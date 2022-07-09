@@ -54,19 +54,45 @@ KEYPAD8.__index = KEYPAD8
 		end
 
 
+	TURNS_LIGTH = {}
+		TURNS_LIGTH.__index = TURNS_LIGTH
+		               function TURNS_LIGTH:NEW()
+				       local obj = { in_left = false, in_rigth = false, in_alarm = false,  out_left = false, out_rigth, out_alarm =false, timer =0, clock = false}
+		       	       setmetatable (obj, self)
+						return obj
+						end
+				function TURNS_LIGTH:PROCESS( tim ,ign )
+					self.timer = self.timer + tim 
+					if (ign == true) then
+					if (self.timer > 500) then if self.clock == true then self.clock = false else self.clock = true end self.timer=0 end
+					self.out_alarm = false self.out_left = false  self.out_rigth = false				
+					if (self.in_alarm == true) then  self.out_alarm = self.clock  else 
+					if (self.in_rigth == true) then   self.out_rigth=self.clock  else
+					if (self.in_left  == true) then   self.out_left =self.clock  end
+						 end end  end
+				end\n\
+
 main = function ( In1 )
 
 function stop()
   In1 = coroutine.yield(Out1)
 end
 KeyPad      = KEYPAD8:NEW(21)
+al          = TURNS_LIGTH:NEW()
 --i = 0
 while true do
 --i = i + 1
 --if i==10 then
 KeyPad:PROCESS()
-       KeyPad:LED_RED(1,1)
+al:PROCESS(10,true)
+al.in_left =  KeyPad:TOG(1) 
+al.in_rigth = KeyPad:TOG(3) 
+al.in_alarm = KeyPad:TOG(2) 
+KeyPad:LED_RED(1,al.out_left) 
+KeyPad:LED_RED(2,al.out_alarm) 
+KeyPad:LED_RED(3,al.out_rigth)	
 Out1 = KeyPad:KEY(1)
+
 --end
 stop()
 
