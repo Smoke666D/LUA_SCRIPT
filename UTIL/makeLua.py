@@ -54,10 +54,9 @@ def delateSpaces ( data, char ):
 #----------------------------------------------------------------------------------------
 def minimiseLua ( data ):
   out = data;
-  out = out.replace( '\n', '\\n' );
+  out = out.replace( '\n', ' ' );
   out = out.replace( '\"', '\\"' );  
   out = out.replace( '\t', ' ' );
-  out = out.replace( '\\n\\n', '\\n' );
   while ( out.find( '  ' ) != -1 ):
     out = out.replace( '  ', ' ' );  
   for symbol in minmizeSymbols:
@@ -69,7 +68,7 @@ def makeCfile ( data, path ):
   string = minimiseLua( data );
   f = open( path, 'w' );
   f.write( '#include "' + hfile + '"\n' );
-  f.write( 'extern const char* const defaultLuaScript = "' + string + '";\n' );
+  f.write( 'const char* const defaultLuaScript = "' + string + '";\n' );
   f.close();
   return;
 #----------------------------------------------------------------------------------------
@@ -78,7 +77,7 @@ def makeHfile ( data, path ):
   f = open( path, 'w' );
   f.write( '#ifndef ' + name + '\n' );
   f.write( '#define ' + name + '\n\n');
-  f.write( 'const char* const defaultLuaScript;\n')
+  f.write( 'extern const char* const defaultLuaScript;\n')
   f.write( '\n#endif' + '\n');
   f.close();
   return;  
