@@ -3,6 +3,7 @@ import sys
 import os
 #----------------------------------------------------------------------------------------
 minmizeSymbols = { '=', '{', '}', '(', ')', ',', '+', '-', '*', '/', '&', '|', '~', '<', '>', '\\n' };
+deleteSymbols  = { '\n', '\t' };
 #----------------------------------------------------------------------------------------
 def noCallback ( data, error ):
   if ( error != None ):
@@ -52,13 +53,38 @@ def delateSpaces ( data, char ):
   out = out.replace( ( char + ' ' ), char );
   return out;
 #----------------------------------------------------------------------------------------
+def deleteLuaComents ( data ):
+  out = data;
+  while out.find( '--' ) > 0:
+    start = out.find( '--' );
+    multiline = out[start:].find( '[[' );
+    newline   = out[start:].find( '\n' )
+    if multiline > 0 and multiline < newline:
+      shift = out[start:].find( ']]' ) + 2;
+      out   = out[:start] + out[start+shift:];
+    else:
+      shift = out[start:].find( '\n' ) + 1;
+      out   = out[:start] + out[start+shift:];
+  return out;
+#----------------------------------------------------------------------------------------
+def deleteDoubleSpaces ( data ):
+  out = data;
+  while out.find( '  ' ) != -1:
+    out = out.replace( '  ', ' ' );  
+  return out;
+#----------------------------------------------------------------------------------------
+def deleteLiterals ( data ):
+  out = data;
+  for symbol in deleteSymbols:
+    out = out.replace( symbol, ' ' );
+  return out;  
+#----------------------------------------------------------------------------------------
 def minimiseLua ( data ):
   out = data;
-  out = out.replace( '\n', ' ' );
+  out = deleteLuaComents( out );
+  out = deleteLiterals( out );
+  out = deleteDoubleSpaces( out );
   out = out.replace( '\"', '\\"' );  
-  out = out.replace( '\t', ' ' );
-  while ( out.find( '  ' ) != -1 ):
-    out = out.replace( '  ', ' ' );  
   for symbol in minmizeSymbols:
     out = delateSpaces( out, symbol );
   return out;
