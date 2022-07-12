@@ -62,111 +62,80 @@ function TurnSygnals:getAlarm ()
 	return self.outAlarm
 end
 ----------------------------------------------------------------------------------------------------------------------
-KEYPAD8 = {}
-KEYPAD8.__index = KEYPAD8
-function KEYPAD8:new ( addr )
-	local obj = { ADDR      = addr, 
-								new_d     = false,
-								old       = 0x00,
-								key       = 0x00,
-								tog       = 0x00,
-								led_red   = 0xFF,
-								led_green = 0xFF,
-								led_blue  = 0xFF }
-	setmetatable( obj, self )
+-- KEYPAD8 NODE
+--  lua_node_keyPad8.json
+-- constructor:
+--  inAdr - network address of the krypad in CAN field bus
+-- process:
+--  none
+-- getKey:
+--   get key state with number n ( number )
+-- getToggle:
+--   get toggle key state with number n ( number )
+-- resetToggle:
+--   reset key toggle state with number n ( number )
+-- setLedRed:
+--   set red led state ( boolean ) with number n ( number )
+-- setLedGreen:
+--   set green led state ( boolean ) with number n ( number )
+-- setLedBlue:
+--   set blue led state ( boolean ) with number n ( number )
+KeyPad8 = {}
+KeyPad8.__index = KeyPad8
+function KeyPad8:new ( inAdr )
+	local obj = nil
+	if ( type( inAdr ) == number ) then
+		local obj = { adr         = inAdr,
+									toggleState = 0,
+									keyState    = 0,
+									oldKeyState = 0,
+									ledRed      = 0xFF,
+									ledGreen    = 0xFF,
+									ledBlue     = 0xFF,
+									newData     = false }
+		setmetatable( obj, self )
+		system.setCanFilter( 0x180 + addr )
+	end
 	return obj
 end
-function KEYPAD8:PROCESS()
-	if ( SheckCanId( 0x180 + self.ADDR ) == 1 ) then
-		self.old = self.key
-		self.key = GetCanMessage( 0x180 + self.ADDR )
-		self.tog = ( ~ self.old & self.key ) ~ self.tog
+function KeyPad8:process()
+	if ( system.canCheckId( 0x180 + self.adr ) == true ) then
+		self.oldKeyState = self.keyState
+		self.keyState    = system.canGetMessage( 0x180 + self.adr )
+		self.toggleState = ( ~ self.oldKeyState & self.keyState ) ~ self.toggleState
 	end
-	if ( self.new_d == true ) then
-		self.new_d = false
-		CanSend( ( 0x215 + adr ), led_red, led_green, led_blue, 0x00, 0x00, 0x00, 0x00, 0x00 )
-	end
-end
-function KEYPAD8:KEY( ind )
-	return	( self.key & ( 0x01 << ( ind - 1 ) ) ) ~= 0
-end
-function KEYPAD8:TOG( ind )
-	return	( self.tog & ( 0x01 << ind ) ) ~= 0
-end
-function KEYPAD8:RES( ind )
-	self.tog = ( ~( 0x01 << ind ) ) & self.tog
-end
-function KEYPAD8:LED_RED( ind, data )
-	self.led_red = ( data ) and ( self.led_red | ( 0x01 << ind ) ) or ( self.led_red & ( ~( 0x01 << 1 ) ) )
-	new_d = true
-end
-function KEYPAD8:LED_GREEN( ind, data )
-	led_green = ( data ) and ( led_red | ( 0x01 << ind ) ) or ( led_red & ( ~( 0x01 << 1 ) ) )
-	new_d = true
-end
-function KEYPAD8:LED_BLUE( ind, data )
-	led_blue = ( data ) and ( led_red | ( 0x01 << ind ) ) or ( led_red & ( ~( 0x01 << 1 ) ) )
-	new_d = true
-end
-----------------------------------------------------------------------------------------------------------------------
-KEYPAD_8 = {}
-KEYPAD_8.__index = KEYPAD_8
-function KEYPAD_8:new ( addr )
-	local obj = { key       = 0x00, 
-								ADDR      = addr,
-								new       = false,
-								tog       = 0x00,
-								old       = 0x00,
-								led_red   = 0x00,
-								led_green = 0x00,
-								led_blue  = 0x00,
-								temp      = { 0 } }
-	setmetatable ( obj, self )
-	system.setCanFilter( 0x180 + addr )
-	return obj
-end
-function KEYPAD8:PROCESS()
-	if ( GetCanToTable( ( 0x180 + self.ADDR ), self.temp ) == 1 ) then
-		self.tog = ( ~ self.key & self.temp[1] ) ~ self.tog
-		self.key = self.temp[1]
-	end
-	if ( self.new == true ) then
-		self.new = false
-		CanSend( 0x215, self.led_red, self.led_green, self.led_blue, 0, 0, 0, 0, 0 )
+	if ( self.newData == true ) then
+		self.newData = false
+		CanSend( ( 0x215 + adr ), ledRed, ledGreen, ledBlue, 0x00, 0x00, 0x00, 0x00, 0x00 )
 	end
 end
-function KEYPAD_8:KEY( ind )
-	return ( self.key & ( 0x01 << ( ind -1 ) ) ) ~= 0
+
+function KeyPad8:getKey( n )
+	return	( self.keyState    & ( 0x01 << n ) ) ~= 0
 end
-function KEYPAD_8:TOG( ind )
-	return ( self.tog & ( 0x01 << ( ind - 1 ) ) ) ~= 0
+function KeyPad8:getToggle( n )
+	return	( self.toggleState & ( 0x01 << n ) ) ~= 0
 end
-function KEYPAD_8:RES( ind )
-	self.tog = ( ~( 0x01 << ind ) ) & self.tog
+function KeyPad8:resetToggle ( n )
+	self.toggleState = ( ~( 0x01 << n ) ) & self.toggleState
 end
-function KEYPAD_8:LED_RED( ind, data )
-	if ( data == false ) then
-		self.led_red = self.led_red & ( ~( 0x01 << ( ind - 1 ) ) )
-	else
-		self.led_red = self.led_red | ( 0x01 << ( ind - 1 ) )
+function KeyPad8:setLedRed ( state, n )
+	if ( ( type( n ) == number ) and ( type( state ) == boolean ) ) then
+		self.ledRed  = ( state ) and ( self.ledRed | ( 0x01 << n ) ) or ( self.ledRed & ( ~( 0x01 << 1 ) ) )
+		self.newData = true
 	end
-	self.new = true
 end
-function KEYPAD_8:LED_GREEN( ind, data )
-	if ( data == false ) then
-		self.led_green = self.led_green & ( ~( 0x01 << ( ind - 1 ) ) )
-	else
-		self.led_green = self.led_green | ( 0x01 << ( ind - 1 ) )
+function KeyPad8:setLedGreen( state, n )
+	if ( ( type( n ) == number ) and ( type( state ) == boolean ) ) then
+		self.ledGreen = ( state ) and ( self.ledGreen | ( 0x01 << n ) ) or ( self.ledGreen & ( ~( 0x01 << 1 ) ) )
+		self.newData  = true
 	end
-	self.new = true
 end
-function KEYPAD_8:LED_BLUE( ind, data )
-	if ( data == false ) then
-		self.led_blue = self.led_blue & ( ~( 0x01 << ( ind - 1 ) ) )
-	else
-		self.led_blue = self.led_blue | ( 0x01 << ( ind - 1 ) )
+function KeyPad8:setLedBlue( state, n )
+	if ( ( type( n ) == number ) and ( type( state ) == boolean ) ) then
+		self.ledBlue = ( state ) and ( self.ledBlue | ( 0x01 << n ) ) or ( self.ledBlue & ( ~( 0x01 << 1 ) ) )
+		self.newData = true
 	end
-	self.new = true
 end
 ----------------------------------------------------------------------------------------------------------------------
 -- COUNTER NODE
@@ -278,20 +247,19 @@ main = function ( In1 )
 	function stop()
 		In1 = coroutine.yield( Out1 )
 	end
-	KeyPad = KEYPAD8:NEW( 21 )
-	al     = TurnSygnals:NEW()
+
+	KeyPad      = KeyPad8:new( 21 )
+	turnSygnals = TurnSygnals:new( 500 )
+
 	while true do
 		k=3
 		i=0
 		t=1
-		KeyPad:PROCESS()
-		al:PROCESS( 10, true )
-		al.in_left  = KeyPad:TOG( 1 )
-		al.in_rigth = KeyPad:TOG( 3 )
-		al.in_alarm = KeyPad:TOG( 2 )
-		KeyPad:LED_RED( 1, al.out_left )
-		KeyPad:LED_RED( 2, al.out_alarm )
-		KeyPad:LED_RED( 3, al.out_rigth )
+		KeyPad:process()
+		turnSygnals:process( true, KeyPad:getToggle( 1 ), KeyPad:getToggle( 3 ), KeyPad:getToggle( 2 ) )
+		KeyPad:setLedRed( 1, turnSygnals.getLeft()  )
+		KeyPad:setLedRed( 2, turnSygnals.getAlarm() )
+		KeyPad:setLedRed( 3, turnSygnals.getRigth() )
 		i = i + timer
 		if ( i > 500 ) then
 			i = 0
@@ -304,10 +272,10 @@ main = function ( In1 )
 					t = false
 				end
 			else
-				KeyPad:LED_GREEN( k, t )
+				KeyPad:setLedGreen( k, t )
 			end
 		end
-		Out1 = KeyPad:KEY( 1 )
+		Out1 = KeyPad:getKey( 1 )
 		stop()
 	end
 end
