@@ -1,2 +1,6 @@
 out/
 *.pyc
+*.bat
+*.c
+*.h
+UTIL/work_sctipt.lua
