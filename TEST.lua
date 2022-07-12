@@ -56,7 +56,7 @@ end
 ----------------------------------------------------------------------------------------------------------------------
 KEYPAD8 = {}
 KEYPAD8.__index = KEYPAD8
-function KEYPAD8:NEW( addr )
+function KEYPAD8:NEW ( addr )
 	local obj = { ADDR      = addr, 
 								new_d     = false,
 								old       = 0x00,
@@ -103,7 +103,7 @@ end
 ----------------------------------------------------------------------------------------------------------------------
 KEYPAD_8 = {}
 KEYPAD_8.__index = KEYPAD_8
-function KEYPAD_8:NEW( addr )
+function KEYPAD_8:NEW ( addr )
 	local obj = { key       = 0x00, 
 								ADDR      = addr,
 								new       = false,
@@ -161,78 +161,105 @@ function KEYPAD_8:LED_BLUE( ind, data )
 	self.new = true
 end
 ----------------------------------------------------------------------------------------------------------------------
-COUNTER = {}
-COUNTER.__index = COUNTER
-function COUNTER:NEW ( a, b, c )
-	local obj = { counter = 0, min = a, max= b, mode = c }
-	setmetatable ( obj, self )
+-- COUNTER NODE
+--   lua_node_counter.json
+-- constructor:
+--   inMin    - minimum value ( number )
+--   inMax    - maximum value ( number )
+--   inReload - reload mode: true, stop mode: false ( boolean )
+-- process:
+--   inc - increment counter ( boolean )
+--   dec - decriment counter ( boolean )
+--   rst - reset counter ( boolean )
+-- get:
+--   counter value ( number )
+Counter = {}
+Counter.__index = Counter
+function Counter:new ( inMin, inMax, inReload )
+	local obj = nil
+	if ( ( type( inMin ) == number ) and 
+			 ( type( inMax ) == number ) and 
+			 ( type( inReload ) == boolean ) ) then
+		obj = { counter = 0, min = inMin, max = inMax, reload = inReload }
+		setmetatable( obj, self )
+	end
 	return obj
 end
-function COUNTER:PROCESS( inc, dec, res )
-	if ( inc ) then
-		if self.counter < self.max then
+function Counter:process ( inc, dec, rst )
+	if ( inc == true ) then
+		if ( self.counter < self.max ) then
 			self.counter = self.counter + 1
-		elseif ( self.mode == "OVER" ) then
+		elseif ( self.reload == true ) then
 			self.counter = self.min
 		end
 	end
-	if ( dec ) then
+	if ( dec == true ) then
 		if ( self.counter > self.min ) then
 			self.counter = self.counter - 1
-		elseif ( self.mode == "OVER" ) then
+		elseif ( self.reload == true ) then
 			self.counter = self.max
 		end
 	end
-	if ( res ) then
+	if ( rst == true ) then
 		self.counter = self.min
 	end
+	return
+end
+function Counter:get ()
 	return self.counter
 end
 ----------------------------------------------------------------------------------------------------------------------
-TIMER = {}
-TIMER.__index = TIMER
-function TIMER:NEW( a, b )
-	local lobj = { timer = 0,	high = b, low = ( a + b ) }
-	setmetatable ( lobj, self )
-	return lobj
-end
-function TIMER:NEWTIC( tic, start )
-	if ( tic ~= nil ) then
-		if ( self.timer > 0 ) then
-			self.timer = self.timer + tic
-		elseif ( start ) then
-			self.timer = 1
-		end
-		print ( self.timer )
-		if ( self.timer > self.low ) then
-			if ( start ) then
-				self.timer = 1
-			else
-				self.timer = 0
-			end
-		end
-		if ( self.timer > 0 ) and ( self.timer <= self.high ) then
-			return true
-		else
-			return false
-		end
+-- DELAY NODE
+--  lua_node_delay.json
+-- constructor:
+--   inDelay - delay value in ms ( number )
+-- process:
+--   start - start delay counting. To reset timer
+--           switch start to false after the delay ( boolean )
+-- get:
+--   finish of the delay ( boolean )
+Delay = {}
+Delay.__index = Delay
+function Delay:new ( inDelay )
+	local obj = nil
+	if ( type( inDelay ) == number ) then
+		obj = { counter = 0, launched = false, output = false, delay = inDelay }
+		setmetatable( obj, self )
 	end
-	return flase
+	return obj
+end
+function Delay:process ( start )
+	if ( self.launched == true ) then
+		self.counter = self.counter + system.getTimeout()
+		if ( self.counter >= self.delay ) then
+			self.output   = true
+			self.launched = false
+		end
+	elseif ( ( self.output == false ) and ( start == true ) ) then
+		self.launched = true
+	elseif ( ( self.output == true ) and ( start == false ) ) then
+		self.output  = false
+		self.counter = 0
+	end
+	return
+end
+function Delay:get ()
+	return self.output
 end
 ----------------------------------------------------------------------------------------------------------------------
-CAN_OUT = {}
-CAN_OUT.__index = CAN_OUT
-function CAN_OUT:NEW(a,b)
-	local cobj = { timer = 0, addr = a, time = b }
-	setmetatable( cobj, self )
-	return cobj
+CanOut = {}
+CanOut.__index = CanOut
+function CanOut:new ( a, b )
+	local obj = { timer = 0, addr = a, time = b }
+	setmetatable( obj, self )
+	return obj
 end
-function CAN_OUT:PROCESS( tic, d1, d2, d3, d4, d5, d6, d7, d8 )
+function CanOut:process ( tic, d1, d2, d3, d4, d5, d6, d7, d8 )
 	if ( tic ~=nil ) then
 		self.timer = self.time + tic
 		if ( self.timer >= self.time ) then
 			self.timer = 0
-			CanSend( self.addr, 8, d1, d2, d3, d4, d5, d6, d7, d8 )
+			canSend( self.addr, 8, d1, d2, d3, d4, d5, d6, d7, d8 )
 		end
 	end
 end
