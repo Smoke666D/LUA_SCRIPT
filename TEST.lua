@@ -1,14 +1,26 @@
 Out1 = false
-
-function SheckCanId ( addr )
+----------------------------------------------------------------------------------------------------------------------
+-- SYSTEM CLASS
+System = {}
+System.__index = System
+function System:new ()
+	local obj = {}
+	setmetatable( obj, self )
+	return obj
+end
+function System:getTimeout ()
 	return 1
 end
-
-function GetCanMessage( addr )
+function System:canCheckId ( adr )
+	return true
+end
+function System:canGetMessage ( adr )
 	return 0x01, 0x00
 end
-
-function CanSend( addr, b1, b2, b3, b4, b5, b6, b7, b8 )
+function System:canSetFilter ( adr )
+	return
+end
+function System:canSend ( adr, b1, b2, b3, b4, b5, b6, b7, b8 )
 	return
 end
 ----------------------------------------------------------------------------------------------------------------------
@@ -43,7 +55,7 @@ function TurnSygnals:new ( inDelay )
 	return obj
 end
 function TurnSygnals:process ( enb, left, right, alarm )
-	self.counter = self.counter + system.getTimeout
+	self.counter = self.counter + system.getTimeout()
 	if ( self.counter >= self.delay ) then
 		self.state    = not state
 		self.counter  = 0
@@ -94,7 +106,7 @@ function KeyPad8:new ( inAdr )
 									ledBlue     = 0xFF,
 									newData     = false }
 		setmetatable( obj, self )
-		system.setCanFilter( 0x180 + addr )
+		system.canSetFilter( 0x180 + addr )
 	end
 	return obj
 end
@@ -106,7 +118,7 @@ function KeyPad8:process()
 	end
 	if ( self.newData == true ) then
 		self.newData = false
-		CanSend( ( 0x215 + adr ), ledRed, ledGreen, ledBlue, 0x00, 0x00, 0x00, 0x00, 0x00 )
+		system.canSend( ( 0x215 + adr ), ledRed, ledGreen, ledBlue, 0x00, 0x00, 0x00, 0x00, 0x00 )
 	end
 end
 
