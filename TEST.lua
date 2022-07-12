@@ -12,51 +12,59 @@ function CanSend( addr, b1, b2, b3, b4, b5, b6, b7, b8 )
 	return
 end
 ----------------------------------------------------------------------------------------------------------------------
-TURNS_LIGTH = {}
-TURNS_LIGTH.__index = TURNS_LIGTH
-function TURNS_LIGTH:NEW()
-	local obj = { in_left   = false, 
-								in_rigth  = false, 
-								in_alarm  = false,	
-								out_left  = false, 
-								out_rigth, 
-								out_alarm = false, 
-								timer     = 0, 
-								clock     = false}
-	setmetatable( obj, self )
+-- TURN SYGNALS NODE
+--   lua_node_turnSygnals.json
+-- constructor:
+--   inDelay - delay for turn sygnal blinking ( number )
+-- process:
+--   enb   - enable sygnal from the ignition ( boolean )
+--   left  - state of the left turning switch ( boolean )
+--   right - state of the right turning switch ( boolean )
+--   alarm - state of the alarm switch ( boolean )
+-- getLeft:
+--   control sygnal for the left turning light ( boolean )
+-- getRight:
+--   control sygnal for the right turning light ( boolean )
+-- getAlarm:
+--   control sygnal for the alarm light ( boolean )
+TurnSygnals = {}
+TurnSygnals.__index = TurnSygnals
+function TurnSygnals:new ( inDelay )
+	local obj = nil
+	if ( type( inDelay ) == number ) then
+		obj = { delay    = inDelay,
+						counter  = 0,
+						state    = false,
+						outLeft  = false, 
+						outRigth = false, 
+						outAlarm = false }
+		setmetatable( obj, self )
+	end
 	return obj
 end
-function TURNS_LIGTH:PROCESS( tim, ign )
-	self.timer = self.timer + tim
-	if ( ign == true ) then
-		if ( self.timer > 500 ) then
-			if ( self.clock == true ) then
-				self.clock = false
-			else
-				self.clock = true
-			end
-			self.timer = 0
-		end
-		self.out_alarm = false
-		self.out_left	 = false
-		self.out_rigth = false
-		if ( self.in_alarm == true ) then
-			self.out_alarm = self.clock
-		else
-			if ( self.in_rigth == true ) then
-				self.out_rigth = self.clock
-			else
-				if ( self.in_left == true ) then
-					self.out_left = self.clock
-				end
-			end
-		end
+function TurnSygnals:process ( enb, left, right, alarm )
+	self.counter = self.counter + system.getTimeout
+	if ( self.counter >= self.delay ) then
+		self.state    = not state
+		self.counter  = 0
+		self.outLeft  = ( alarm or ( enb and left  ) ) and state
+		self.outRigth = ( alarm or ( enb and right ) ) and state
+		self.outAlarm = alarm and state
 	end
+end
+function TurnSygnals:getLeft ()
+	return self.outLeft
+end
+function TurnSygnals:getRight ()
+	return self.outRight
+end
+function TurnSygnals:getAlarm ()
+	return self.outAlarm
 end
 ----------------------------------------------------------------------------------------------------------------------
 KEYPAD8 = {}
 KEYPAD8.__index = KEYPAD8
-function KEYPAD8:NEW ( addr )
+function KEYPAD8:new ( addr )
 	local obj = { ADDR      = addr, 
 								new_d     = false,
 								old       = 0x00,
@@ -103,7 +111,7 @@ end
 ----------------------------------------------------------------------------------------------------------------------
 KEYPAD_8 = {}
 KEYPAD_8.__index = KEYPAD_8
-function KEYPAD_8:NEW ( addr )
+function KEYPAD_8:new ( addr )
 	local obj = { key       = 0x00, 
 								ADDR      = addr,
 								new       = false,
@@ -113,8 +121,8 @@ function KEYPAD_8:NEW ( addr )
 								led_green = 0x00,
 								led_blue  = 0x00,
 								temp      = { 0 } }
-	setmetatable (obj, self ) 
-	SetCanFilter( 0x180 + addr )
+	setmetatable ( obj, self )
+	system.setCanFilter( 0x180 + addr )
 	return obj
 end
 function KEYPAD8:PROCESS()
@@ -271,7 +279,7 @@ main = function ( In1 )
 		In1 = coroutine.yield( Out1 )
 	end
 	KeyPad = KEYPAD8:NEW( 21 )
-	al     = TURNS_LIGTH:NEW()
+	al     = TurnSygnals:NEW()
 	while true do
 		k=3
 		i=0
