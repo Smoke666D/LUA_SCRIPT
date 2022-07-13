@@ -27,7 +27,15 @@ def addIncludesToScript ( path, includes, output ):
   out    = '#!/usr/local/bin/lua\n';
   f      = open( path, 'r', encoding='utf-8' );
   buffer = f.read().replace( '#!/usr/local/bin/lua\n', '' );
-  
+  f.close();
+  for include in includes:
+    out = out + '----------------------------------------------------------------------------------------------------------------------\n';
+    out = out + include + '\n';
+  out = out + buffer;
+  print( os.path.join( output, os.path.basename( path ) ) )
+  f   = open( os.path.join( output, os.path.basename( path ) ), 'w' );
+  f.write( out );
+  f.close();
   return;  
 #----------------------------------------------------------------------------------------
 def analizInput ( args ):
