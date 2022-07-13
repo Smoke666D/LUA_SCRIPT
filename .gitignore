@@ -4,3 +4,5 @@ out/
 *.c
 *.h
 
+__pycache__
+

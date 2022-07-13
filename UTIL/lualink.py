@@ -2,6 +2,7 @@
 import sys
 import os
 import json
+from common import getExtension, checkFile
 #----------------------------------------------------------------------------------------
 def getIncludeList ( ldpath ):
   error = None;
@@ -24,7 +25,7 @@ def getLibContent ( path ):
   return [out,error];
 
 def addIncludesToScript ( path, includes, output ):
-  out    = '#!/usr/local/bin/lua\n';
+  out    = '';
   f      = open( path, 'r', encoding='utf-8' );
   buffer = f.read().replace( '#!/usr/local/bin/lua\n', '' );
   f.close();
@@ -55,20 +56,6 @@ def analizInput ( args ):
     if ( args[i] == '-o' ) and ( len( args ) > ( i + 1 ) ):
       data['out'] = args[i + 1];
   return data;
-
-def getExtension ( path ):
-  return os.path.splitext( path )[1];
-
-def checkFile ( path, extension ):  
-  error    = None;
-  if ( path != '' ):
-    if not os.path.isabs( path ):
-      path = os.path.join( os.getcwd(), path );
-    if not os.path.isfile( path ):
-      return "File is not a exist";
-    if ( getExtension( path ) != extension ):
-      return "Wrong file format";
-  return error;    
 
 def checkInputData ( data ):
   error    = None;
@@ -121,7 +108,11 @@ def runCommand ( data ):
       showHelp();
   return;
 #----------------------------------------------------------------------------------------
-data  = analizInput( sys.argv );
-error = checkInputData( data );
-if ( error == None ):
-  runCommand( data );
+def lualink ( args ):
+  data  = analizInput( args );
+  error = checkInputData( data );
+  if ( error == None ):
+    runCommand( data );
+  return;  
+#----------------------------------------------------------------------------------------
+lualink( sys.argv );
