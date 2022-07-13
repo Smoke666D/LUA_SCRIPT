@@ -1,0 +1,47 @@
+-- COUNTER NODE
+--   lua_node_counter.json
+-- constructor:
+--   inMin    - minimum value ( number )
+--   inMax    - maximum value ( number )
+--   inReload - reload mode: true, stop mode: false ( boolean )
+-- process:
+--   inc - increment counter ( boolean )
+--   dec - decriment counter ( boolean )
+--   rst - reset counter ( boolean )
+-- get:
+--   counter value ( number )
+Counter = {}
+Counter.__index = Counter
+function Counter:new ( inMin, inMax, inReload )
+	local obj = nil
+	if ( ( type( inMin ) == number ) and 
+			 ( type( inMax ) == number ) and 
+			 ( type( inReload ) == boolean ) ) then
+		obj = { counter = 0, min = inMin, max = inMax, reload = inReload }
+		setmetatable( obj, self )
+	end
+	return obj
+end
+function Counter:process ( inc, dec, rst )
+	if ( inc == true ) then
+		if ( self.counter < self.max ) then
+			self.counter = self.counter + 1
+		elseif ( self.reload == true ) then
+			self.counter = self.min
+		end
+	end
+	if ( dec == true ) then
+		if ( self.counter > self.min ) then
+			self.counter = self.counter - 1
+		elseif ( self.reload == true ) then
+			self.counter = self.max
+		end
+	end
+	if ( rst == true ) then
+		self.counter = self.min
+	end
+	return
+end
+function Counter:get ()
+	return self.counter
+end
