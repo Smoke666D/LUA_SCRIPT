@@ -1,8 +1,6 @@
 {
-  "include" : [
-    "lib\\Counter.lua",
-    "lib\\Delay.lua",
-    "lib\\KeyPad8.lua",
-    "lib\\TurnSygnals.lua"
+  "include" : [   
+    "lib\\PDM20.lua",
+    "lib\\KeyPad8.lua"
   ]
 }
