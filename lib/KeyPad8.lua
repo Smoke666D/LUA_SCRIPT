@@ -18,58 +18,56 @@
 --   set blue led state ( boolean ) with number n ( number )
 KeyPad8 = {}
 KeyPad8.__index = KeyPad8
-function KeyPad8:new ( inAdr )
-	local obj = nil
-	if ( type( inAdr ) == number ) then
-		local obj = { adr         = inAdr,
-									toggleState = 0,
-									keyState    = 0,
-									oldKeyState = 0,
-									ledRed      = 0xFF,
-									ledGreen    = 0xFF,
-									ledBlue     = 0xFF,
-									newData     = false }
-		setmetatable( obj, self )
-		system.canSetFilter( 0x180 + addr )
-	end
-	return obj
+
+function KeyPad8:new( addr)
+      local obj = {key = 0x00, ADDR = addr, new = false,  tog= 0x00, old =0x00, ledRed=0x00,ledGreen=0x00, ledBlue =0x00, temp={0}}
+      setmetatable (obj, self) 
+      SetCanFilter(0x180 +addr)
+      return obj
 end
 function KeyPad8:process()
-	if ( system.canCheckId( 0x180 + self.adr ) == true ) then
-		self.oldKeyState = self.keyState
-		self.keyState    = system.canGetMessage( 0x180 + self.adr )
-		self.toggleState = ( ~ self.oldKeyState & self.keyState ) ~ self.toggleState
+	if (GetCanToTable(0x180 + self.ADDR,self.temp) ==1 ) then  
+		self.tog = (~ self.key & self.temp[1]) ~ self.tog	
+		self.key =self.temp[1]	 
 	end
-	if ( self.newData == true ) then
-		self.newData = false
-		system.canSend( ( 0x215 + adr ), ledRed, ledGreen, ledBlue, 0x00, 0x00, 0x00, 0x00, 0x00 )
+	if self.new == true then
+		self.new = false		
+		CanSend(0x215,self.ledRed,self.ledGreen,self.ledBlue,0,0,0,0,0)
 	end
 end
-
 function KeyPad8:getKey( n )
-	return	( self.keyState    & ( 0x01 << n ) ) ~= 0
+	  return  (self.key & ( 0x01 << ( n - 1 ) ) ) ~= 0 
 end
-function KeyPad8:getToggle( n )
-	return	( self.toggleState & ( 0x01 << n ) ) ~= 0
+function KeyPad8:getToggle( n ) 
+         return  (self.tog & ( 0x01 << ( n - 1 ) ) ) ~= 0 
 end
-function KeyPad8:resetToggle ( n )
-	self.toggleState = ( ~( 0x01 << n ) ) & self.toggleState
+function KeyPad8:resetToggle( n , state)
+	 if state == true then
+		 self.tog =  (~(0x01<< ( n-1 ) )) & self.tog
+	 end
 end
-function KeyPad8:setLedRed ( state, n )
-	if ( ( type( n ) == number ) and ( type( state ) == boolean ) ) then
-		self.ledRed  = ( state ) and ( self.ledRed | ( 0x01 << n ) ) or ( self.ledRed & ( ~( 0x01 << 1 ) ) )
-		self.newData = true
-	end
+function KeyPad8:setLedRed( n , state)
+ 	 if (state == false) then 
+		self.ledRed = self.ledRed & (~(0x01<<( n-1 ) ) ) 
+	 else 
+		self.ledRed = self.ledRed | (0x01<<(n-1)) 
+	 end    
+         self.new = true
+
 end
-function KeyPad8:setLedGreen( state, n )
-	if ( ( type( n ) == number ) and ( type( state ) == boolean ) ) then
-		self.ledGreen = ( state ) and ( self.ledGreen | ( 0x01 << n ) ) or ( self.ledGreen & ( ~( 0x01 << 1 ) ) )
-		self.newData  = true
-	end
+function KeyPad8:setLedGreen( n, state)
+ 	 if (state == false) then 
+		self.ledGreen = self.ledGreen & (~(0x01<<( n-1 ) ) ) 
+	 else 
+		self.ledGreen = self.ledGreen | (0x01<<(n-1)) 
+	 end    
+         self.new = true
 end
-function KeyPad8:setLedBlue( state, n )
-	if ( ( type( n ) == number ) and ( type( state ) == boolean ) ) then
-		self.ledBlue = ( state ) and ( self.ledBlue | ( 0x01 << n ) ) or ( self.ledBlue & ( ~( 0x01 << 1 ) ) )
-		self.newData = true
-	end
+function KeyPad8:setLedBlue( n , state)
+	 if (data == state) then 
+		self.ledBlue = self.ledBlue & (~(0x01<<(n-1))) 
+	 else 
+		self.ledBlue = self.ledBlue | (0x01<<(n-1)) 
+	 end
+	 self.new = true        	
 end
