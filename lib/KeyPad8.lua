@@ -50,7 +50,7 @@ function KeyPad8:setLedRed( n , state)
  	 if (state == false) then 
 		self.ledRed = self.ledRed & (~(0x01<<( n-1 ) ) ) 
 	 else 
-		self.ledRed = self.ledRed | (0x01<<(n-1)) 
+		self.ledRed = self.ledRed | (0x01<< ( n - 1)) 
 	 end    
          self.new = true
 

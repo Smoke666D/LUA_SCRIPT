@@ -17,38 +17,37 @@
                                                 
 
 
-
 TurnSygnals = {}
 TurnSygnals.__index = TurnSygnals
 function TurnSygnals:new ( inDelay )
-	local obj = nil
-	if ( type( inDelay ) == number ) then
-		obj = { delay    = inDelay,
+
+	local obj = {                         delay    = inDelay,
 						counter  = 0,
 						state    = false,
 						outLeft  = false, 
-						outRigth = false, 
+						outRight = false, 
 						outAlarm = false }
-		setmetatable( obj, self )
-	end
+	
+	setmetatable( obj, self )
 	return obj
 end
 function TurnSygnals:process ( enb, left, right, alarm )
-	self.counter = self.counter + system.getDelay()
-	if ( self.counter >= self.delay ) then
-		self.state    = not self.state
-		self.counter  = 0
-		self.outLeft  = ( alarm or ( enb and left  ) ) and self.state
-		self.outRigth = ( alarm or ( enb and right ) ) and self.state
-		self.outAlarm = alarm and  self.state
-	end
+		self.counter = self.counter + getDelay()		
+		if ( self.counter > self.delay )  then
+			self.state    = not self.state
+			self.counter  = 0
+			self.outLeft  = left  and self.state and enb and (not alarm)
+			self.outRight = right and self.state and enb and (not alarm)
+			self.outAlarm = alarm and self.state and enb 
+		end				
 end
-function TurnSygnals:getLeft ()
-	return self.outLeft
-end
-function TurnSygnals:getRight ()
+function TurnSygnals:getRight()
 	return self.outRight
+end
+function TurnSygnals:getLeft()
+	return self.outLeft
 end
 function TurnSygnals:getAlarm ()
 	return self.outAlarm
 end
+
