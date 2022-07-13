@@ -171,23 +171,44 @@ def luaConvertTabsToSpaces ( data ):
   out = out.replace( '\t', ' ' );
   return out;
 
+def makeNewMinName ( index ):
+  length = 1;
+  border = len( minNamesList );
+  while ( index < border ):
+    length++;
+
+
+
+  size = ( index // len( minNamesList ) ) + 1;
+  for i in range( size ):
+
+  return minNamesList[index];
+
 def luaMinFunctionNames ( data ):
   out = data;
   return out;
 
-def processLuaAssign ( assign, counter, varList ):
+def processLuaAssign ( assign, counter, varList, newList ):
   for node in ast.walk( assign ):
     if isinstance( node, astnodes.Name ):
-      print( node.id );
+      if ( node.id not in varList ):
+        varList.append( node.id );
+        index    = counter;
+        counter += 1;
+        newList.append( makeNewMinName( index ) );
+      else:
+        index = varList.index( node.id );
+      print( index );
   return;  
 
 def processLuaFunction ( function ):
   out     = function;
   counter = 0;
   varList = [];
+  newList = [];
   for node in ast.walk( out ):
     if isinstance( node, astnodes.Assign ):
-      processLuaAssign( node, counter, varList );
+      processLuaAssign( node, counter, varList, newList );   
   return out;
 
 def luaMinVarNames ( data ):
