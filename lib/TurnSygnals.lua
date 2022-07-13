@@ -13,6 +13,11 @@
 --   control sygnal for the right turning light ( boolean )
 -- getAlarm:
 --   control sygnal for the alarm light ( boolean )
+
+                                                
+
+
+
 TurnSygnals = {}
 TurnSygnals.__index = TurnSygnals
 function TurnSygnals:new ( inDelay )
@@ -29,13 +34,13 @@ function TurnSygnals:new ( inDelay )
 	return obj
 end
 function TurnSygnals:process ( enb, left, right, alarm )
-	self.counter = self.counter + system.getTimeout()
+	self.counter = self.counter + system.getDelay()
 	if ( self.counter >= self.delay ) then
-		self.state    = not state
+		self.state    = not self.state
 		self.counter  = 0
-		self.outLeft  = ( alarm or ( enb and left  ) ) and state
-		self.outRigth = ( alarm or ( enb and right ) ) and state
-		self.outAlarm = alarm and state
+		self.outLeft  = ( alarm or ( enb and left  ) ) and self.state
+		self.outRigth = ( alarm or ( enb and right ) ) and self.state
+		self.outAlarm = alarm and  self.state
 	end
 end
 function TurnSygnals:getLeft ()

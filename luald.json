@@ -1,6 +1,7 @@
 {
   "include" : [   
     "lib\\PDM20.lua",
-    "lib\\KeyPad8.lua"
+    "lib\\KeyPad8.lua",
+    "lib\\TurnSygnals.lua"
   ]
 }

@@ -1,6 +1,7 @@
 
 
 
+
 TURNS_LIGTH = {}
 TURNS_LIGTH.__index = TURNS_LIGTH
 function TURNS_LIGTH:NEW()
@@ -8,8 +9,8 @@ function TURNS_LIGTH:NEW()
 		       	       setmetatable (obj, self)
 						return obj
 						end
-				function TURNS_LIGTH:PROCESS( tim ,ign )
-					self.t = self.t + tim 
+				function TURNS_LIGTH:PROCESS( ign )
+					self.t = self.t + getDelay() 
 					if (ign == true) then
 						if (self.t > 500) then 
 							 self.clk = not self.clk 
@@ -44,28 +45,27 @@ function TURNS_LIGTH:NEW()
 
 
 
+
 main = function () 
 	OutConfig(10,10,1000,60) 
 	KeyPad =  KeyPad8:new(0x15) 
-	al     = TURNS_LIGTH:NEW()  	
+	al     = TurnSygnals:new(500)  	
 	k=3  
 	i=0 
 	t=false
 	while true do 
 		OutSetPWM(13,k) 
+
 		KeyPad:process()
-		al:PROCESS(getDelay(),true)  		
+		al:process( true , KeyPad:getToggle( 1 ), KeyPad:getToggle( 3 ),  KeyPad:getToggle( 2 ))  		
 
    	        KeyPad:resetToggle(1, KeyPad:getToggle( 2 ) or KeyPad:getKey( 3 ) )
 		KeyPad:resetToggle(3, KeyPad:getToggle( 2 ) or KeyPad:getKey( 1 ) )
 
-                al:setALARM( KeyPad:getToggle( 2 ) )
-		al:setLEFT( KeyPad:getToggle( 1 ) ) 
-		al:setRIGTH( KeyPad:getToggle( 3 ) ) 
+		KeyPad:setLedRed(1,al:getLeft()) 
+		KeyPad:setLedRed(2,al:getAlarm()) 
+		KeyPad:setLedRed(3,al:getRigth())		
 
-		KeyPad:setLedRed(1,al:getLEFT()) 
-		KeyPad:setLedRed(2,al:getALARM()) 
-		KeyPad:setLedRed(3,al:getRIGTH())		
 	        i = i + getDelay()  
 		if (i > 500) then 
 			i = 0 
