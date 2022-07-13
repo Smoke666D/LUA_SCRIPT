@@ -55,7 +55,7 @@ def delateSpaces ( data, char ):
 #----------------------------------------------------------------------------------------
 def deleteLuaComents ( data ):
   out = data;
-  while out.find( '--' ) > 0:
+  while out.find( '--' ) >= 0:
     start = out.find( '--' );
     multiline = out[start:].find( '[[' );
     newline   = out[start:].find( '\n' )
