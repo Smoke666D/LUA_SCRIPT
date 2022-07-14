@@ -10,26 +10,22 @@
 Delay = {}
 Delay.__index = Delay
 function Delay:new ( inDelay )
-	local obj = nil
-	if ( type( inDelay ) == number ) then
-		obj = { counter = 0, launched = false, output = false, delay = inDelay }
-		setmetatable( obj, self )
-	end
+	local obj  = { counter = 0, launched = false, output = false, delay = inDelay }
+	setmetatable( obj, self )
 	return obj
 end
 function Delay:process ( start )
-	if ( self.launched == true ) then
-		self.counter = self.counter + system.getTimeout()
+	if ( start == true ) then	
+		if  (self.counter == 0) then
+			self.output   = false		
+		end
+		self.counter = self.counter + getDelay()
 		if ( self.counter >= self.delay ) then
 			self.output   = true
-			self.launched = false
+			self.counter = 0
 		end
-	elseif ( ( self.output == false ) and ( start == true ) ) then
-		self.launched = true
-	elseif ( ( self.output == true ) and ( start == false ) ) then
-		self.output  = false
-		self.counter = 0
 	end
+
 	return
 end
 function Delay:get ()

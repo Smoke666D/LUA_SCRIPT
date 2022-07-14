@@ -32,7 +32,7 @@ function KeyPad8:process()
 	end
 	if self.new == true then
 		self.new = false		
-		CanSend(0x215,self.ledRed,self.ledGreen,self.ledBlue,0,0,0,0,0)
+		CanSend(0x200 + self.ADDR,self.ledRed,self.ledGreen,self.ledBlue,0,0,0,0,0)
 	end
 end
 function KeyPad8:getKey( n )
@@ -70,4 +70,10 @@ function KeyPad8:setLedBlue( n , state)
 		self.ledBlue = self.ledBlue | (0x01<<(n-1)) 
 	 end
 	 self.new = true        	
+end
+function KeyPad8:setLedBrigth( brigth )
+   	CanSend(0x600 + self.ADDR,0x2F,0x03,0x20,0x02,brigth,0,0,0)
+end
+function KeyPad8:setBackLigthBrigth( brigth )
+    	CanSend(0x600 + self.ADDR,0x2F,0x03,0x20,0x01,brigth,0,0,0)
 end
