@@ -82,6 +82,8 @@ binaryPriority = {
   'or'  : [1,  1]
 };
 
+reservedNames = [ 'setmetatable', 'stop', 'self' ];
+
 unaryPriority = 8;
 
 
@@ -174,50 +176,124 @@ def luaConvertTabsToSpaces ( data ):
 def makeNewMinName ( index ):
   length = 1;
   border = len( minNamesList );
-  while ( index < border ):
-    length++;
+  out    = '';
+  shift  = 0;
 
-
-
-  size = ( index // len( minNamesList ) ) + 1;
-  for i in range( size ):
-
-  return minNamesList[index];
+  while ( index >= border ):
+    length += 1;
+    border += pow( len( minNamesList ), length )
+  border -= pow( len( minNamesList ), length )  
+  item    = index;
+  for i in range( length ):
+    item = item - border + shift;
+    if item >= len( minNamesList ):
+      shift = item // len( minNamesList );
+      item  = item - shift * len( minNamesList );
+    else:
+      shift = 0
+    out     = minNamesList[item] + out;
+    item   -= item;
+    border -= pow( len( minNamesList ), ( length - i - 1 ) );
+  return out;
 
 def luaMinFunctionNames ( data ):
   out = data;
   return out;
 
-def processLuaAssign ( assign, counter, varList, newList ):
+def getVarName ( name, varList, static ):
+  if name not in reservedNames: 
+    index = -1;
+    for i in range( len( varList ) ):
+      if varList[i][0] == name:
+        index = i;
+        break;
+    if index == -1:
+      varList.append( [name, static] );
+      index = len( varList ) - 1;
+    name = makeNewMinName( index );
+  return name;
+
+def cleanVarList ( varList ):
+  out = [];
+  for var in varList:
+    if var[1] == True:
+      out.append( var );
+  return out;    
+
+def processLuaAssign ( assign, varList ):
   for node in ast.walk( assign ):
     if isinstance( node, astnodes.Name ):
-      if ( node.id not in varList ):
-        varList.append( node.id );
-        index    = counter;
-        counter += 1;
-        newList.append( makeNewMinName( index ) );
-      else:
-        index = varList.index( node.id );
-      print( index );
+      node.id = getVarName( node.id, varList, False );
   return;  
 
-def processLuaFunction ( function ):
-  out     = function;
-  counter = 0;
-  varList = [];
-  newList = [];
+def processLuaFunction ( function, varList ):
+  out = function;
   for node in ast.walk( out ):
-    if isinstance( node, astnodes.Assign ):
-      processLuaAssign( node, counter, varList, newList );   
+    if isinstance( node, astnodes.Function ):
+      node.name.id = getVarName( node.name.id, varList, True );
+      for arg in node.args:
+        arg.id = getVarName( arg.id, varList, False );
+    elif isinstance( node, astnodes.Assign ):
+      processLuaAssign( node, varList );   
+    elif isinstance( node, astnodes.Call ):
+      node.func.id = getVarName( node.func.id, varList, True );
+      for arg in node.args:
+        if isinstance( arg, astnodes.Index ):
+          arg.idx.id = getVarName( arg.idx.id, varList, False );
+        if isinstance( arg, astnodes.Name ):
+          arg.id = getVarName( arg.id, varList, False );
+    elif isinstance( node, astnodes.Return ):
+      for value in node.values:
+        if ( "id" in dir( value ) ):
+          value.id = getVarName( value.id, varList, False );
+    elif isinstance( node, astnodes.If ) or isinstance( node, astnodes.ElseIf ) or isinstance( node, astnodes.While ):
+      for state in ast.walk( node.test.left ):
+        if isinstance( state, astnodes.Name ):
+          state.id = getVarName( state.id, varList, False );
+      for state in ast.walk( node.test.right ):
+        if isinstance( state, astnodes.Name ):
+          state.id = getVarName( state.id, varList, False );
+    elif isinstance(node, astnodes.Fornum ):
+      if isinstance( node.target, astnodes.Name ):
+        node.target.id = getVarName( node.target.id, varList, False );
+      if isinstance( node.start, astnodes.Name ):  
+        node.start.id = getVarName( node.start.id, varList, False );
+      if isinstance( node.stop, astnodes.Name ):  
+        node.stop.id = getVarName( node.stop.id, varList, False );
+      if isinstance( node.step, astnodes.Name ):
+        node.step.id = getVarName( node.step.id, varList, False );
+      
   return out;
 
 def luaMinVarNames ( data ):
-  out = data;
-  tree = ast.parse( out );
-  for node in ast.walk( tree ):
+  out     = data;
+  tree    = ast.parse( out );
+  varList = [];
+
+  for node in tree.body.to_json()['Block']['body']:
     if isinstance( node, astnodes.Function ):
-      node = processLuaFunction( node );
+      node    = processLuaFunction( node, varList );
+      varList = cleanVarList( varList );  
+    elif isinstance( node, astnodes.Assign ):
+      for value in node.values:
+        if isinstance( value, astnodes.Name ):
+          value.id = getVarName( value.id, varList, True );
+      for target in node.targets:
+        if isinstance( target, astnodes.Index ):
+          target.value.id = getVarName( target.value.id, varList, True );
+        if isinstance( target, astnodes.Name ):
+          target.id = getVarName( target.id, varList, True );
+    elif isinstance( node, astnodes.Method ):
+      node.source.id = getVarName( node.source.id, varList, True );
+      node.name.id   = getVarName( node.name.id, varList, True );
+      for arg in node.args:
+        arg.id = getVarName( arg.id, varList, False );
+      node    = processLuaFunction( node, varList );
+      varList = cleanVarList( varList );    
+      
+  
   out = ast.to_lua_source( tree );
+  print( out )
   return out;
 
 def luaMinSpaces ( data ):
@@ -258,4 +334,3 @@ def minlua ( args ):
   return;
 #----------------------------------------------------------------------------------------
 minlua( sys.argv );
-

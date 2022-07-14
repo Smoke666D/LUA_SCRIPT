@@ -24,7 +24,7 @@ def analizInput ( callback = noCallback ):
       if ( len( sys.argv ) > 3 ):
         data['outputPath'] = sys.argv[3];
   else:
-    errorStr = 'No command';
+    errorStr = '[luamake] No command';
   callback( data, errorStr );
   return [data, errorStr];
 #----------------------------------------------------------------------------------------
@@ -92,7 +92,7 @@ def minimiseLua ( data ):
 def makeCfile ( data, path ):
   hfile  = os.path.basename( path ).replace( '.c', '.h' );
   string = minimiseLua( data );
-  f = open( path, 'w' );
+  f = open( path, 'w', encoding='utf-8' );
   f.write( '#include "' + hfile + '"\n' );
   f.write( 'const char* const defaultLuaScript = "' + string + '";\n' );
   f.close();
@@ -100,7 +100,7 @@ def makeCfile ( data, path ):
 #----------------------------------------------------------------------------------------
 def makeHfile ( data, path ):
   name   = os.path.basename( path ).replace( '.', '_' ).upper();
-  f = open( path, 'w' );
+  f = open( path, 'w', encoding='utf-8' );
   f.write( '#ifndef ' + name + '\n' );
   f.write( '#define ' + name + '\n\n');
   f.write( 'extern const char* const defaultLuaScript;\n')
@@ -119,12 +119,15 @@ def getLuaScript ( path = '', callback = noCallback ):
     luaPath = path;
   if ( luaPath.endswith( '.lua' ) == True ):    
     if ( os.path.exists( luaPath ) == False ):
-      errorStr = "There is no file on: " + luaPath;  
+      errorStr = "[luamake] There is no file on: " + luaPath;  
     else:
-      f    = open( luaPath, 'r' );
-      data = f.read();
+      try:
+        f    = open( luaPath, 'r', encoding='utf-8' );
+        data = f.read();
+      except:
+        errorStr = "[luamake] Wrong file encoding"
   else:
-    errorStr = "This isn't lua file";
+    errorStr = "[luamake] This isn't lua file";
   callback( data, errorStr );  
   return [data, errorStr];
 #----------------------------------------------------------------------------------------
@@ -141,17 +144,14 @@ def parsingCommand ( data, error ):
         hPath      = os.path.join( outputPath, 'luaDefScript.h' );
         makeCfile( lua, cPath );
         makeHfile( lua, hPath );
-        print( 'Ready!' );
+        print( '[luamake] Done!' );
       else:
         print( err );  
     else:    
-      errorStr = 'Wrong command';  
+      errorStr = '[luamake] Wrong command';  
       print( errorStr );
   else:
     print( error );    
   return;
 #----------------------------------------------------------------------------------------
-
-print( "---" )
 analizInput( parsingCommand );
-print( "---" )
