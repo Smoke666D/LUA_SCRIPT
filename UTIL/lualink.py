@@ -41,7 +41,6 @@ def addIncludesToScript ( path, includes, output ):
       out = out + '----------------------------------------------------------------------------------------------------------------------\n';
       out = out + include + '\n';
     out = out + buffer;
-    print( os.path.join( output, os.path.basename( path ) ) )
     f   = open( os.path.join( output, os.path.basename( path ) ), 'w' );
     f.write( out );
     f.close();

@@ -1,15 +1,7 @@
-<<<<<<< HEAD
 {
   "include" : [   
     "lib\\PDM20.lua",
     "lib\\KeyPad8.lua",
     "lib\\TurnSygnals.lua"
   ]
-=======
-{
-  "include" : [   
-    "lib\\PDM20.lua",
-    "lib\\KeyPad8.lua"
-  ]
->>>>>>> 58100eca28b367fda753eadd8ee344628f864963
 }
