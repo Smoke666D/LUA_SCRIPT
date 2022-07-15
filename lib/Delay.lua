@@ -16,7 +16,7 @@ function Delay:new ( inDelay )
 end
 function Delay:process ( start )
 	if ( start == true ) then	
-		if  (self.counter == 0) then
+		if  (self.counter >= 0) then
 			self.output   = false		
 		end
 		self.counter = self.counter + getDelay()
@@ -25,7 +25,6 @@ function Delay:process ( start )
 			self.counter = 0
 		end
 	end
-
 	return
 end
 function Delay:get ()

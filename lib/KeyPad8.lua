@@ -64,10 +64,10 @@ function KeyPad8:setLedGreen( n, state)
          self.new = true
 end
 function KeyPad8:setLedBlue( n , state)
-	 if (data == state) then 
-		self.ledBlue = self.ledBlue & (~(0x01<<(n-1))) 
+	 if (state == false) then 
+		self.ledBlue = self.ledBlue & (~(0x01<< (n-1 ) ) ) 
 	 else 
-		self.ledBlue = self.ledBlue | (0x01<<(n-1)) 
+		self.ledBlue = self.ledBlue | (0x01 << ( n-1 ) ) 
 	 end
 	 self.new = true        	
 end

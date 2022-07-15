@@ -21,7 +21,7 @@ TurnSygnals = {}
 TurnSygnals.__index = TurnSygnals
 function TurnSygnals:new ( inDelay )
 
-	local obj = {                         delay    = inDelay,
+	local obj = {                           delay    = inDelay,
 						counter  = 0,
 						state    = false,
 						outLeft  = false, 

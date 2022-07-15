@@ -18,15 +18,22 @@ Out17 = false
 Out18 = false 
 Out19 = false 
 Out20 = false 
-delay = 0
+delayms = 0
+DInput = { flase,true,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase}
+
 
 
 function Yield ()
-	delay = coroutine.yield(Out20,Out19,Out18,Out17,Out16,Out15,Out14,Out13,Out12,Out11,Out10,Out9,Out8,Out7,Out6,Out5,Out4,Out3,Out2,Out1)	
+	delayms = coroutine.yield(Out20,Out19,Out18,Out17,Out16,Out15,Out14,Out13,Out12,Out11,Out10,Out9,Out8,Out7,Out6,Out5,Out4,Out3,Out2,Out1)	
 end
 function getDelay()
-	return delay
+	return delayms
 end     
+function getDIN( ch)
+	return DInput[ch]	
+end
+
+
 function setOut( channel, state)
 	if channel == 1 then
 	Out1 = state;	
@@ -68,12 +75,5 @@ function setOut( channel, state)
 	Out19 = state;
 	elseif channel == 20 then
 	Out20 = state;
-
-
-
 	end
-
-
-
-
 end
