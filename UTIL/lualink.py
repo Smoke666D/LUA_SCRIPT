@@ -2,7 +2,7 @@
 import sys
 import os
 import json
-from common import getExtension, checkFile
+from common import getExtension, checkFile, log, makeFileName
 #----------------------------------------------------------------------------------------
 def getIncludeList ( ldpath ):
   error = None;
@@ -11,12 +11,12 @@ def getIncludeList ( ldpath ):
     f    = open( ldpath, 'r' );
     data = json.loads( f.read() )
   except:
-    error = "[lualink] Wrong lib file encoding: " + ldpath;  
+    error = "Wrong lib file encoding: " + ldpath;  
   if error == None:
     if 'include' in data.keys():
       list = data['include'];
     else:
-      error = "[lualink] Wrong ld file format"
+      error = "Wrong ld file format"
   return [list, error];
 
 def getLibContent ( path ):
@@ -35,13 +35,14 @@ def addIncludesToScript ( path, includes, output ):
     buffer = f.read().replace( '#!/usr/local/bin/lua\n', '' );
     f.close();
   except:
-    error = "[lualink] Wrong script file encoding";
+    error = "Wrong script file encoding";
   if ( error == None ):    
     for include in includes:
       out = out + '----------------------------------------------------------------------------------------------------------------------\n';
       out = out + include + '\n';
-    out = out + buffer;
-    f   = open( os.path.join( output, os.path.basename( path ) ), 'w' );
+    out  = out + buffer;
+    name = makeFileName( path, 'link', 'lua' );
+    f    = open( os.path.join( output, name ), 'w' );
     f.write( out );
     f.close();
   return error;
@@ -67,7 +68,7 @@ def analizInput ( args ):
 def checkInputData ( data ):
   error    = None;
   if ( data['command'] != '' ) or ( data['command'] != '-h' ):
-    error = '[lualink] Wrong command';
+    error = 'Wrong command';
   error = checkFile( data['script'], '.lua' );
   if error == None:
     if ( data['ld'] == '' ):
@@ -92,20 +93,22 @@ def showHelp ():
 def luaLink ( script, ld, out ):
   includes = [];
   [paths, error] = getIncludeList( ld );
+  log( 'lualink', 'info', 'There are ' + str( len( paths ) ) + ' paths in ld file:' );
   if ( error == None ):
     for path in paths:
+      log( 'lualink', 'info', '  ' + path )
       [data,error] = getLibContent( path );
       if ( error != None ):
-        print( error + ' in ' + path );
+        log( 'lialink', 'error', (error + ' in ' + path) );
         return;
       includes.append( data );
     error = addIncludesToScript( script, includes, out )
     if ( error != None ):
-      print( error );
+      log( 'lialink', 'error', error );
     else:
-      print( "[lualink] Done" )  
+      log( 'lialink', 'info', 'Done' );
   else:
-    print( error );
+    log( 'lialink', 'error', error );
   return;
 #----------------------------------------------------------------------------------------
 def runCommand ( data ):
@@ -113,7 +116,7 @@ def runCommand ( data ):
     if ( data['script'] != '' ) and ( data['ld'] != '' ):
       luaLink( data['script'], data['ld'], data['out'] );
     else:
-      print( "[lualink] There isn't full data for the linker" );  
+      log( 'lialink', 'error', "There isn't full data for the linker" );
   else:
     if ( data['command'] == '-h' ):
       showHelp();
@@ -124,6 +127,8 @@ def lualink ( args ):
   error = checkInputData( data );
   if ( error == None ):
     runCommand( data );
+  else:
+    log( 'lualink', 'error', error );   
   return;  
 #----------------------------------------------------------------------------------------
 lualink( sys.argv );

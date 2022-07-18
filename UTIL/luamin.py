@@ -5,7 +5,7 @@ import os
 import itertools
 from luaparser import ast
 from luaparser import astnodes
-from common import getExtension, checkFile
+from common import getExtension, checkFile, log, makeFileName
 #----------------------------------------------------------------------------------------
 precedence = {
     'or' : 1,
@@ -82,7 +82,7 @@ binaryPriority = {
   'or'  : [1,  1]
 };
 
-reservedNames = [ 'setmetatable', 'stop', 'self' ];
+reservedNames = [ 'setmetatable', 'stop', 'self', 'type' ];
 
 unaryPriority = 8;
 
@@ -92,43 +92,50 @@ unaryPriority = 8;
 #----------------------------------------------------------------------------------------
 def analizInput ( args ):
   data = {
-    "command"       : '',
-    "file"          : '',
-    "newLine"       : False,
-    "spaces"        : False,
-    "varNames"      : False,
-    "functionNames" : False
+    "command" : '',
+    "file"    : '',
+    "out"     : '',
+    "newLine" : False,
+    "spaces"  : False,
+    "names"   : False,
   }
   for i in range( len( args ) ):
     if args[i] == '-h':
       data['command'] = '-h';
     if ( args[i] == '-s' ) and ( len( args ) > ( i + 1 ) ):
       data['script'] = args[i + 1];
+    if ( args[i] == '-o' ) and ( len( args ) > ( i + 1 ) ):
+      data['out'] = args[i + 1];
     if ( args[i] == '-a' ):
-      data['newLine']       = True;
-      data['spaces']        = True;
-      data['varNames']      = True;
-      data['functionNames'] = True;
+      data['newLine'] = True;
+      data['spaces']  = True;
+      data['names']   = True;
     if ( args[i] == '-n' ):
-      data['newLine']       = True;
+      data['newLine'] = True;
     if ( args[i] == '-sp' ):
-      data['spaces']        = True;
+      data['spaces']  = True;
     if ( args[i] == '-v' ):
-      data['varNames']      = True;  
-    if ( args[i] == '-f' ):  
-      data['functionNames'] = True;
+      data['names']   = True;  
   return data;
 
 def checkInputData ( data ):
   error = None;
-  if ( data['command'] != '' ) or ( data['command'] != '-h' ):
+  if ( data['command'] != '' ) and ( data['command'] != '-h' ):
     error = 'Wrong command';
-  error = checkFile( data['script'], '.lua' );
+  if ( error == None ):
+    if data['command'] != '-h':
+      error = checkFile( data['script'], '.lua' );
+      if ( error == None ):
+        if ( data['out'] == '' ):
+          data['out'] = os.path.join( os.getcwd(), 'out' );
+        if not os.path.exists( data['out'] ):
+          os.mkdir( data['out'] );  
   return error;
 
 def runCommand ( data ):
   if ( data['command'] == '' ):
     luaMinProcessing( data );
+    log( 'luamin', 'info', 'Done!' );
   else:
     if ( data['command'] == '-h' ):
       showHelp();
@@ -138,11 +145,11 @@ def showHelp ():
   print( '*************************************************' );
   print( '    -h:  get help information'                     );
   print( '    -s:  set script file'                          );
+  print( '    -o:  set output path'                          );
   print( '    -a:  optimise all scenarios'                   );
   print( '    -n:  optimise new line symbols'                );
   print( '    -sp: optimise spaces symbols'                  );
-  print( '    -v:  optimise variables names'                 );
-  print( '    -f:  optimise functions names'                 );
+  print( '    -v:  optimise var and functions names'         );
   print( '*************************************************' );
   return;  
 #----------------------------------------------------------------------------------------
@@ -151,8 +158,6 @@ def luaOpenScript ( path ):
   buffer = f.read();
   f.close();
   return buffer;
-#----------------------------------------------------------------------------------------
-
 #----------------------------------------------------------------------------------------
 def luaDeleteComments ( data ):
   out = data;
@@ -172,13 +177,12 @@ def luaConvertTabsToSpaces ( data ):
   out = data;
   out = out.replace( '\t', ' ' );
   return out;
-
+#----------------------------------------------------------------------------------------
 def makeNewMinName ( index ):
   length = 1;
   border = len( minNamesList );
   out    = '';
   shift  = 0;
-
   while ( index >= border ):
     length += 1;
     border += pow( len( minNamesList ), length )
@@ -196,104 +200,140 @@ def makeNewMinName ( index ):
     border -= pow( len( minNamesList ), ( length - i - 1 ) );
   return out;
 
-def luaMinFunctionNames ( data ):
-  out = data;
-  return out;
+class Name ():
+  def __init__( self, name, isGlobal, className ):
+    self.name      = name;
+    self.isGlobal  = isGlobal;
+    self.className = className;
 
-def getVarName ( name, varList, static ):
-  if name not in reservedNames: 
+def getVarName ( name, varList, isGlobal, className ):
+  out = name;
+  if name not in reservedNames:
     index = -1;
     for i in range( len( varList ) ):
-      if varList[i][0] == name:
-        index = i;
-        break;
+      if varList[i] != None:
+        if varList[i].name == name:
+          if className == None or varList[i].className == className:
+            index = i;
+            break;
     if index == -1:
-      varList.append( [name, static] );
+      varList.append( Name( name, isGlobal, className ) );
       index = len( varList ) - 1;
-    name = makeNewMinName( index );
-  return name;
+    out = makeNewMinName( index );  
+  return out;
 
 def cleanVarList ( varList ):
   out = [];
-  for var in varList:
-    if var[1] == True:
-      out.append( var );
+  for item in varList:
+    if item != None:
+      if item.isGlobal == True or item.className != None:
+        out.append( item );
+      else:
+        out.append( None );  
+    else:
+      out.append( item );    
   return out;    
 
-def processLuaAssign ( assign, varList ):
-  for node in ast.walk( assign ):
-    if isinstance( node, astnodes.Name ):
-      node.id = getVarName( node.id, varList, False );
-  return;  
+def isEndPoint ( node ):
+  return isinstance( node, astnodes.Index ) or isinstance( node, astnodes.Name );
+
+def processEndPoint ( node, varList, className ):
+  if isinstance( node, astnodes.Index ):
+    if isinstance( node.value, astnodes.Name ):
+      if node.value.id == 'self':
+        node.idx.id = getVarName( node.idx.id, varList, False, className );
+      else:
+        node.idx.id   = getVarName( node.idx.id, varList, False, node.value.id );
+        node.value.id = getVarName( node.value.id, varList, True, None );    
+    else:
+      processEndPoint( node.value, varList, className );
+  elif isinstance( node, astnodes.Name ):
+    node.id = getVarName( node.id, varList, False, None ); 
+  return node;  
+
+astClassFields = [ 'left', 'right', 'targets', 'values', 'test', 
+                   'body', 'orelse', 'target', 'start', 'stop', 
+                   'step', 'iter', 'args', 'func', 'fields', 
+                   'operand', 'key', 'value'  ];
+
+def processTree ( node, varList, className ):
+  if isEndPoint( node ):
+    processEndPoint( node, varList, className );
+  else:
+    if type( node ) == list:
+        for item in node:
+          item = processTree( item, varList, className );
+    else:     
+      for field in astClassFields:
+        if field in dir( node ):
+          atr = getattr( node, field );
+          atr = processTree( atr, varList, className );
+  return node;  
+
+def processingMethod ( method, varList ):
+  out = method;
+  # Set Method name and arguments
+  className     = out.source.id;
+  methodName    = out.name.id;
+  out.source.id = getVarName( out.source.id, varList, True, None );
+  out.name.id   = getVarName( out.name.id, varList, False, className );
+  
+  for arg in out.args:
+    arg.id = getVarName( arg.id, varList, False, None )
+  
+  if methodName == 'new':
+    obj = '';
+    for node in ast.walk( out ):
+      if isinstance( node, astnodes.Call ):
+        if node.func.id == 'setmetatable':
+          obj = node.args[0].id;
+          getVarName( node.args[0].id, varList, False, None )
+    isTableNext = False;      
+    for node in ast.walk( out ): 
+      if isinstance( node, astnodes.Name ):
+        if node.id == obj:
+          isTableNext = True;
+      if isinstance( node, astnodes.Table ) and isTableNext:
+        isTableNext = False;
+        for field in node.fields:
+          getVarName( field.key.id, varList, False, className );
+  processTree( out.body, varList, className );
+  return out;
 
 def processLuaFunction ( function, varList ):
   out = function;
-  for node in ast.walk( out ):
-    if isinstance( node, astnodes.Function ):
-      node.name.id = getVarName( node.name.id, varList, True );
-      for arg in node.args:
-        arg.id = getVarName( arg.id, varList, False );
-    elif isinstance( node, astnodes.Assign ):
-      processLuaAssign( node, varList );   
-    elif isinstance( node, astnodes.Call ):
-      node.func.id = getVarName( node.func.id, varList, True );
-      for arg in node.args:
-        if isinstance( arg, astnodes.Index ):
-          arg.idx.id = getVarName( arg.idx.id, varList, False );
-        if isinstance( arg, astnodes.Name ):
-          arg.id = getVarName( arg.id, varList, False );
-    elif isinstance( node, astnodes.Return ):
-      for value in node.values:
-        if ( "id" in dir( value ) ):
-          value.id = getVarName( value.id, varList, False );
-    elif isinstance( node, astnodes.If ) or isinstance( node, astnodes.ElseIf ) or isinstance( node, astnodes.While ):
-      for state in ast.walk( node.test.left ):
-        if isinstance( state, astnodes.Name ):
-          state.id = getVarName( state.id, varList, False );
-      for state in ast.walk( node.test.right ):
-        if isinstance( state, astnodes.Name ):
-          state.id = getVarName( state.id, varList, False );
-    elif isinstance(node, astnodes.Fornum ):
-      if isinstance( node.target, astnodes.Name ):
-        node.target.id = getVarName( node.target.id, varList, False );
-      if isinstance( node.start, astnodes.Name ):  
-        node.start.id = getVarName( node.start.id, varList, False );
-      if isinstance( node.stop, astnodes.Name ):  
-        node.stop.id = getVarName( node.stop.id, varList, False );
-      if isinstance( node.step, astnodes.Name ):
-        node.step.id = getVarName( node.step.id, varList, False );
-      
+  out.name.id = getVarName( out.name.id, varList, True, None );
+  for arg in out.args:
+    arg.id = getVarName( arg.id, varList, False, None );
+  processTree( out.body, varList, None );
   return out;
 
-def luaMinVarNames ( data ):
+def luaMinNames ( data ):
   out     = data;
   tree    = ast.parse( out );
   varList = [];
-
-  for node in tree.body.to_json()['Block']['body']:
+  # Walk thrue the blocks of file
+  for node in tree.body.body:
+    #---------------- Functions ----------------
     if isinstance( node, astnodes.Function ):
       node    = processLuaFunction( node, varList );
-      varList = cleanVarList( varList );  
+      varList = cleanVarList( varList );
+    #--------------- Global vars ---------------
     elif isinstance( node, astnodes.Assign ):
       for value in node.values:
         if isinstance( value, astnodes.Name ):
-          value.id = getVarName( value.id, varList, True );
+          value.id = getVarName( value.id, varList, True, None );
       for target in node.targets:
         if isinstance( target, astnodes.Index ):
-          target.value.id = getVarName( target.value.id, varList, True );
+          target.value.id = getVarName( target.value.id, varList, True, None );
         if isinstance( target, astnodes.Name ):
-          target.id = getVarName( target.id, varList, True );
+          target.id = getVarName( target.id, varList, True, None );
+    #-------------- Class methods --------------
     elif isinstance( node, astnodes.Method ):
-      node.source.id = getVarName( node.source.id, varList, True );
-      node.name.id   = getVarName( node.name.id, varList, True );
-      for arg in node.args:
-        arg.id = getVarName( arg.id, varList, False );
-      node    = processLuaFunction( node, varList );
+      node    = processingMethod( node, varList );
       varList = cleanVarList( varList );    
-      
-  
+    #-------------------------------------------
   out = ast.to_lua_source( tree );
-  print( out )
   return out;
 
 def luaMinSpaces ( data ):
@@ -314,16 +354,23 @@ def luaMinNewLines ( data ):
 
 def luaMinProcessing( data ):
   buffer = luaOpenScript( data['script'] );
-  #buffer = luaDeleteComments( buffer );
-  #buffer = luaConvertTabsToSpaces( buffer );
-  #if data['functionNames'] == True:
-  #  buffer = luaMinFunctionNames( buffer );
-  if data['varNames'] == True:
-    buffer = luaMinVarNames( buffer );
-  #if data['spaces'] == True:
-  #  buffer = luaMinSpaces( buffer );
-  #if data['newLine'] == True:
-  #  buffer = luaMinNewLines( buffer );
+  startSize = len( buffer );
+  log( 'luamin', 'info', ('Start size of the script is ' + str( startSize ) + ' byte' ) );
+  buffer = luaDeleteComments( buffer );
+  if data['names'] == True:
+    buffer = luaMinNames( buffer );
+    log( 'luamin', 'info', 'After names min: ' + str( len( buffer ) ) + ' byte' );
+  buffer = luaConvertTabsToSpaces( buffer );
+  if data['newLine'] == True:
+    buffer = luaMinNewLines( buffer );
+  if data['spaces'] == True:
+    buffer = luaMinSpaces( buffer );
+    log( 'luamin', 'info', 'After spaces min: ' + str( len( buffer ) ) + ' byte' );
+  log( 'luamin', 'info', 'Reducing the size from: ' + str( startSize ) + ' byte to ' + str( len( buffer ) ) + ' byte (' + str( int( len( buffer ) * 100 / startSize ) ) + '%)' );  
+  name = makeFileName( data['script'], 'min', 'lua' );
+  f    = open( os.path.join( data['out'], name ), 'w' );
+  f.write( buffer );
+  f.close();
   return;
 #----------------------------------------------------------------------------------------
 def minlua ( args ):
@@ -331,6 +378,8 @@ def minlua ( args ):
   error = checkInputData( data );
   if ( error == None ):
     runCommand( data );
+  else:
+    log( 'luamin', 'error', error );   
   return;
 #----------------------------------------------------------------------------------------
 minlua( sys.argv );
