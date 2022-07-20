@@ -23,7 +23,7 @@ function TurnSygnals:new ( inDelay )
 
 	local obj = {                           delay    = inDelay,
 						counter  = 0,
-						state    = false,
+						state    = true,
 						outLeft  = false, 
 						outRight = false, 
 						outAlarm = false }

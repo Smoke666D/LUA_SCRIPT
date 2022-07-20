@@ -31,14 +31,14 @@ end
 
 CanOut = {}
 CanOut.__index = CanOut
-function CanOut:new ( addr , time , size)
-	local obj = { ADDR = addr, data={}, delay = time, timer = 0}
+function CanOut:new ( addr , time , size, d1, d2, d3, d4, d5, d6, d7, d8)
+	local obj = { ADDR = addr, data={d1,d2,d3,d4,d5,d6,d7,d8}, delay = time, timer = 0}
 	setmetatable( obj, self )
 	return obj
 end
 function CanOut:process()
-    self.timer = self.timer + gerDelay() 
-    if self.timer >=  self.dealy then   
+    self.timer = self.timer + getDelay() 
+    if self.timer >=  self.delay then   
      CanSendTable(self.ADDR,self.data)     
      self.timer	= 0
     end
@@ -55,8 +55,8 @@ function CanOut:setByte( nb ,state )
 	data[nb] = state  & 0xFF
 end
 function CanOut:setWord( nb ,state)
-	data[nb] = (state <<8) & 0xFF
-        data[nb+1] = state & 0xFF
+	self.data[nb] = (state <<8) & 0xFF
+        self.data[nb+1] = state & 0xFF
 
 end
 
