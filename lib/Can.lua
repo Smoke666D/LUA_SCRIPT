@@ -32,7 +32,7 @@ end
 CanOut = {}
 CanOut.__index = CanOut
 function CanOut:new ( addr , time , size, d1, d2, d3, d4, d5, d6, d7, d8)
-	local obj = { ADDR = addr, data={d1,d2,d3,d4,d5,d6,d7,d8}, delay = time, timer = 0}
+	local obj = { ADDR = addr, data={d1,d2,d3,d4,d5,d6,d7,d8}, delay = time, timer = 0, sz =size}
 	setmetatable( obj, self )
 	return obj
 end
@@ -43,16 +43,26 @@ function CanOut:process()
      self.timer	= 0
     end
 end
+function CanOut:setFrame(...)
+	local arg =  table.pack(...)	
+	if arg.n <=8 then
+		for i=1, arg.n do
+			self.data[i] = arg[i]
+		end
+		self.sz = arg.n
+	end
+end
+
 function CanOut:setBit( nb, nbit, state)	
 	if state == true then
-  	  data[nb] = data[bn] | (0x01 << (nbit-1))
+  	  self.data[nb] = self.data[bn] | (0x01 << (nbit-1))
 	else
-  	  data[nb] = data[bn] & ~(0x01 << (nbit-1))
+  	  self.data[nb] = self.data[bn] & ~(0x01 << (nbit-1))
 	end
 
 end
 function CanOut:setByte( nb ,state )
-	data[nb] = state  & 0xFF
+	self.data[nb] = state  & 0xFF
 end
 function CanOut:setWord( nb ,state)
 	self.data[nb] = (state <<8) & 0xFF

@@ -1,31 +1,15 @@
-Out1 = true 
-Out2 = false 
-Out3 = false 
-Out4 = false 
-Out5 = false 
-Out6 = false 
-Out7 = false 
-Out8 = false 
-Out9 = false 
-Out10 = false
-Out11 = false 
-Out12 = false 
-Out13 = true 
-Out14 = false 
-Out15 = false 
-Out16 = false 
-Out17 = false 
-Out18 = false 
-Out19 = false 
-Out20 = false 
+
 delayms = 0
+DOut =  { flase,true,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase}
 DInput = { flase,true,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase}
-Current = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0 ,0 ,0, 0, 0, 0, 0}
+
+Cur =    { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 
 
 
 function Yield ()
-	delayms = coroutine.yield(Out20,Out19,Out18,Out17,Out16,Out15,Out14,Out13,Out12,Out11,Out10,Out9,Out8,Out7,Out6,Out5,Out4,Out3,Out2,Out1)	
+	delayms,DInput[1],DInput[2],DInput[3],DInput[4],DInput[5],DInput[6],DInput[7],DInput[8],DInput[9],DInput[10],DInput[11],DInput[12],Cur[1],Cur[2],Cur[3],Cur[4],Cur[5],Cur[6],Cur[7],Cur[8],Cur[9],Cur[10],Cur[11],Cur[12],Cur[13],Cur[14],Cur[15],Cur[16],Cur[17],Cur[18],Cur[19],Cur[20] = coroutine.yield(DOut[20],DOut[19],DOut[18],DOut[17],DOut[16],
+DOut[15],DOut[14],DOut[13],DOut[12],DOut[11],DOut[10],DOut[9],DOut[8],DOut[7],DOut[6],DOut[5],DOut[4],DOut[3],DOut[2],DOut[1])	
 end
 
 function getDelay()
@@ -34,54 +18,18 @@ end
 function getDIN( ch)
 	return DInput[ch]	
 end
---function getDINS( )
---	return DInput[1]	
---end
 
 function getCurrent( ch )
-	return Current[ch]
+	return Cur[ch]
 end
 
-function setOut( channel, state)
-	if channel == 1 then
-	Out1 = state;	
-	elseif channel == 2 then
-	Out2 = state;	
-	elseif channel == 3 then
-	Out3 = state;
-	elseif channel == 4 then
-	Out4 = state;
-	elseif channel == 5 then
-	Out5 = state;
-	elseif channel == 6 then
-	Out6 = state;
-	elseif channel == 7 then
-	Out7 = state;
-	elseif channel == 8 then
-	Out8 = state;
-	elseif channel == 9 then
-	Out9 = state;
-	elseif channel == 10 then
-	Out10 = state;
-	elseif channel == 11 then
-	Out11 = state;
-	elseif channel == 12 then
-	Out12 = state;
-	elseif channel == 13 then
-	Out13 = state;
-	elseif channel == 14 then
-	Out14 = state;
-	elseif channel == 15 then
-	Out15 = state;
-	elseif channel == 16 then
-	Out16 = state;
-	elseif channel == 17 then
-	Out17 = state;
-	elseif channel == 18 then
-	Out18 = state;
-	elseif channel == 19 then
-	Out19 = state;
-	elseif channel == 20 then
-	Out20 = state;
+function getCurrentBase( ch,b )
+	return Cur[ch]//1, (Cur[ch]%1)*10*b//1
+end
+
+
+function setOut( ch, data)
+	if ch <=20 then
+		DOut[ch] = data;			
 	end
 end

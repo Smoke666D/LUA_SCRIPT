@@ -1,4 +1,4 @@
-
+                	
 
 
 main = function () 
@@ -22,12 +22,25 @@ main = function ()
 --	OutConfig(18,8,0,10) 
 --	OutConfig(19,8,0,10) 
 --	OutConfig(20,8,0,10) 
+        SetDINConfig(1,1)
+        SetDINConfig(2,1)
+        SetDINConfig(3,1)
+        SetDINConfig(4,1)
+        SetDINConfig(5,1)
+        SetDINConfig(6,1)
+        SetDINConfig(7,1)
+        SetDINConfig(8,1)
+        SetDINConfig(9,1)
+        SetDINConfig(10,1)
+        SetDINConfig(11,1)
+        SetDINConfig(12,1)
+
 
 	KeyPad          = KeyPad8:new(0x15) 	
         TurnSygnal      = TurnSygnals:new(500)  	
         Delay500ms      = Delay:new( 500 )  
-	LigthCounter    = Counter:new ( 	1, 4, true ) 
-	WiperCounter    = Counter:new ( 1, 3, true ) 
+	LigthCounter    = Counter:new ( 1, 4, 1, true ) 
+	WiperCounter    = Counter:new ( 1, 3, 1, true ) 
 	
 	CAN_OUT1	= CanOut:new(0x505,900,8,0,0,0,0,0,0,0,0)
 	CAN_OUT2	= CanOut:new(0x506,900,8,0,0,0,0,0,0,0,0)
@@ -59,9 +72,12 @@ main = function ()
 	        CAN_OUT3:process()		
 
 
+--		CAN_OUT1:setByte(1,getCurrent(1)//1)
+		CAN_OUT1:setFrame(1,2,3,4)
 	        --can out data
-		CAN_OUT1:setWord(0,getCurrent(1)) CAN_OUT1:setWord(2,getCurrent(2)) CAN_OUT1:setWord(4,getCurrent(3)) CAN_OUT1:setWord(6,getCurrent(4))
-                CAN_OUT2:setWord(0,getCurrent(5)) CAN_OUT1:setWord(2,getCurrent(6)) CAN_OUT1:setWord(4,getCurrent(7)) CAN_OUT1:setWord(6,getCurrent(8))
+--		CAN_OUT1:setFrame(getCurrent(1)/10,(getCurrent(1)*10)%10,getCurrent(2)/10,(getCurrent(2)*10)%10,getCurrent(3)/10,(getCurrent(3)*10)%10,getCurrent(4)/10,(getCurrent(4)*10)%10)
+--		CAN_OUT1:setWord(0,getCurrent(1)) CAN_OUT1:setWord(2,getCurrent(2)) CAN_OUT1:setWord(4,getCurrent(3)) CAN_OUT1:setWord(6,getCurrent(4))
+--               CAN_OUT2:setWord(0,getCurrent(5)) CAN_OUT1:setWord(2,getCurrent(6)) CAN_OUT1:setWord(4,getCurrent(7)) CAN_OUT1:setWord(6,getCurrent(8))
 --                CAN_OUT3:setWord(0,getDins()) 
 
 		-- HORN

@@ -12,34 +12,43 @@
 --   counter value ( number )
 Counter = {}
 Counter.__index = Counter
-function Counter:new ( inMin, inMax, inReload )
-	local obj = { counter = inMin, min = inMin, max = inMax, reload = inReload , inc_old = false}
+function Counter:new ( inMin, inMax, inDefault, inReload )
+	local obj = { 				counter = (type(inDefault) == "number") and inDefault or 0,
+						min = (type(inMin) == "number") and inMin or 0,
+						max = (type(inMax) == "number") and inMax or 0xFFFF,
+						reload = (type(inReload) == "boolean") and inReload or true,
+						old = false
+		   }
 	setmetatable( obj, self )
 	return obj
 end
 function Counter:process ( inc, dec, rst )
-	if ( inc == true ) then		
-		if self.inc_old == false then
-			if ( self.counter < self.max ) then
-				self.counter = self.counter + 1
-			elseif ( self.reload == true ) then
-				self.counter = self.min
+	if (type(inc) == "boolean") and (type(dec) == "boolean") and (type(rst) == "boolean") then
+		if ( inc == true ) then
+			if (  self.old  == false )  then								
+				if ( self.counter < self.max ) then
+					self.counter = self.counter + 1
+				elseif ( self.reload == true ) then
+					self.counter = self.min
+				end			
+			end		
+		end
+		if ( dec == true ) then
+			if (  self.old  == false )  then								
+				if ( self.counter > self.min ) then
+					self.counter = self.counter - 1
+				elseif ( self.reload == true ) then
+					self.counter = self.max
+				end			
 			end
-			self.inc_old = true
 		end
-	else
-		self.inc_old = false
-	end
-
-	if ( dec == true ) then
-		if ( self.counter > self.min ) then
-			self.counter = self.counter - 1
-		elseif ( self.reload == true ) then
-			self.counter = self.max
+		if ( rst == true ) then
+			if (  self.old  == false )  then										
+				self.counter = self.min			
+			end
 		end
-	end
-	if ( rst == true ) then
-		self.counter = self.min
+		self.old =   (rst or inc or dec ) and true or false
+		
 	end
 	return
 end
