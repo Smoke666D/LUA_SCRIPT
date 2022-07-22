@@ -49,3 +49,12 @@ def makeFileName ( base, add, ext ):
   name = name[0:name.find( '.' )];
   name = name + '.' + add + '.' + ext;  
   return name
+
+def progressBar ( progress, total ):
+  persent = 100 * ( progress / float( total ) );
+  bar     = '█' * int( persent ) + '▒' * ( 100 - int( persent ) );
+  print( bcolors.WARNING + f"\r{bar} {persent:.2f}%", end="\r" );
+  if ( progress == total ):
+    print( bcolors.OKGREEN + f"\r{bar} {persent:.2f}%", end="\r" );
+    print( '\n' );
+  return;

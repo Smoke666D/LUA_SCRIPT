@@ -151,7 +151,7 @@ def showHelp ():
   print( '    -sp: optimise spaces symbols'                  );
   print( '    -v:  optimise var and functions names'         );
   print( '*************************************************' );
-  return;  
+  return;
 #----------------------------------------------------------------------------------------
 def luaOpenScript ( path ):
   f = open( path, 'r', encoding='utf-8' );
