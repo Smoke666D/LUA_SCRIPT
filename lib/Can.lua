@@ -1,26 +1,16 @@
-function CanSendTable( addr, p)
-end
-
-function getBit (data, pos )
-	if  (data  &  ( 0x01<< pos-1)) then
-		return  true
-	else
-		return false
-	end
-end
-
 CanInput = {}
 CanInput.__index = CanInput
 function CanInput:new ( addr )
 	local obj = { ADDR = addr, data={0,0,0,0,0,0,0,0}}
 	setmetatable( obj, self )
+        SetCanFilter(addr)
 	return obj
 end
 function CanInput:process()
      GetCanToTable( self.ADDR,self.data) 
 end
 function CanInput:getBit( nb, nbit)	
-	return getBit(self.data[nb], nbit)
+	return ((self.data[nb] & (0x01<<(nbit-1))) >0 ) and true or false
 end
 function CanInput:getByte( nb )
 	return self.data[nb]
@@ -39,19 +29,20 @@ end
 function CanOut:process()
     self.timer = self.timer + getDelay() 
     if self.timer >=  self.delay then   
-     CanSendTable(self.ADDR,self.data)     
-     self.timer	= 0
+	  CanTable(self.ADDR,self.sz,self.data)
+          self.timer	= 0
     end
 end
 function CanOut:setFrame(...)
 	local arg =  table.pack(...)	
-	if arg.n <=8 then
+	if (arg.n < 9) then
 		for i=1, arg.n do
 			self.data[i] = arg[i]
 		end
 		self.sz = arg.n
 	end
 end
+
 
 function CanOut:setBit( nb, nbit, state)	
 	if state == true then
