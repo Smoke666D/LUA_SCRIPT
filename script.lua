@@ -1,4 +1,4 @@
-                	
+
 
 
 main = function () 
@@ -54,8 +54,8 @@ main = function ()
 	CAN_OUT5	= CanOut:new(0x509,900,8,0,0,0,0,0,0,0,0)
 	CAN_OUT6	= CanOut:new(0x510,900,8,0,0,0,0,0,0,0,0)
 	CAN_TEMP        = CanInput:new(0x028)
-	CAN_CH1 	= CanInput:new(0x020)
-	CAN_CH2		= CanInput:new(0x509)
+	CAN_RPM 	= CanInput:new(0x032)
+	CAN_CH2		= CanInput:new(0x511)
 	CAN_CH3         = CanInput:new(0x5F2)
 	CAN_ALARM 	= CanInput:new(0x034)
 	Wiper 	        = Wipers:new(2000,3)
@@ -68,20 +68,15 @@ main = function ()
 	starter	= false	
 	ignition = false	 
         pre_heat_on = false
+	can_temp = 0
 	while true do 
 
 		KeyPad:process()    	
-		Delay8s:process( ignition )
-		Delay4s:process( ignition )
-		Delay3s:process( ignition )
-		Delay2s:process( ignition )
-		Delay1s:process( ignition )
-		CAN_CH1:process()
 		CAN_CH2:process()
+		CAN_RPM:process()
 		CAN_CH3:process()
 		starter  = CAN_CH3:getBit(1,4)
-		ignition = --CAN_CH3:getBit(1,1)
-CAN_CH3:getByte(1) > 0 and true or false --  
+		ignition = CAN_CH3:getBit(1,1)
 		CAN_ALARM:process()
 	        CAN_OUT1:process()
 	        CAN_OUT2:process()
@@ -93,6 +88,7 @@ CAN_CH3:getByte(1) > 0 and true or false --
 
 		
 		can_temp = CAN_TEMP:getByte(1)  --Get fist byte from CAN. In LUA all numeration from 1. 
+	
 	        --can out data
 	        DIN_STATE =  igetDIN(1) | igetDIN(2)<<1 | igetDIN(3)<<2 | igetDIN(4)<<3 | igetDIN(5)<<4| igetDIN(6)<<5 | igetDIN(7)<<6 | igetDIN(8)<<7    
 	        DIN_STATE1 = igetDIN(9) | igetDIN(10)<<1 | igetDIN(11)<<2 
@@ -109,19 +105,41 @@ CAN_CH3:getByte(1) > 0 and true or false --
 		
                 KeyPad:setBackLigthBrigth( brigth)
 
-		--PREHEAT
-				
-		pre_heat_on = --( 
-				Delay8s:get() --and ( can_temp<40) ) or 
-			      --( Delay4s:get() and ( can_temp<50) ) or 
-			      --( Delay3s:get() and ( can_temp<60) ) or 
-			      --( Delay2s:get() and ( can_temp<70) ) or 
-			      --( Delay1s:get() and ( can_temp<100) )
---		setOut(12,pre_heat_on)                		
-		setOut(13,pre_heat_on)
+		--PREHEAT				
+		Delay8s:process( ignition ) 
+					    
+					    
+		Delay4s:process( ignition )  --4 sec time
+		Delay3s:process( ignition )  --3 sec time
+		Delay2s:process( ignition )  --2 sec time
+		Delay1s:process( ignition )  --1 sec time
+		pre_heat_on = ( Delay8s:get() and ( can_temp<40) ) or 
+			      ( Delay4s:get() and ( can_temp<50) ) or 
+			      ( Delay3s:get() and ( can_temp<60) ) or 
+			      ( Delay2s:get() and ( can_temp<70) ) or 
+			      ( Delay1s:get() and ( can_temp<100) )
+   	       setOut(12,pre_heat_on)                		
+   	       setOut(13,pre_heat_on)                		
+
+		-- FAN
+		fan_on  =  KeyPad:getToggle( 4 )  or (ignition and (can_temp == 0 ))  or (can_temp > 125)
+                KeyPad:setLedGreen( 4, KeyPad:getToggle( 4 ) ) 
+		setOut(14, fan_on  )
+		--Starter
+		Delay10s:process(starter)
+		starter_on = Delay10s:get() and ignition and (CAN_RPM:getWord(1) < 500)		
+		setOut(15, starter_on  )
+
+		--FUELPUMP
+		setOut(11, ignition )		
+		--IGNITION
+		setOut(16, ignition )				
+
 		-- HORN
 	        setOut(1, KeyPad:getKey( 1 ) )			-- HORN out set
 		KeyPad:setLedGreen(1,KeyPad:getKey( 1 ))        -- HORN LED on
+
+
 
 		--LIGTH switch
 					--inc             dec   res
@@ -158,7 +176,7 @@ CAN_CH3:getByte(1) > 0 and true or false --
 
 
 		KeyPad:setLedGreen( 3, KeyPad:getToggle( 3 ) ) 
-		KeyPad:setLedGreen( 4, KeyPad:getToggle( 4 ) ) 
+		
 		
 		Yield()
   	

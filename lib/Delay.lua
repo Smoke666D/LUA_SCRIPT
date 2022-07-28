@@ -10,24 +10,18 @@
 Delay = {}
 Delay.__index = Delay
 function Delay:new ( inDelay , neg )
-	local obj  = { counter = 0, launched = false, output = not neg, delay = inDelay , state = neg, str = false}
+	local obj  = { counter = 0, launched = false, output = not neg, delay = inDelay , state = neg, rst = true}
 	setmetatable( obj, self )
 	return obj
 end
 function Delay:process ( start )
 	if start == true  then	
-	   if self.str == false then
-	     self.str = true
-	     self.counter = 0
+	   if self.rst == true then
+		self.launched = true
+	        self.counter = 0
 	   end
-	else
-	  self.str = false		
 	end
-	
-	if (self.str == true) and (self.launched ==false) then
-	  self.launched = true
-	  self.str = false	  
-	end
+	self.rst = not start
 	if (self.launched == true ) then	
 		self.counter = self.counter + getDelay()
 		if ( self.counter < self.delay ) then
