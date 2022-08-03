@@ -39,9 +39,9 @@ def checkFile ( path, extension ):
     if not os.path.isabs( path ):
       path = os.path.join( os.getcwd(), path );
     if not os.path.isfile( path ):
-      return "File is not a exist";
+      return ( path + " File is not a exist" );
     if ( getExtension( path ) != extension ):
-      return "Wrong file format";
+      return ( path + " Wrong file format" );
   return error;
 
 def makeFileName ( base, add, ext ):

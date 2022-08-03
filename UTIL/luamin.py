@@ -134,8 +134,8 @@ def checkInputData ( data ):
 
 def runCommand ( data ):
   if ( data['command'] == '' ):
-    luaMinProcessing( data );
-    log( 'luamin', 'info', 'Done!' );
+    name = luaMinProcessing( data );
+    log( 'luamin', 'info', ('DONE: ' + name ) );
   else:
     if ( data['command'] == '-h' ):
       showHelp();
@@ -352,7 +352,7 @@ def luaMinNewLines ( data ):
     out = out.replace( item, ' ' );
   return out;
 
-def luaMinProcessing( data ):
+def luaMinProcessing ( data ):
   buffer = luaOpenScript( data['script'] );
   startSize = len( buffer );
   log( 'luamin', 'info', ('Start size of the script is ' + str( startSize ) + ' byte' ) );
@@ -367,11 +367,11 @@ def luaMinProcessing( data ):
     buffer = luaMinSpaces( buffer );
     log( 'luamin', 'info', 'After spaces min: ' + str( len( buffer ) ) + ' byte' );
   log( 'luamin', 'info', 'Reducing the size from: ' + str( startSize ) + ' byte to ' + str( len( buffer ) ) + ' byte (' + str( int( len( buffer ) * 100 / startSize ) ) + '%)' );  
-  name = makeFileName( data['script'], 'min', 'lua' );
-  f    = open( os.path.join( data['out'], name ), 'w' );
+  name = os.path.join( data['out'], makeFileName( data['script'], 'min', 'lua' ) );
+  f    = open( name, 'w' );
   f.write( buffer );
   f.close();
-  return;
+  return name;
 #----------------------------------------------------------------------------------------
 def minlua ( args ):
   data  = analizInput( args );

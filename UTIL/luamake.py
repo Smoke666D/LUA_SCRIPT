@@ -65,7 +65,7 @@ def runCommand ( data ):
     f.close();
     makeCfile( lua, os.path.join( data['out'], 'luaDefScript.c' ) );
     makeHfile( lua, os.path.join( data['out'], 'luaDefScript.h' ) );
-    log( 'luamake', 'info', 'Done' );
+    #log( 'luamake', 'info', ('DONE:' + data['out'] ) );
   else:  
     if ( data['command'] == '-h' ):
       showHelp();

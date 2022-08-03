@@ -41,18 +41,19 @@ def addIncludesToScript ( path, includes, output ):
       out = out + '----------------------------------------------------------------------------------------------------------------------\n';
       out = out + include + '\n';
     out  = out + buffer;
-    name = makeFileName( path, 'link', 'lua' );
-    f    = open( os.path.join( output, name ), 'w' );
+    name = os.path.join( output, makeFileName( path, 'link', 'lua' ) );
+    f    = open( name, 'w' );
     f.write( out );
     f.close();
-  return error;
+  return [error, name];
 #----------------------------------------------------------------------------------------
 def analizInput ( args ):
   data = {
     "command" : '',
     "script"  : '',
     "ld"      : '',
-    "out"     : ''
+    "out"     : '',
+    "lib"     : ''
   }
   for i in range( len( args ) ):
     if args[i] == '-h':
@@ -63,6 +64,8 @@ def analizInput ( args ):
       data['ld'] = args[i + 1];
     if ( args[i] == '-o' ) and ( len( args ) > ( i + 1 ) ):
       data['out'] = args[i + 1];
+    if ( args[i] == '-a' ) and ( len( args ) > ( i + 1 ) ):
+      data['lib'] = args[i + 1];
   return data;
 
 def checkInputData ( data ):
@@ -74,11 +77,14 @@ def checkInputData ( data ):
     if ( data['ld'] == '' ):
       data['ld'] = 'luald.json';
     error = checkFile( data['ld'], '.json' );
-    if error == None:
-      if ( data['out'] == '' ):
-        data['out'] = os.path.join( os.getcwd(), 'out' );
-      if not os.path.exists( data['out'] ):
-        os.mkdir( data['out'] );  
+    if ( data['lib'] != '' ) and not os.path.exists( data['lib'] ):
+      error = 'Wrong library path';
+    else:  
+      if error == None:
+        if ( data['out'] == '' ):
+          data['out'] = os.path.join( os.getcwd(), 'out' );
+        if not os.path.exists( data['out'] ):
+          os.mkdir( data['out'] );  
   return error;
 #----------------------------------------------------------------------------------------
 def showHelp ():
@@ -86,27 +92,30 @@ def showHelp ():
   print( '    -h: get help information'                      );
   print( '    -s: set script file'                           );
   print( '    -l: set ld file in json format'                );
+  print( '    -a: set library path'                          );
   print( '    -o: set output path'                           );
   print( '*************************************************' );
   return;
 
-def luaLink ( script, ld, out ):
+def luaLink ( script, ld, out, lib ):
   includes = [];
   [paths, error] = getIncludeList( ld );
   log( 'lualink', 'info', 'There are ' + str( len( paths ) ) + ' paths in ld file:' );
   if ( error == None ):
     for path in paths:
+      if lib != '':
+        path = os.path.join( lib, path );
       log( 'lualink', 'info', '  ' + path )
       [data,error] = getLibContent( path );
       if ( error != None ):
         log( 'lialink', 'error', (error + ' in ' + path) );
         return;
       includes.append( data );
-    error = addIncludesToScript( script, includes, out )
+    [error, name] = addIncludesToScript( script, includes, out )
     if ( error != None ):
       log( 'lialink', 'error', error );
     else:
-      log( 'lialink', 'info', 'Done' );
+      log( 'lialink', 'info', ( 'DONE: ' + name ) );
   else:
     log( 'lialink', 'error', error );
   return;
@@ -114,7 +123,7 @@ def luaLink ( script, ld, out ):
 def runCommand ( data ):
   if ( data['command'] == '' ):
     if ( data['script'] != '' ) and ( data['ld'] != '' ):
-      luaLink( data['script'], data['ld'], data['out'] );
+      luaLink( data['script'], data['ld'], data['out'], data['lib'] );
     else:
       log( 'lialink', 'error', "There isn't full data for the linker" );
   else:
