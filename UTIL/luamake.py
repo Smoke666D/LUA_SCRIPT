@@ -1,106 +1,56 @@
 #!/usr/bin/python
 import sys
 import os
+from common import log, checkFile
 #----------------------------------------------------------------------------------------
-minmizeSymbols = { '=', '{', '}', '(', ')', ',', '+', '-', '*', '/', '&', '|', '~', '<', '>', '\\n' };
-deleteSymbols  = { '\n', '\t' };
-#----------------------------------------------------------------------------------------
-def noCallback ( data, error ):
-  if ( error != None ):
-    print( error );  
-  return;
-#----------------------------------------------------------------------------------------
-def analizInput ( callback = noCallback ):
+def analizInput ( args ):
   errorStr = None;
   data = {
-    'command':   '-h',
-    'inputFile': '',
-    'outputPath': ''
+    'command' : '',
+    'script'  : '',
+    'out'     : ''
   };
-  if ( len( sys.argv ) > 1 ):
-    data['command'] = sys.argv[1];
-    if ( len( sys.argv ) > 2 ):
-      data['inputFile'] = sys.argv[2];
-      if ( len( sys.argv ) > 3 ):
-        data['outputPath'] = sys.argv[3];
-  else:
-    errorStr = 'No command';
-  callback( data, errorStr );
-  return [data, errorStr];
+  for i in range( len( args ) ):
+    if args[i] == '-h':
+      data['command'] = '-h';
+    if ( args[i] == '-s' ) and ( len( args ) > ( i + 1 ) ):
+      data['script'] = args[i + 1];
+    if ( args[i] == '-o' ) and ( len( args ) > ( i + 1 ) ):
+      data['out'] = args[i + 1];
+  return data;
+#----------------------------------------------------------------------------------------
+def checkInputData ( data ):
+  error    = None;
+  if ( data['command'] != '' ) or ( data['command'] != '-h' ):
+    error = 'Wrong command';
+  error = checkFile( data['script'], '.lua' );
+  if error == None:
+    if ( data['out'] == '' ):
+      data['out'] = os.path.join( os.getcwd(), 'out' );
+    if not os.path.exists( data['out'] ):
+      os.mkdir( data['out'] );
+  return error;    
 #----------------------------------------------------------------------------------------
 def showHelp ():
   print( '*************************************************' );
   print( '    -h: get help information'                      );
-  print( '    -m: make lua script. 1st argument - input'     );
-  print( '        file of lua, 2nd argument - output path'   );
+  print( '    -s: set script file'                           );
+  print( '    -o: set output path'                           );
   print( '*************************************************' );
   return;
 #----------------------------------------------------------------------------------------
-def getOutputPath ( path = '' ):
-  outputPath = '';
-  if len( path ) == 0:
-    outputPath = os.path.dirname( __file__ );
-    outputPath = os.path.join( outputPath, 'out' );
-  else:
-    outputPath = path;
-  if not os.path.exists( outputPath ):
-    os.mkdir( outputPath );
-  return outputPath;
-#----------------------------------------------------------------------------------------
-def delateSpaces ( data, char ):
-  out = data
-  out = out.replace( ( ' ' + char ), char );
-  out = out.replace( ( char + ' ' ), char );
-  return out;
-#----------------------------------------------------------------------------------------
-def deleteLuaComents ( data ):
-  out = data;
-  while out.find( '--' ) >= 0:
-    start = out.find( '--' );
-    multiline = out[start:].find( '[[' );
-    newline   = out[start:].find( '\n' )
-    if multiline > 0 and multiline < newline:
-      shift = out[start:].find( ']]' ) + 2;
-      out   = out[:start] + out[start+shift:];
-    else:
-      shift = out[start:].find( '\n' ) + 1;
-      out   = out[:start] + out[start+shift:];
-  return out;
-#----------------------------------------------------------------------------------------
-def deleteDoubleSpaces ( data ):
-  out = data;
-  while out.find( '  ' ) != -1:
-    out = out.replace( '  ', ' ' );  
-  return out;
-#----------------------------------------------------------------------------------------
-def deleteLiterals ( data ):
-  out = data;
-  for symbol in deleteSymbols:
-    out = out.replace( symbol, ' ' );
-  return out;  
-#----------------------------------------------------------------------------------------
-def minimiseLua ( data ):
-  out = data;
-  out = deleteLuaComents( out );
-  out = deleteLiterals( out );
-  out = deleteDoubleSpaces( out );
-  out = out.replace( '\"', '\\"' );  
-  for symbol in minmizeSymbols:
-    out = delateSpaces( out, symbol );
-  return out;
-#----------------------------------------------------------------------------------------
 def makeCfile ( data, path ):
-  hfile  = os.path.basename( path ).replace( '.c', '.h' );
-  string = minimiseLua( data );
-  f = open( path, 'w' );
+  data  = data.replace( '\"', '\\"' );  
+  hfile = os.path.basename( path ).replace( '.c', '.h' );
+  f = open( path, 'w', encoding='utf-8' );
   f.write( '#include "' + hfile + '"\n' );
-  f.write( 'const char* const defaultLuaScript = "' + string + '";\n' );
+  f.write( 'const char* const defaultLuaScript = "' + data + '";\n' );
   f.close();
   return;
 #----------------------------------------------------------------------------------------
 def makeHfile ( data, path ):
   name   = os.path.basename( path ).replace( '.', '_' ).upper();
-  f = open( path, 'w' );
+  f = open( path, 'w', encoding='utf-8' );
   f.write( '#ifndef ' + name + '\n' );
   f.write( '#define ' + name + '\n\n');
   f.write( 'extern const char* const defaultLuaScript;\n')
@@ -108,50 +58,26 @@ def makeHfile ( data, path ):
   f.close();
   return;  
 #----------------------------------------------------------------------------------------
-def getLuaScript ( path = '', callback = noCallback ):
-  errorStr = None;
-  luaPath  = '';
-  data     = '';
-  if ( len( path ) == 0 ):
-    luaPath = os.path.dirname( os.path.dirname( __file__ ) );
-    luaPath = os.path.join( luaPath, 'TEST.lua' );
-  else:
-    luaPath = path;
-  if ( luaPath.endswith( '.lua' ) == True ):    
-    if ( os.path.exists( luaPath ) == False ):
-      errorStr = "There is no file on: " + luaPath;  
-    else:
-      f    = open( luaPath, 'r' );
-      data = f.read();
-  else:
-    errorStr = "This isn't lua file";
-  callback( data, errorStr );  
-  return [data, errorStr];
-#----------------------------------------------------------------------------------------
-def parsingCommand ( data, error ):
-  errorStr = None;
-  if ( error == None ):
+def runCommand ( data ):
+  if ( data['command'] == '' ):
+    f   = open( data['script'], 'r', encoding='utf-8' );
+    lua = f.read();
+    f.close();
+    makeCfile( lua, os.path.join( data['out'], 'luaDefScript.c' ) );
+    makeHfile( lua, os.path.join( data['out'], 'luaDefScript.h' ) );
+    #log( 'luamake', 'info', ('DONE:' + data['out'] ) );
+  else:  
     if ( data['command'] == '-h' ):
       showHelp();
-    elif ( data['command'] == '-m' ):
-      [lua, err] = getLuaScript( data['inputFile'] );
-      if ( err == None ):
-        outputPath = getOutputPath( data['outputPath'] );
-        cPath      = os.path.join( outputPath, 'luaDefScript.c' );
-        hPath      = os.path.join( outputPath, 'luaDefScript.h' );
-        makeCfile( lua, cPath );
-        makeHfile( lua, hPath );
-        print( 'Ready!' );
-      else:
-        print( err );  
-    else:    
-      errorStr = 'Wrong command';  
-      print( errorStr );
-  else:
-    print( error );    
   return;
 #----------------------------------------------------------------------------------------
-
-print( "---" )
-analizInput( parsingCommand );
-print( "---" )
+def luamake ( args ):
+  data  = analizInput( args );
+  error = checkInputData( data )
+  if ( error == None ):
+    runCommand( data )
+  else:
+    log( 'luamake','error', error );  
+  return;
+#----------------------------------------------------------------------------------------
+luamake( sys.argv );
