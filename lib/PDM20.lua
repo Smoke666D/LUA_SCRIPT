@@ -21,7 +21,7 @@ function getDelay()
 	return delayms
 end     
 function getDIN( ch)
-	return (ch<12) and DInput[ch] or false 
+	return (ch<11) and DInput[ch] or false 
 end
 
 function igetDIN( ch)	
@@ -44,4 +44,20 @@ function setOut( ch, data)
 	end
 end
 
+function waitDIN( ch, data, timeout)
+	del = 0
+   	while true do		
+		 Yield()
+		 if getDIN(ch) == data then
+			return true
+		 end
+		 del = del + delayms
+		 if (timeout > 0) then
+		    if (del > timeout) then
+			return false
+		    end
+ 		 end 
+	end
+	return false
+end
 

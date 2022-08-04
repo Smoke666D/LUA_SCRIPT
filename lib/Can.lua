@@ -1,9 +1,11 @@
+
+
 CanInput = {}
 CanInput.__index = CanInput
 function CanInput:new ( addr )
 	local obj = { ADDR = addr, data={0,0,0,0,0,0,0,0}}
 	setmetatable( obj, self )
-        SetCanFilter(addr)
+        setCanFilter(addr)
 	return obj
 end
 function CanInput:process()
@@ -62,3 +64,35 @@ function CanOut:setWord( nb ,state)
 end
 
 
+CanRequest = {}
+CanRequest.__index = CanRequest
+
+function CanRequest:new()
+	local obj = { del = 0, timeout =0, data = {0,0,0,0,0,0,0,0}}
+	setmetatable( obj, self )
+	return obj
+
+end
+
+function CanRequest:waitCAN( add, getadd, timeout, d1,d2,d3,d4,d5,d6,d7,d8)
+	self.del = 0
+        sendCandRequest(add,getadd,d1,d2,d3,d4,d5,d6,d7,d8)
+   	while true do		
+		 Yield()
+		 if CheckAnswer() == 1 then			
+			self.data[1],self.data[2],self.data[3],self.data[4],self.data[5],self.data[6],self.data[7],self.data[8] = GetRequest()
+			return true
+		 end
+		 self.del = self.del + delayms
+		 if (timeout > 0) then
+		    if (self.del > timeout) then
+			return false
+		    end
+ 		 end 
+	end
+	return false
+end
+
+function CanRequest:getData()
+   	return self.data[1],self.data[2],self.data[3],self.data[4],self.data[5],self.data[6],self.data[7],self.data[8]
+end

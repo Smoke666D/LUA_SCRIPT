@@ -20,9 +20,9 @@ KeyPad8 = {}
 KeyPad8.__index = KeyPad8
 
 function KeyPad8:new( addr)
-      local obj = {key = 0x00, ADDR = addr, new = false,  tog= 0x00, old =0x00, ledRed=0x00,ledGreen=0x00, ledBlue =0x00, temp={0}}
+      local obj = {key = 0x00, ADDR = addr, new = true,  tog= 0x00, old =0x00, ledRed=0x00,ledGreen=0x00, ledBlue =0x00, temp={0}}
       setmetatable (obj, self) 
-      SetCanFilter(0x180 +addr)
+      setCanFilter(0x180 +addr)
       return obj
 end
 function KeyPad8:process()
