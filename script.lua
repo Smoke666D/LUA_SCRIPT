@@ -90,7 +90,7 @@ main = function ()
 			starter  = CAN_CH3:getBit(1,4)
 			ignition = CAN_CH3:getBit(1,1)
 			CAN_ALARM:process()
-	        	CAN_OUT1:process()
+		      	CAN_OUT1:process()
 		        CAN_OUT2:process()
 		        CAN_OUT3:process()		
 		        CAN_OUT4:process()		
@@ -101,7 +101,7 @@ main = function ()
 	
 		        --can out data
 		        DIN_STATE =  igetDIN(1) | igetDIN(2)<<1 | igetDIN(3)<<2 | igetDIN(4)<<3 | igetDIN(5)<<4| igetDIN(6)<<5 | igetDIN(7)<<6 | igetDIN(8)<<7    
-	        	DIN_STATE1 = igetDIN(9) | igetDIN(10)<<1 | igetDIN(11)<<2 
+	 	      	DIN_STATE1 = igetDIN(9) | igetDIN(10)<<1 | igetDIN(11)<<2 
 			CAN_OUT1:setFrame(DIN_STATE,DIN_STATE1) 		
 	
 			CAN_OUT2:setFrame(getCurFB(1),getCurSB(1),getCurFB(2),getCurSB(2),getCurFB(3),getCurSB(3),getCurFB(4),getCurSB(4))
