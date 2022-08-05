@@ -32,7 +32,6 @@ init = function()
         setDINConfig(9,1)
         setDINConfig(10,1)
         setDINConfig(11,1)
-        setDINConfig(12,1)
         CAN_EXCHENGE    = CanRequest:new()
 	if ( CAN_EXCHENGE:waitCAN(0x615,0x595,8000,0x2F,0x03,0x20,0x03,0x06,0x00,0x00,0x00) == true) then
 		dd1,dd2,dd3,dd4,dd5,dd6,dd7,dd8 = CAN_EXCHENGE:getData()
