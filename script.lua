@@ -144,7 +144,7 @@ main = function ()
 			--IGNITION
 			setOut(16, ignition )				
 			
-			--ПЕЧКА
+			--HEATER
 
 
 			-- HORN

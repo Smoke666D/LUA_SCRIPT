@@ -280,7 +280,8 @@ def processingMethod ( method, varList ):
   out.name.id   = getVarName( out.name.id, varList, False, className );
   
   for arg in out.args:
-    arg.id = getVarName( arg.id, varList, False, None )
+    if 'id' in dir( arg ):
+      arg.id = getVarName( arg.id, varList, False, None )
   
   if methodName == 'new':
     obj = '';
