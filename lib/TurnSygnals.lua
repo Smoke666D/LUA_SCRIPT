@@ -21,25 +21,31 @@ TurnSygnals = {}
 TurnSygnals.__index = TurnSygnals
 function TurnSygnals:new ( inDelay )
 
-	local obj = {                           delay    = inDelay,
+	local obj = {                           delay    = (type(inDelay) =="number") and inDelay or 100,
 						counter  = 0,
-						state    = false,
+						state    = true,
 						outLeft  = false, 
 						outRight = false, 
-						outAlarm = false }
-	
-	setmetatable( obj, self )
+						outAlarm = false }	
+	setmetatable( obj, self )	
 	return obj
 end
 function TurnSygnals:process ( enb, left, right, alarm )
-		self.counter = self.counter + getDelay()		
-		if ( self.counter > self.delay )  then
-			self.state    = not self.state
-			self.counter  = 0
+		if (type(enb)=="boolean") and (type(left)=="boolean") and (type(right)=="boolean") and (type(alarm)=="boolean") then
+			if left or right or alarm then
+				self.counter = self.counter + getDelay()		
+				if ( self.counter > self.delay )  then
+					self.state    = not self.state
+					self.counter  = 0
+				end			
+			else
+				self.state    = true
+				self.counter  = 0
+			end		
 			self.outLeft  = left  and self.state and enb and (not alarm)
 			self.outRight = right and self.state and enb and (not alarm)
 			self.outAlarm = alarm and self.state and enb 
-		end				
+		end
 end
 function TurnSygnals:getRight()
 	return self.outRight

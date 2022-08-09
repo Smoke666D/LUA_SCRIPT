@@ -20,9 +20,9 @@ KeyPad8 = {}
 KeyPad8.__index = KeyPad8
 
 function KeyPad8:new( addr)
-      local obj = {key = 0x00, ADDR = addr, new = false,  tog= 0x00, old =0x00, ledRed=0x00,ledGreen=0x00, ledBlue =0x00, temp={0}}
+      local obj = {key = 0x00, ADDR = addr, new = true,  tog= 0x00, old =0x00, ledRed=0x00,ledGreen=0x00, ledBlue =0x00, temp={0}, backligth = 0, led_brigth = 0}
       setmetatable (obj, self) 
-      SetCanFilter(0x180 +addr)
+      setCanFilter(0x180 +addr)
       return obj
 end
 function KeyPad8:process()
@@ -47,33 +47,43 @@ function KeyPad8:resetToggle( n , state)
 	 end
 end
 function KeyPad8:setLedRed( n , state)
- 	 if (state == false) then 
-		self.ledRed = self.ledRed & (~(0x01<<( n-1 ) ) ) 
-	 else 
-		self.ledRed = self.ledRed | (0x01<< ( n - 1)) 
-	 end    
-         self.new = true
+	self.old = (state ) and  self.ledRed | (0x01<<(n-1)) or self.ledRed & (~(0x01<<( n-1 ))) 
+	if ( self.old ~= self.ledRed ) then
+        	self.ledRed = self.old 
+ 	        self.new = true
+	end
+
 
 end
 function KeyPad8:setLedGreen( n, state)
- 	 if (state == false) then 
-		self.ledGreen = self.ledGreen & (~(0x01<<( n-1 ) ) ) 
-	 else 
-		self.ledGreen = self.ledGreen | (0x01<<(n-1)) 
-	 end    
-         self.new = true
+        self.old = (state ) and self.ledGreen | (0x01<<(n-1)) or self.ledGreen & (~(0x01<<( n-1 ))) 
+	if ( self.old ~= self.ledGreen ) then
+        	self.ledGreen = self.old 
+ 	        self.new = true
+	end
 end
 function KeyPad8:setLedBlue( n , state)
-	 if (state == false) then 
-		self.ledBlue = self.ledBlue & (~(0x01<< (n-1 ) ) ) 
-	 else 
-		self.ledBlue = self.ledBlue | (0x01 << ( n-1 ) ) 
-	 end
-	 self.new = true        	
+        self.old = (state ) and  self.ledBlue | (0x01<<(n-1)) or self.ledBlue & (~(0x01<<( n-1 ))) 
+	if ( self.old ~= self.ledBlue ) then
+        	self.ledBlue = self.old 
+ 	        self.new = true
+	end
 end
+function KeyPad8:setLedWhite( n , state)
+	 self:setLedBlue(n, state)
+	 self:setLedGreen(n, state)
+	 self:setLedRed(n, state)
+end
+
 function KeyPad8:setLedBrigth( brigth )
-   	CanSend(0x600 + self.ADDR,0x2F,0x03,0x20,0x02,brigth,0,0,0)
+	if (self.ledbrigth ~= brigth) then
+	   self.ledbrigth = brigth
+	   CanSend(0x600 + self.ADDR,0x2F,0x03,0x20,0x01,brigth,0,0,0)
+	end
 end
 function KeyPad8:setBackLigthBrigth( brigth )
-    	CanSend(0x600 + self.ADDR,0x2F,0x03,0x20,0x01,brigth,0,0,0)
+	if (self.backligth ~=brigth) then
+		self.backligth =brigth		
+	    	CanSend(0x600 + self.ADDR,0x2F,0x03,0x20,0x02,brigth,0,0,0)
+	end
 end

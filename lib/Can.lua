@@ -1,26 +1,18 @@
-function CanSendTable( addr, p)
-end
 
-function getBit (data, pos )
-	if  (data  &  ( 0x01<< pos-1)) then
-		return  true
-	else
-		return false
-	end
-end
 
 CanInput = {}
 CanInput.__index = CanInput
 function CanInput:new ( addr )
 	local obj = { ADDR = addr, data={0,0,0,0,0,0,0,0}}
 	setmetatable( obj, self )
+        setCanFilter(addr)
 	return obj
 end
 function CanInput:process()
-     GetCanToTable( self.ADDR,self.data) 
+   GetCanToTable( self.ADDR,self.data) 
 end
 function CanInput:getBit( nb, nbit)	
-	return getBit(self.data[nb], nbit)
+	return ((self.data[nb] & (0x01<<(nbit-1))) >0 ) and true or false
 end
 function CanInput:getByte( nb )
 	return self.data[nb]
@@ -31,33 +23,76 @@ end
 
 CanOut = {}
 CanOut.__index = CanOut
-function CanOut:new ( addr , time , size)
-	local obj = { ADDR = addr, data={}, delay = time, timer = 0}
+function CanOut:new ( addr , time , size, d1, d2, d3, d4, d5, d6, d7, d8)
+	local obj = { ADDR = addr, data={d1,d2,d3,d4,d5,d6,d7,d8}, delay = time, timer = 0, sz =size}
 	setmetatable( obj, self )
 	return obj
 end
 function CanOut:process()
-    self.timer = self.timer + gerDelay() 
-    if self.timer >=  self.dealy then   
-     CanSendTable(self.ADDR,self.data)     
-     self.timer	= 0
+    self.timer = self.timer + getDelay() 
+    if self.timer >=  self.delay then   
+	  CanTable(self.ADDR,self.sz,self.data)
+          self.timer	= 0
     end
 end
+function CanOut:setFrame(...)
+	local arg =  table.pack(...)	
+	if (arg.n < 9) then
+		for i=1, arg.n do
+			self.data[i] = arg[i]
+		end
+		self.sz = arg.n
+	end
+end
+
+
 function CanOut:setBit( nb, nbit, state)	
 	if state == true then
-  	  data[nb] = data[bn] | (0x01 << (nbit-1))
+  	  self.data[nb] = self.data[bn] | (0x01 << (nbit-1))
 	else
-  	  data[nb] = data[bn] & ~(0x01 << (nbit-1))
+  	  self.data[nb] = self.data[bn] & ~(0x01 << (nbit-1))
 	end
 
 end
 function CanOut:setByte( nb ,state )
-	data[nb] = state  & 0xFF
+	self.data[nb] = state  & 0xFF
 end
 function CanOut:setWord( nb ,state)
-	data[nb] = (state <<8) & 0xFF
-        data[nb+1] = state & 0xFF
+	self.data[nb] = (state <<8) & 0xFF
+        self.data[nb+1] = state & 0xFF
 
 end
 
 
+CanRequest = {}
+CanRequest.__index = CanRequest
+
+function CanRequest:new()
+	local obj = { del = 0, timeout =0, data = {0,0,0,0,0,0,0,0}}
+	setmetatable( obj, self )
+	return obj
+
+end
+
+function CanRequest:waitCAN( add, getadd, timeout, d1,d2,d3,d4,d5,d6,d7,d8)
+	self.del = 0
+        sendCandRequest(add,getadd,d1,d2,d3,d4,d5,d6,d7,d8)
+   	while true do		
+		 Yield()
+		 if CheckAnswer() == 1 then			
+			self.data[1],self.data[2],self.data[3],self.data[4],self.data[5],self.data[6],self.data[7],self.data[8] = GetRequest()
+			return true
+		 end
+		 self.del = self.del + delayms
+		 if (timeout > 0) then
+		    if (self.del > timeout) then
+			return false
+		    end
+ 		 end 
+	end
+	return false
+end
+
+function CanRequest:getData()
+   	return self.data[1],self.data[2],self.data[3],self.data[4],self.data[5],self.data[6],self.data[7],self.data[8]
+end
