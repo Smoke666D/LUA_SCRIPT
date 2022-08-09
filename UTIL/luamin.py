@@ -243,7 +243,8 @@ def processEndPoint ( node, varList, className ):
       if node.value.id == 'self':
         node.idx.id = getVarName( node.idx.id, varList, False, className );
       else:
-        node.idx.id   = getVarName( node.idx.id, varList, False, node.value.id );
+        if 'id' in dir( node.idx ) :
+          node.idx.id   = getVarName( node.idx.id, varList, False, node.value.id );
         node.value.id = getVarName( node.value.id, varList, True, None );    
     else:
       processEndPoint( node.value, varList, className );
