@@ -8,7 +8,7 @@ def getIncludeList ( ldpath ):
   error = None;
   list = [];
   try:
-    f    = open( ldpath, 'r' );
+    f    = open( ldpath, 'r', encoding='utf-8' );
     data = json.loads( f.read() )
   except:
     error = "Wrong lib file encoding: " + ldpath;  
@@ -23,9 +23,12 @@ def getLibContent ( path ):
   out   = '';
   error = checkFile( path, '.lua' );
   if error == None:
-    f   = open( path, 'r', encoding='utf-8' );
-    out = f.read();
-  return [out,error];
+    try:
+      f   = open( path, 'r', encoding='utf-8' );
+      out = f.read();
+    except:
+      error = "Wrong script file encoding";
+  return [out, error];
 
 def addIncludesToScript ( path, includes, output ):
   error  = None;
@@ -42,7 +45,7 @@ def addIncludesToScript ( path, includes, output ):
       out = out + include + '\n';
     out  = out + buffer;
     name = os.path.join( output, makeFileName( path, 'link', 'lua' ) );
-    f    = open( name, 'w' );
+    f    = open( name, 'w', encoding='utf-8' );
     f.write( out );
     f.close();
   return [error, name];
