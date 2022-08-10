@@ -1,0 +1,20 @@
+{
+  "exceptions" : [
+    "init",
+    "main",
+    "CanTable",
+    "setDINConfig",
+    "setOutConfig",
+    "OutResetConfig",
+    "OutSetPWM",
+    "CanSend",
+    "setCanFilter",
+    "CheckCanId",
+    "GetCanMessage",
+    "GetCanToTable",
+    "sendCandRequest",
+    "CheckAnswer",
+    "GetRequest",
+    "GetRequestToTable"
+  ]
+}
