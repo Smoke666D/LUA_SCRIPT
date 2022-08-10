@@ -2,6 +2,7 @@
 from re import L
 import sys
 import os
+import json
 import itertools
 from luaparser import ast
 from luaparser import astnodes
@@ -206,10 +207,10 @@ class Name ():
     self.isGlobal  = isGlobal;
     self.className = className;
 
-def getVarName ( name, varList, isGlobal, className ):
+def getVarName ( name, varList, isGlobal, className, debug=False ):
   out = name;
   if name not in reservedNames:
-    index = -1;
+    index = -1
     for i in range( len( varList ) ):
       if varList[i] != None:
         if varList[i].name == name:
@@ -237,19 +238,19 @@ def cleanVarList ( varList ):
 def isEndPoint ( node ):
   return isinstance( node, astnodes.Index ) or isinstance( node, astnodes.Name );
 
-def processEndPoint ( node, varList, className ):
+def processEndPoint ( node, varList, className, debug=False ):
   if isinstance( node, astnodes.Index ):
     if isinstance( node.value, astnodes.Name ):
       if node.value.id == 'self':
         node.idx.id = getVarName( node.idx.id, varList, False, className );
       else:
-        if 'id' in dir( node.idx ) :
+        if 'id' in dir( node.idx ):
           node.idx.id   = getVarName( node.idx.id, varList, False, node.value.id );
         node.value.id = getVarName( node.value.id, varList, True, None );    
     else:
-      processEndPoint( node.value, varList, className );
+      processEndPoint( node.value, varList, className, debug );
   elif isinstance( node, astnodes.Name ):
-    node.id = getVarName( node.id, varList, False, None ); 
+    node.id = getVarName( node.id, varList, False, None, debug ); 
   return node;  
 
 astClassFields = [ 'left', 'right', 'targets', 'values', 'test', 
@@ -257,18 +258,21 @@ astClassFields = [ 'left', 'right', 'targets', 'values', 'test',
                    'step', 'iter', 'args', 'func', 'fields', 
                    'operand', 'key', 'value'  ];
 
-def processTree ( node, varList, className ):
+def processTree ( node, varList, className, debug=False ):
   if isEndPoint( node ):
-    processEndPoint( node, varList, className );
+    processEndPoint( node, varList, className, debug );
   else:
     if type( node ) == list:
-        for item in node:
-          item = processTree( item, varList, className );
-    else:     
+      for item in node:
+        item = processTree( item, varList, className, debug );
+    else:
       for field in astClassFields:
         if field in dir( node ):
           atr = getattr( node, field );
-          atr = processTree( atr, varList, className );
+          #if debug == True:
+          #  if ( 'id' in dir( atr )):
+          #    print( atr.id )
+          atr = processTree( atr, varList, className, debug );
   return node;  
 
 def processingMethod ( method, varList ):
@@ -323,12 +327,18 @@ def luaMinNames ( data ):
     #--------------- Global vars ---------------
     elif isinstance( node, astnodes.Assign ):
       for value in node.values:
-        if isinstance( value, astnodes.Name ):
+
+
+        if isinstance( value, astnodes.AnonymousFunction ):
+          processTree( value.body, varList, None, True );
+
+
+        elif isinstance( value, astnodes.Name ):
           value.id = getVarName( value.id, varList, True, None );
       for target in node.targets:
         if isinstance( target, astnodes.Index ):
           target.value.id = getVarName( target.value.id, varList, True, None );
-        if isinstance( target, astnodes.Name ):
+        elif isinstance( target, astnodes.Name ):
           target.id = getVarName( target.id, varList, True, None );
     #-------------- Class methods --------------
     elif isinstance( node, astnodes.Method ):
@@ -375,9 +385,26 @@ def luaMinProcessing ( data ):
   f.close();
   return name;
 #----------------------------------------------------------------------------------------
+def getExceptions ():
+  out = [];
+  f = open( os.path.join( os.path.dirname(os.path.abspath(__file__)), 'exceptionsNames.json' ), 'r' );
+  data = json.loads( f.read() );
+  for record in data['exceptions']:
+    reservedNames.append( record )
+  return;  
+#----------------------------------------------------------------------------------------
 def minlua ( args ):
+  getExceptions();
   data  = analizInput( args );
   error = checkInputData( data );
+  flags = '';
+  if data['newLine']:
+    flags += 'newLine ';
+  if data['spaces']:
+    flags += 'spaces ';
+  if data['names']:
+    flags += 'names ';  
+  log( 'luamin', 'info', ( 'Run with flags: ' + flags ) );
   if ( error == None ):
     runCommand( data );
   else:

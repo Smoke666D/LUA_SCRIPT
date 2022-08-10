@@ -39,7 +39,6 @@ init = function()
 		        setOut(13,true )                					
 		end
 	end
---	Yield()
 end
 
 
