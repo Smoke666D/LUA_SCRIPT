@@ -1,78 +1,88 @@
-init = function()
-        setOutConfig(1,10,2000,60) 
-	setOutConfig(2,10,2000,60)
-	setOutConfig(3,10,2000,60) 
-	setOutConfig(4,5,2000,60) 
-	setOutConfig(5,5,2000,60) 
-	setOutConfig(6,5,2000,60) 
-	setOutConfig(7,5,2000,60) 
-	setOutConfig(8,10,2000,60) 
-	setOutConfig(9,8,0,10) 
-	setOutConfig(10,8,0,10) 
-	setOutConfig(11,8,0,10) 
-	setOutConfig(12,8,0,10) 
-	setOutConfig(13,8,0,10) 
-	setOutConfig(14,8,0,10) 
-	setOutConfig(15,8,0,10) 
-	setOutConfig(16,8,0,10) 
-	setOutConfig(17,8,0,10) 
-	setOutConfig(18,8,0,10) 
-	setOutConfig(19,8,0,10) 
-	setOutConfig(20,8,0,10) 
-        setDINConfig(1,1)
-        setDINConfig(2,1)
-        setDINConfig(3,1)
-        setDINConfig(4,1)
-        setDINConfig(5,1)
-        setDINConfig(6,1)
-        setDINConfig(7,1)
-        setDINConfig(8,1)
-        setDINConfig(9,1)
-        setDINConfig(10,1)
-        setDINConfig(11,1)
-        CAN_EXCHENGE    = CanRequest:new()
-	if ( CAN_EXCHENGE:waitCAN(0x615,0x595,8000,0x2F,0x03,0x20,0x03,0x06,0x00,0x00,0x00) == true) then
-		dd1,dd2,dd3,dd4,dd5,dd6,dd7,dd8 = CAN_EXCHENGE:getData()
-		if dd1 == 0x60 then
-		        setOut(13,true )                					
-		end
-	end
---	Yield()
+delayms = 0
+DOut =  { flase,true,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase,flase}
+DInput = { flase,true,flase,flase,flase,flase,flase,flase,flase,flase,flase}
+
+Cur = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+
+function Yield ()
+	delayms,DInput[1],DInput[2],DInput[3],DInput[4],DInput[5],DInput[6],DInput[7],DInput[8],DInput[9],DInput[10],DInput[11],Cur[1],Cur[2],Cur[3],Cur[4],Cur[5],Cur[6],Cur[7],Cur[8],
+Cur[9],Cur[10],Cur[11],Cur[12],Cur[13],Cur[14],Cur[15],Cur[16],Cur[17],Cur[18],Cur[19],Cur[20] = coroutine.yield(DOut[20],DOut[19],DOut[18],DOut[17],DOut[16],
+DOut[15],DOut[14],DOut[13],DOut[12],DOut[11],DOut[10],DOut[9],DOut[8],DOut[7],DOut[6],DOut[5],DOut[4],DOut[3],DOut[2],DOut[1])	
+end
+
+function getDelay()
+	return delayms
+end     
+function boltoint( data)
+   return (data) and 1 or 0
+end
+
+function igetDIN( ch)	
+	return (ch<11) and boltoint(DInput[ch]) or 0
 end
 
 
+Delay = {}
+Delay.__index = Delay
+function Delay:new ( inDelay , neg )
+	local obj  = { counter = 0, launched = false, output = not neg, delay = inDelay , state = neg, rst = true}
+	setmetatable( obj, self )
+	return obj
+end
+function Delay:process ( start )
+	if start == true  then	
+	   if self.rst == true then
+		self.launched = true
+	        self.counter = 0
+	   end
+	end
+	self.rst = not start
+	if (self.launched == true ) then	
+		self.counter = self.counter + getDelay()
+		if ( self.counter < self.delay ) then
+			self.output  = self.state
+		else	
+			self.launched = false
+		end		
+	else 
+		self.output   = not self.state
+	end
+	return
+end
+function Delay:get ()
+	return self.output
+end
+
+CanInput = {}
+CanInput.__index = CanInput
+function CanInput:new ( addr )
+	local obj = { ADDR = addr, data={0,0,0,0,0,0,0,0}}
+	setmetatable( obj, self )
+        setCanFilter(addr)
+	return obj
+end
+function CanInput:process()
+   GetCanToTable( self.ADDR,self.data) 
+end
+function CanInput:getBit( nb, nbit)	
+	return ((self.data[nb] & (0x01<<(nbit-1))) >0 ) and true or false
+end
+
+
+init = function()
+	setOutConfig(13,8,0,10) 
+end
+	
+
 main = function () 
-	
-	KeyPad          = KeyPad8:new(0x15) 	
-        TurnSygnal      = TurnSygnals:new(500)  	
-	CAN_OUT1	= CanOut:new(0x505,900,8,0,0,0,0,0,0,0,0)
+        Delay10s     	= Delay:new( 10000,true )  	
+	CAN_TEMP        = CanInput:new(0x028)
 	while true do 
-			KeyPad:process()    	
-		      	CAN_OUT1:process()	
-		        --can out data
-		        DIN_STATE =  igetDIN(1) | igetDIN(2)<<1 | igetDIN(3)<<2 | igetDIN(4)<<3 | igetDIN(5)<<4| igetDIN(6)<<5 | igetDIN(7)<<6 | igetDIN(8)<<7    
-	 	      	DIN_STATE1 = igetDIN(9) | igetDIN(10)<<1 | igetDIN(11)<<2 
-			CAN_OUT1:setFrame(DIN_STATE,DIN_STATE1) 		
-	
+			Delay10s:process( true ) 
+			CAN_TEMP:process()		
+		        setOut( 13 , Delay10s:get()  or  CAN_TEMP:getBit(1,1))
 			brigth = igetDIN( 2) << 4 
-		
-	                KeyPad:setBackLigthBrigth( brigth)
-
-		
-			--Turn signal
-			TurnSygnal:process( true , KeyPad:getToggle( 5 ), KeyPad:getToggle( 6 ),  KeyPad:getToggle( 7 ))  				
-	   	        KeyPad:resetToggle( 5, KeyPad:getToggle( 7 ) or KeyPad:getKey( 6 ) ) 
-			KeyPad:resetToggle( 6, KeyPad:getToggle( 7 ) or KeyPad:getKey( 5 ) ) 
-			KeyPad:setLedWhite( 5, TurnSygnal:getLeft() ) 
-			KeyPad:setLedWhite( 6, TurnSygnal:getRight() )		
-			KeyPad:setLedRed( 7, TurnSygnal:getAlarm() ) 
-			KeyPad:setLedGreen( 7, TurnSygnal:getAlarm() ) 
-		        setOut( 3 , TurnSygnal:getLeft()  or TurnSygnal:getAlarm() )
-		        setOut( 7 , TurnSygnal:getRight() or TurnSygnal:getAlarm() )
-	
-	--	        setOut(13, TurnSygnal:getAlarm() or TurnSygnal:getLeft() or TurnSygnal:getRight())
-
-				
+		    	CanSend(0x615,0x2F,0x03,0x20,0x02,brigth,0,0,0)				
 			Yield()
 	end		  	 	 
 end
