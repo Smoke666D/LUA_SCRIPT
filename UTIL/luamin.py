@@ -340,7 +340,7 @@ def luaMinNames ( data ):
     elif isinstance( node, astnodes.Assign ):
       for value in node.values:
         if isinstance( value, astnodes.AnonymousFunction ):
-          value.body = processTree( value.body, varList, None, True, True  );
+          value.body = processTree( value.body, varList, None, True, False  );
         elif isinstance( value, astnodes.Name ):
           value.id = getVarName( value.id, varList, True, None );
       for target in node.targets:
