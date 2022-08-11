@@ -1,26 +1,8 @@
--- KEYPAD8 NODE
---  lua_node_keyPad8.json
--- constructor:
---  inAdr - network address of the krypad in CAN field bus
--- process:
---  none
--- getKey:
---   get key state with number n ( number )
--- getToggle:
---   get toggle key state with number n ( number )
--- resetToggle:
---   reset key toggle state with number n ( number )
--- setLedRed:
---   set red led state ( boolean ) with number n ( number )
--- setLedGreen:
---   set green led state ( boolean ) with number n ( number )
--- setLedBlue:
---   set blue led state ( boolean ) with number n ( number )
 KeyPad8 = {}
 KeyPad8.__index = KeyPad8
 
 function KeyPad8:new( addr)
-      local obj = {key = 0x00, ADDR = addr, new = true,  tog= 0x00, old =0x00, ledRed=0x00,ledGreen=0x00, ledBlue =0x00, temp={0}, backligth = 0, led_brigth = 0}
+      local obj = {key = 0x00, ADDR = addr, new = true,  tog= 0x00, old =0x00, ledRed=0x00,ledGreen=0x00, ledBlue =0x00, temp={[1]=0}, backligth = 0, led_brigth = 0}
       setmetatable (obj, self) 
       setCanFilter(0x180 +addr)
       return obj

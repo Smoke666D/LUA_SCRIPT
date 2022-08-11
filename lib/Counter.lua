@@ -1,15 +1,3 @@
--- COUNTER NODE
---   lua_node_counter.json
--- constructor:
---   inMin    - minimum value ( number )
---   inMax    - maximum value ( number )
---   inReload - reload mode: true, stop mode: false ( boolean )
--- process:
---   inc - increment counter ( boolean )
---   dec - decriment counter ( boolean )
---   rst - reset counter ( boolean )
--- get:
---   counter value ( number )
 Counter = {}
 Counter.__index = Counter
 function Counter:new ( inMin, inMax, inDefault, inReload )

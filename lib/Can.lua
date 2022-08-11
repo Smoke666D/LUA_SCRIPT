@@ -3,7 +3,7 @@
 CanInput = {}
 CanInput.__index = CanInput
 function CanInput:new ( addr )
-	local obj = { ADDR = addr, data={0,0,0,0,0,0,0,0}}
+	local obj = { ADDR = addr, data={[1]=0,[2]=0,[3]=0,[4]=0,[5]=0,[6]=0,[7]=0,[8]=0}}
 	setmetatable( obj, self )
         setCanFilter(addr)
 	return obj
@@ -24,7 +24,7 @@ end
 CanOut = {}
 CanOut.__index = CanOut
 function CanOut:new ( addr , time , size, d1, d2, d3, d4, d5, d6, d7, d8)
-	local obj = { ADDR = addr, data={d1,d2,d3,d4,d5,d6,d7,d8}, delay = time, timer = 0, sz =size}
+	local obj = { ADDR = addr, data={[1]=d1,[2]=d2,[3]=d3,[4]=d4,[5]=d5,[6]=d6,[7]=d7,[8]=d8}, delay = time, timer = 0, sz =size}
 	setmetatable( obj, self )
 	return obj
 end
@@ -68,7 +68,7 @@ CanRequest = {}
 CanRequest.__index = CanRequest
 
 function CanRequest:new()
-	local obj = { del = 0, timeout =0, data = {0,0,0,0,0,0,0,0}}
+	local obj = { del = 0, timeout =0, data = {[1]=0,[2]=0,[3]=0,[4]=0,[5]=0,[6]=0,[7]=0,[8]=0}}
 	setmetatable( obj, self )
 	return obj
 

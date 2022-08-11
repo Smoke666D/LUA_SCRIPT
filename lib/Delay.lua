@@ -1,12 +1,3 @@
--- DELAY NODE
---  lua_node_delay.json
--- constructor:
---   inDelay - delay value in ms ( number )
--- process:
---   start - start delay counting. To reset timer
---           switch start to false after the delay ( boolean )
--- get:
---   finish of the delay ( boolean )
 Delay = {}
 Delay.__index = Delay
 function Delay:new ( inDelay , neg )

@@ -1,21 +1,3 @@
--- TURN SYGNALS NODE
---   lua_node_turnSygnals.json
--- constructor:
---   inDelay - delay for turn sygnal blinking ( number )
--- process:
---   enb   - enable sygnal from the ignition ( boolean )
---   left  - state of the left turning switch ( boolean )
---   right - state of the right turning switch ( boolean )
---   alarm - state of the alarm switch ( boolean )
--- getLeft:
---   control sygnal for the left turning light ( boolean )
--- getRight:
---   control sygnal for the right turning light ( boolean )
--- getAlarm:
---   control sygnal for the alarm light ( boolean )
-
-                                                
-
 
 TurnSygnals = {}
 TurnSygnals.__index = TurnSygnals

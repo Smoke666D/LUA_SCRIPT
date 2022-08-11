@@ -95,9 +95,9 @@ main = function ()
 			CAN_OUT5:process()		
 			CAN_OUT6:process()		
 			CAN_TEMP:process()		
-			can_temp = CAN_TEMP:getByte(1)  --Get fist byte from CAN. In LUA all numeration from 1. 
+			can_temp = CAN_TEMP:getByte(1) 
 	
-		        --can out data
+
 		        DIN_STATE =  igetDIN(1) | igetDIN(2)<<1 | igetDIN(3)<<2 | igetDIN(4)<<3 | igetDIN(5)<<4| igetDIN(6)<<5 | igetDIN(7)<<6 | igetDIN(8)<<7    
 	 	      	DIN_STATE1 = igetDIN(9) | igetDIN(10)<<1 | igetDIN(11)<<2 
 			CAN_OUT1:setFrame(DIN_STATE,DIN_STATE1) 		
@@ -113,56 +113,53 @@ main = function ()
 		
 	                KeyPad:setBackLigthBrigth( brigth)
 
-			--PREHEAT				
+
 			Delay8s:process( ignition ) 
 					    
 					    
-			Delay4s:process( ignition )  --4 sec time
-			Delay3s:process( ignition )  --3 sec time
-			Delay2s:process( ignition )  --2 sec time
-			Delay1s:process( ignition )  --1 sec time
+			Delay4s:process( ignition ) 
+			Delay3s:process( ignition ) 
+			Delay2s:process( ignition ) 
+			Delay1s:process( ignition ) 
 			pre_heat_on = ( Delay8s:get() and ( can_temp<40) ) or 
 			      ( Delay4s:get() and ( can_temp<50) ) or 
 			      ( Delay3s:get() and ( can_temp<60) ) or 
 			      ( Delay2s:get() and ( can_temp<70) ) or 
 			      ( Delay1s:get() and ( can_temp<100) )
 	   	       setOut(12,pre_heat_on)                		
---   		       setOut(13,pre_heat_on)                		
 
-			-- FAN
+
+
 			fan_on  =  KeyPad:getToggle( 4 )  or (ignition and (can_temp == 0 ))  or (can_temp > 125)
         	        KeyPad:setLedGreen( 4, KeyPad:getToggle( 4 ) ) 
 			setOut(14, fan_on  )
-			--Starter
+
 			Delay10s:process(starter)
 			starter_on = Delay10s:get() and ignition and (CAN_RPM:getWord(1) < 500)		
 			setOut(15, starter_on  )
 	
-			--FUELPUMP
 			setOut(11, ignition )		
-			--IGNITION
+
 			setOut(16, ignition )				
 			
-			--HEATER
-
-
-			-- HORN
-		        setOut(1, KeyPad:getKey( 1 ) )			-- HORN out set
-			KeyPad:setLedGreen(1,KeyPad:getKey( 1 ))        -- HORN LED on
 
 
 
-			--LIGTH switch
-					--inc             dec   res
+
+		        setOut(1, KeyPad:getKey( 1 ) )			
+			KeyPad:setLedGreen(1,KeyPad:getKey( 1 ))        
+
+
+
 			LigthCounter:process(KeyPad:getKey( 2 ), false, false)		
 			lowbeam  = ( LigthCounter:get() == 2) 
 			highbeam = ( LigthCounter:get() == 4) 
-		        setOut(8, lowbeam)			-- lowbeam out set
-			setOut(6, highbeam)			-- highbeam out set
-			KeyPad:setLedGreen(2,lowbeam)           -- lowbeam LED on
-			KeyPad:setLedBlue(2,highbeam)           -- highbeam LED on
+		        setOut(8, lowbeam)			
+			setOut(6, highbeam)			
+			KeyPad:setLedGreen(2,lowbeam)           
+			KeyPad:setLedBlue(2,highbeam)           
 	
-			--WASH
+
 	  		WiperCounter:process(KeyPad:getKey( 8 ), false, false)		
 			wiperstart = ( WiperCounter:get() == 2 )  		   
 			wiperpause = ( WiperCounter:get()  == 3) 
@@ -172,7 +169,7 @@ main = function ()
 			KeyPad:setLedBlue(8, wiperpause  ) 	
 			setOut(5, wiperstart or  wiperpause )	
 		
-			--Turn signal
+
 			TurnSygnal:process( true , KeyPad:getToggle( 5 ), KeyPad:getToggle( 6 ),  KeyPad:getToggle( 7 ))  				
 	   	        KeyPad:resetToggle( 5, KeyPad:getToggle( 7 ) or KeyPad:getKey( 6 ) ) 
 			KeyPad:resetToggle( 6, KeyPad:getToggle( 7 ) or KeyPad:getKey( 5 ) ) 
@@ -183,7 +180,7 @@ main = function ()
 		        setOut( 3 , TurnSygnal:getLeft()  or TurnSygnal:getAlarm() )
 		        setOut( 7 , TurnSygnal:getRight() or TurnSygnal:getAlarm() )
 	
-	--	        setOut(13, TurnSygnal:getAlarm() or TurnSygnal:getLeft() or TurnSygnal:getRight())
+
 
 
 			KeyPad:setLedGreen( 3, KeyPad:getToggle( 3 ) ) 
