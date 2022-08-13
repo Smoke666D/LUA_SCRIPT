@@ -16,5 +16,29 @@
     "CheckAnswer",
     "GetRequest",
     "GetRequestToTable"
+  ], 
+  "vars" : [
+    "do",
+    "if",
+    "in",
+    "or",
+    "and",
+    "end",
+    "for",
+    "nil",
+    "not",
+    "else",
+    "goto",
+    "then",
+    "true",
+    "break",
+    "false",
+    "local",
+    "while",
+    "until",
+    "elseif",
+    "repeat",
+    "return",
+    "function"
   ]
 }

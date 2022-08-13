@@ -26,9 +26,9 @@ characterForEscape = ['\r', '\n', '\t', '"', "'", '\\'];
 
 newLineCharacters  = [ '\r', '\n' ];
 
-minNamesList = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 
-                'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 
-                's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
+minNamesList = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 
+                'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 
+                'u', 'v', 'w', 'x', 'y', 'z'];
 
 allIdentStartChars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 
                       'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 
@@ -83,8 +83,11 @@ binaryPriority = {
   'or'  : [1,  1]
 };
 
-reservedNames = [ 'setmetatable', 'stop', 'self', 'type', 'coroutine', 'yield' ];
-resevedPacks  = [ 'base', 'package', 'coroutine', 'table', 'io', 'os', 'string', 'math', 'utf8', 'debug' ];
+reservedNames   = [ 'setmetatable', 'stop', 'self', 'type', 'coroutine', 'yield' ];
+resevedPacks    = [ 'base', 'package', 'coroutine', 'table', 'io', 'os', 'string', 'math', 'utf8', 'debug' ];
+reservedVars    = [];
+maxNameLength   = 4;
+reservedVarsSort = [];
 
 unaryPriority = 8;
 
@@ -180,26 +183,36 @@ def luaConvertTabsToSpaces ( data ):
   out = out.replace( '\t', ' ' );
   return out;
 #----------------------------------------------------------------------------------------
-def makeNewMinName ( index ):
-  length = 1;
-  border = len( minNamesList );
+def makeNewMinName ( index, check=False ):
+
+
+  base   = len( minNamesList );
+  number = index;
+  result = [];
   out    = '';
-  shift  = 0;
-  while ( index >= border ):
-    length += 1;
-    border += pow( len( minNamesList ), length )
-  border -= pow( len( minNamesList ), length )  
-  item    = index;
-  for i in range( length ):
-    item = item - border + shift;
-    if item >= len( minNamesList ):
-      shift = item // len( minNamesList );
-      item  = item - shift * len( minNamesList );
+  adder  = 0; 
+
+  if check == True:
+    for item in reservedVarsSort:
+      if number >= item:
+        adder += 1;
+  number += adder;      
+
+
+  if number == 0:
+    result.append( 0 );
+  else:  
+    while number != 0:
+      result.insert( 0, number % base );
+      number //= base;
+  for i in range( len( result ) ):
+    if len( result ) > 1 and i != ( len( result ) - 1):
+      ri = result[i] - 1;
     else:
-      shift = 0
-    out     = minNamesList[item] + out;
-    item   -= item;
-    border -= pow( len( minNamesList ), ( length - i - 1 ) );
+      ri = result[i];
+    out += minNamesList[ ri ];
+  if len( out ) > maxNameLength:
+    log( 'luamin', 'error', 'Too big number of the variables' );
   return out;
 
 class Name ():
@@ -224,7 +237,7 @@ def getVarName ( name, varList, isGlobal, className, debug=False ):
     if index == -1:
       varList.append( Name( name, isGlobal, className ) );
       index = len( varList ) - 1;
-    out = makeNewMinName( index );  
+    out = makeNewMinName( index, True );
   return out;
 
 def cleanVarList ( varList ):
@@ -400,6 +413,14 @@ def getExceptions ():
   data = json.loads( f.read() );
   for record in data['exceptions']:
     reservedNames.append( record )
+  for record in data['vars']:
+    reservedVars.append( record );
+    index = 0;
+    if len( record ) <= maxNameLength:
+      while ( record != makeNewMinName( index ) ):
+        index += 1;
+      reservedVarsSort.append( index );  
+  reservedVarsSort.sort();
   return;  
 #----------------------------------------------------------------------------------------
 def minlua ( args ):
