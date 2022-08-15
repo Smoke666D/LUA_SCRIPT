@@ -166,7 +166,7 @@ def luaOpenScript ( path ):
 #----------------------------------------------------------------------------------------
 def luaDeleteComments ( data ):
   out = data;
-  while out.find( '--' ) > 0:
+  while out.find( '--' ) >= 0:
     start = out.find( '--' );
     multiline = out[start:].find( '[[' );
     newline   = out[start:].find( '\n' )
@@ -184,21 +184,16 @@ def luaConvertTabsToSpaces ( data ):
   return out;
 #----------------------------------------------------------------------------------------
 def makeNewMinName ( index, check=False ):
-
-
   base   = len( minNamesList );
   number = index;
   result = [];
   out    = '';
   adder  = 0; 
-
   if check == True:
     for item in reservedVarsSort:
       if number >= item:
         adder += 1;
   number += adder;      
-
-
   if number == 0:
     result.append( 0 );
   else:  
