@@ -49,7 +49,6 @@ def addIncludesToScript ( path, includes, output ):
     f    = open( name, 'w', encoding='utf-8' );
     f.write( out );
     f.close();
-    name += '(' + str( border ) + ')';
   return [error, name];
 #----------------------------------------------------------------------------------------
 def analizInput ( args ):
