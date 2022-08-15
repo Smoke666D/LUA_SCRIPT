@@ -6,21 +6,21 @@ function Delay:new ( inDelay , neg )
 	return obj
 end
 function Delay:process ( start )
-	if start == true  then	
+	if start == true  then
 	   if self.rst == true then
 		self.launched = true
 	        self.counter = 0
 	   end
 	end
 	self.rst = not start
-	if (self.launched == true ) then	
+	if (self.launched == true ) then
 		self.counter = self.counter + getDelay()
 		if ( self.counter < self.delay ) then
 			self.output  = self.state
-		else	
+		else
 			self.launched = false
-		end		
-	else 
+		end
+	else
 		self.output   = not self.state
 	end
 	return
@@ -28,4 +28,3 @@ end
 function Delay:get ()
 	return self.output
 end
-
