@@ -43,11 +43,13 @@ def addIncludesToScript ( path, includes, output ):
     for include in includes:
       out = out + '----------------------------------------------------------------------------------------------------------------------\n';
       out = out + include + '\n';
+    border = out.count( '\n' );
     out  = out + buffer;
     name = os.path.join( output, makeFileName( path, 'link', 'lua' ) );
     f    = open( name, 'w', encoding='utf-8' );
     f.write( out );
     f.close();
+    name += '(' + str( border ) + ')';
   return [error, name];
 #----------------------------------------------------------------------------------------
 def analizInput ( args ):
