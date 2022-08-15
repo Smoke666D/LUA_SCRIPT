@@ -1,11 +1,11 @@
 {
   "include" : [   
-    "lib\\PDM20.lua",
-    "lib\\KeyPad8.lua",
-    "lib\\Can.lua",
-    "lib\\Wiper.lua",
-    "lib\\Counter.lua",
-    "lib\\Delay.lua",
-    "lib\\TurnSygnals.lua"
+    "PDM20.lua",
+    "KeyPad8.lua",
+    "Can.lua",
+    "Wiper.lua",
+    "Counter.lua",
+    "Delay.lua",
+    "TurnSygnals.lua"
   ]
 }
