@@ -1,3 +1,3 @@
-function test()
-	return 1
+function test( number )
+	self.her[number] = 2
 end

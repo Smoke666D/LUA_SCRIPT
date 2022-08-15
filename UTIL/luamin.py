@@ -252,12 +252,16 @@ def isEndPoint ( node ):
 
 def processEndPoint ( node, varList, className, glob, debug=False ):
   if isinstance( node, astnodes.Index ):
+    if 'id' in dir( node.idx ):
+      node.idx.id = getVarName( node.idx.id, varList, glob, None, debug ); 
     if isinstance( node.value, astnodes.Name ):
       if node.value.id == 'self':
         node.idx.id = getVarName( node.idx.id, varList, glob, className );
       else:
         if 'id' in dir( node.idx ):
           node.idx.id = getVarName( node.idx.id, varList, glob, None );  
+        else:
+          print( node )
         node.value.id = getVarName( node.value.id, varList, True, None );    
     else:
       processEndPoint( node.value, varList, className, glob, debug );
@@ -339,6 +343,9 @@ def luaMinNames ( data ):
   varList = [];
   first   = True;
   # Walk thrue the blocks of file
+  #print( tree.body.body[0].body.body[0].targets[0].idx.to_json() );
+  #print( tree.body.body[0].body.body[0].targets[0].value.idx.to_json() );
+  #print( tree.body.body[0].body.body[0].targets[0].value.value.to_json() );
   for node in tree.body.body:
     #---------------- Functions ----------------
     if isinstance( node, astnodes.Function ):
