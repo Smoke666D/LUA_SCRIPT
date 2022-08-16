@@ -263,8 +263,6 @@ def isEndPoint ( node ):
 
 def processEndPoint ( node, varList, availableVarList, className, glob, debug=False ):
   if isinstance( node, astnodes.Index ):
-    if 'id' in dir( node.idx ):
-      node.idx.id = getVarName( node.idx.id, varList, availableVarList, glob, None, debug ); 
     if isinstance( node.value, astnodes.Name ):
       if node.value.id == 'self':
         node.idx.id = getVarName( node.idx.id, varList, availableVarList, glob, className );
