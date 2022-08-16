@@ -22,6 +22,6 @@ end
 function CanInput:process()
   GetCanToTable( self.ADDR,self.data)
 end
-function CanInput:getBit( nb, nbit)
-  return ((self.data[nb] & (0x01<<(nbit-1))) >0 ) and true or false
+function CanInput:getBit( nb, nbit )
+  return (self.data[nb] & (1<<nbit)) > 0
 end

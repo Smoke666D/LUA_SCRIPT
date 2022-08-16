@@ -272,6 +272,7 @@ def processEndPoint ( node, varList, availableVarList, className, glob, debug=Fa
         node.value.id = getVarName( node.value.id, varList, availableVarList, True, None );    
     else:
       processEndPoint( node.value, varList, availableVarList, className, glob, debug );
+      processEndPoint( node.idx, varList, availableVarList, className, glob, debug );
   elif isinstance( node, astnodes.Name ):
     node.id = getVarName( node.id, varList, availableVarList, glob, None, debug ); 
   return node;
