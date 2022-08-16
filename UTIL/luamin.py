@@ -86,8 +86,6 @@ binaryPriority = {
 reservedNames   = [ 'setmetatable', 'stop', 'self', 'type', 'coroutine', 'yield' ];
 resevedPacks    = [ 'base', 'package', 'coroutine', 'table', 'io', 'os', 'string', 'math', 'utf8', 'debug' ];
 reservedVars    = [];
-maxNameLength   = 4;
-reservedVarsSort = [];
 
 unaryPriority = 8;
 
@@ -177,23 +175,16 @@ def luaDeleteComments ( data ):
       shift = out[start:].find( '\n' ) + 1;
       out   = out[:start] + out[start+shift:];
   return out;
-
 def luaConvertTabsToSpaces ( data ):
   out = data;
   out = out.replace( '\t', ' ' );
   return out;
 #----------------------------------------------------------------------------------------
-def makeNewMinName ( index, check=False ):
+def makeNewMinName ( index ):
   base   = len( minNamesList );
   number = index;
   result = [];
-  out    = '';
-  adder  = 0; 
-  if check == True:
-    for item in reservedVarsSort:
-      if number >= item:
-        adder += 1;
-  number += adder;      
+  out    = '';     
   if number == 0:
     result.append( 0 );
   else:  
@@ -206,9 +197,31 @@ def makeNewMinName ( index, check=False ):
     else:
       ri = result[i];
     out += minNamesList[ ri ];
-  if len( out ) > maxNameLength:
-    log( 'luamin', 'error', 'Too big number of the variables' );
   return out;
+def isNameReserved ( name ):
+  res = False;
+  for reserv in reservedVars:
+    if name == reserv:
+      res = True;
+      break;
+  return res;
+def initAvailableVarList ( size ):
+  out = [];
+  counter = 0;
+  for i in range( size ):
+    while isNameReserved( makeNewMinName( counter ) ) == True:
+      counter += 1;
+    out.append( makeNewMinName( counter ) );
+    counter += 1;
+  return out;
+def getMinName ( index, varList ):
+  res = 'error';
+  if ( index < len( varList ) ):
+    res = varList[index];
+  return res;
+
+
+
 
 class Name ():
   def __init__( self, name, isGlobal, className ):
@@ -219,7 +232,7 @@ class Name ():
     print( str( self.name ) + '|' + str( self.isGlobal ) + '|' + str( self.className ) );
     return;
 
-def getVarName ( name, varList, isGlobal, className, debug=False ):
+def getVarName ( name, varList, availableVarList, isGlobal, className, debug=False ):
   out = name;
   if name not in reservedNames:
     index = -1
@@ -232,9 +245,8 @@ def getVarName ( name, varList, isGlobal, className, debug=False ):
     if index == -1:
       varList.append( Name( name, isGlobal, className ) );
       index = len( varList ) - 1;
-    out = makeNewMinName( index, True );
+    out = getMinName( index, availableVarList );
   return out;
-
 def cleanVarList ( varList ):
   out = [];
   for item in varList:
@@ -246,35 +258,39 @@ def cleanVarList ( varList ):
     else:
       out.append( item );    
   return out;    
-
 def isEndPoint ( node ):
   return isinstance( node, astnodes.Index ) or isinstance( node, astnodes.Name );
 
-def processEndPoint ( node, varList, className, glob, debug=False ):
+def processEndPoint ( node, varList, availableVarList, className, glob, debug=False ):
   if isinstance( node, astnodes.Index ):
     if 'id' in dir( node.idx ):
-      node.idx.id = getVarName( node.idx.id, varList, glob, None, debug ); 
+      node.idx.id = getVarName( node.idx.id, varList, availableVarList, glob, None, debug ); 
     if isinstance( node.value, astnodes.Name ):
       if node.value.id == 'self':
-        node.idx.id = getVarName( node.idx.id, varList, glob, className );
+        node.idx.id = getVarName( node.idx.id, varList, availableVarList, glob, className );
       else:
         if 'id' in dir( node.idx ):
-          node.idx.id = getVarName( node.idx.id, varList, glob, None );  
-        else:
-          print( node )
-        node.value.id = getVarName( node.value.id, varList, True, None );    
+          node.idx.id = getVarName( node.idx.id, varList, availableVarList, glob, None );  
+        node.value.id = getVarName( node.value.id, varList, availableVarList, True, None );    
     else:
-      processEndPoint( node.value, varList, className, glob, debug );
+      processEndPoint( node.value, varList, availableVarList, className, glob, debug );
   elif isinstance( node, astnodes.Name ):
-    node.id = getVarName( node.id, varList, glob, None, debug ); 
-  return node;  
+    node.id = getVarName( node.id, varList, availableVarList, glob, None, debug ); 
+  return node;
+
+def calculateVarNumber ( tree ):
+  counter = 0;
+  for node in ast.walk( tree ):
+    if isinstance( node, astnodes.Name ):
+      counter += 1;
+  return counter;
 
 astClassFields = [ 'left', 'right', 'targets', 'values', 'test', 
                    'body', 'orelse', 'target', 'start', 'stop', 
                    'step', 'iter', 'args', 'func', 'fields', 
                    'operand', 'key', 'value', 'source'  ];
 
-def processTree ( node, varList, className, glob, debug=False ):
+def processTree ( node, varList, availableVarList, className, glob, debug=False ):
   if debug:
     if ( 'to_json' in dir( node ) ):
       if isinstance( node, astnodes.Invoke ):
@@ -285,30 +301,28 @@ def processTree ( node, varList, className, glob, debug=False ):
   #      if var != None:
   #        var.log();
   #    print('+++')
-    processEndPoint( node, varList, className, glob, debug );
+    processEndPoint( node, varList, availableVarList, className, glob, debug );
   else:
     if type( node ) == list:
       for item in node:
-        item = processTree( item, varList, className, glob, debug );
+        item = processTree( item, varList, availableVarList, className, glob, debug );
     else:
       for field in astClassFields:
         if field in dir( node ):
           atr = getattr( node, field );
-          atr = processTree( atr, varList, className, glob, debug );
+          atr = processTree( atr, varList, availableVarList, className, glob, debug );
   return node;  
-
-
-def processingMethod ( method, varList, debug=False ):
+def processingMethod ( method, varList, availableVarList, debug=False ):
   out = method;
   # Set Method name and arguments
   className     = out.source.id;
   methodName    = out.name.id;
-  out.source.id = getVarName( out.source.id, varList, True, None );
-  out.name.id   = getVarName( out.name.id, varList, False, className );
+  out.source.id = getVarName( out.source.id, varList, availableVarList, True, None );
+  out.name.id   = getVarName( out.name.id, varList, availableVarList, False, className );
 
   for arg in out.args:
     if 'id' in dir( arg ):
-      arg.id = getVarName( arg.id, varList, False, None )   
+      arg.id = getVarName( arg.id, varList, availableVarList, False, None )   
   
   if methodName == 'new':
     obj = '';
@@ -316,7 +330,7 @@ def processingMethod ( method, varList, debug=False ):
       if isinstance( node, astnodes.Call ):
         if node.func.id == 'setmetatable':
           obj = node.args[0].id;
-          getVarName( node.args[0].id, varList, False, None )
+          getVarName( node.args[0].id, varList, availableVarList, False, None )
     isTableNext = False;      
     for node in ast.walk( out ): 
       if isinstance( node, astnodes.Name ):
@@ -325,16 +339,15 @@ def processingMethod ( method, varList, debug=False ):
       if isinstance( node, astnodes.Table ) and isTableNext:
         isTableNext = False;
         for field in node.fields:
-          getVarName( field.key.id, varList, False, className );
-  out.body = processTree( out.body, varList, className, False, debug );
+          getVarName( field.key.id, varList, availableVarList, False, className );
+  out.body = processTree( out.body, varList, availableVarList, className, False, debug );
   return out;
-
-def processLuaFunction ( function, varList ):
+def processLuaFunction ( function, varList, availableVarList ):
   out = function;
-  out.name.id = getVarName( out.name.id, varList, True, None );
+  out.name.id = getVarName( out.name.id, varList, availableVarList, True, None );
   for arg in out.args:
-    arg.id = getVarName( arg.id, varList, False, None );
-  out.body = processTree( out.body, varList, None, False );
+    arg.id = getVarName( arg.id, varList, availableVarList, False, None );
+  out.body = processTree( out.body, varList, availableVarList, None, False );
   return out;
 
 def luaMinNames ( data ):
@@ -342,31 +355,35 @@ def luaMinNames ( data ):
   tree    = ast.parse( out );
   varList = [];
   first   = True;
+  availableVarList = [];
+  #-------- INIT --------
+  getExceptions();
+  n = calculateVarNumber( tree );
+  log( 'luamin', 'info', 'There are ' + str( n ) + ' variables in the script' );
+  availableVarList = initAvailableVarList( n );
+  #----------------------
   # Walk thrue the blocks of file
-  #print( tree.body.body[0].body.body[0].targets[0].idx.to_json() );
-  #print( tree.body.body[0].body.body[0].targets[0].value.idx.to_json() );
-  #print( tree.body.body[0].body.body[0].targets[0].value.value.to_json() );
   for node in tree.body.body:
     #---------------- Functions ----------------
     if isinstance( node, astnodes.Function ):
-      node    = processLuaFunction( node, varList );
+      node    = processLuaFunction( node, varList, availableVarList );
       varList = cleanVarList( varList );
     #--------------- Global vars ---------------
     elif isinstance( node, astnodes.Assign ):
       for value in node.values:
         if isinstance( value, astnodes.AnonymousFunction ):
-          value.body = processTree( value.body, varList, None, True, False  );
+          value.body = processTree( value.body, varList, availableVarList, None, True, False  );
         elif isinstance( value, astnodes.Name ):
-          value.id = getVarName( value.id, varList, True, None );
+          value.id = getVarName( value.id, varList, availableVarList, True, None );
       for target in node.targets:
         if isinstance( target, astnodes.Index ):
-          target.value.id = getVarName( target.value.id, varList, True, None );
+          target.value.id = getVarName( target.value.id, varList, availableVarList, True, None );
         elif isinstance( target, astnodes.Name ):
-          target.id = getVarName( target.id, varList, True, None );
+          target.id = getVarName( target.id, varList, availableVarList, True, None );
       varList = cleanVarList( varList );    
     #-------------- Class methods --------------
     elif isinstance( node, astnodes.Method ):
-      node    = processingMethod( node, varList, False );
+      node    = processingMethod( node, varList, availableVarList, False );
       varList = cleanVarList( varList );
     #-------------------------------------------
   out = ast.to_lua_source( tree );
@@ -417,16 +434,9 @@ def getExceptions ():
     reservedNames.append( record )
   for record in data['vars']:
     reservedVars.append( record );
-    index = 0;
-    if len( record ) <= maxNameLength:
-      while ( record != makeNewMinName( index ) ):
-        index += 1;
-      reservedVarsSort.append( index );  
-  reservedVarsSort.sort();
   return;  
 #----------------------------------------------------------------------------------------
 def minlua ( args ):
-  getExceptions();
   data  = analizInput( args );
   error = checkInputData( data );
   flags = '';
