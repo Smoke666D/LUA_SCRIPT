@@ -35,6 +35,9 @@ function setOut( ch, data)
 		DOut[ch] = data;
 	end
 end
+function getOut( ch )
+	return DOut[ch]
+end
 function waitDIN( ch, data, timeout)
 	local del = 0
 	while true do
