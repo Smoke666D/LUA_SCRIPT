@@ -1,3 +1,4 @@
+CAN_EXT_ID = 0x80000000
 CanInput = {}
 CanInput.__index = CanInput
 function CanInput:new ( addr )
