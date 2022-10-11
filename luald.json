@@ -6,6 +6,7 @@
     "Wiper.lua",
     "Counter.lua",
     "Delay.lua",
-    "TurnSygnals.lua"
+    "TurnSygnals.lua",
+    "dashboard.lua"
   ]
 }

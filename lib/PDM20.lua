@@ -1,4 +1,3 @@
-
 delayms = 0
 DOut =  { [1] = false,[2] = false,[3] = false,[4] = false,[5] = false,[6] = false,[7] =false,[8] =false,[9] =false,[10] =false,[11] = false,[12] =false,[13]=false,[14] =false,[15] =false,[16]=false,[17]=false,[18]= false,[19]=false,[20]=false}
 DInput = { [1]=false,[2]=false,[3]=false,[4]=false,[5]=false,[6]=false,[7]=false,[8]=false,[9]=false,[10]=false,[11]=false}
@@ -8,6 +7,9 @@ function Yield ()
 Cur[9],Cur[10],Cur[11],Cur[12],Cur[13],Cur[14],Cur[15],Cur[16],Cur[17],Cur[18],Cur[19],Cur[20] = coroutine.yield(DOut[20],DOut[19],DOut[18],DOut[17],DOut[16],
 DOut[15],DOut[14],DOut[13],DOut[12],DOut[11],DOut[10],DOut[9],DOut[8],DOut[7],DOut[6],DOut[5],DOut[4],DOut[3],DOut[2],DOut[1])
 delayms = delayms/100
+end
+function getOut( ch )
+	return (ch<=20) and ch or 0
 end
 function boltoint( data)
    return (data) and 1 or 0
@@ -29,6 +31,12 @@ function getCurFB( ch )
 end
 function getCurSB( ch )
   return (Cur[ch]*100)%100//1
+end
+function getCurLSB10( ch )
+	return (((Cur[ch]*10)//1) & 0xFF )
+end
+function getCurMSB10( ch )
+	return  (( Cur[ch]*10//1 ) >>8 )
 end
 function setOut( ch, data)
 	if ch <=20 then
