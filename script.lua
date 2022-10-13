@@ -63,7 +63,7 @@ main = function ()
 	local CAN_ALARM 	= CanInput:new(0x034)
 	local DASH		= Dashboard:new(0x00,1000)
 	
-	DASH:init("PDM20","LIGTH","WIPER")
+	DASH:init("PDM20","HORN","WASHER","LEFT TURN","REAR GEAR LIGHT","WIPERS","HIGHBEAM","RIGHTTURN","LOWBEAM","N/A","N/A","FUELPUMP","PREHEAT","PREHEAT","COOLFAN","STARTER","IGNITION","REAR_PDM")
 	local temp_out		= true	
 	local counter		= 0
 --	local Wiper 	        = Wipers:new(2000,3)
