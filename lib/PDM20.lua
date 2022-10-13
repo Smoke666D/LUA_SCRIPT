@@ -1,6 +1,7 @@
 delayms = 0
 DOut =  { [1] = false,[2] = false,[3] = false,[4] = false,[5] = false,[6] = false,[7] =false,[8] =false,[9] =false,[10] =false,[11] = false,[12] =false,[13]=false,[14] =false,[15] =false,[16]=false,[17]=false,[18]= false,[19]=false,[20]=false}
 DInput = { [1]=false,[2]=false,[3]=false,[4]=false,[5]=false,[6]=false,[7]=false,[8]=false,[9]=false,[10]=false,[11]=false}
+DOUTSTATUS = { [1]=0,[2]=0}
 DIN = 0
 Cur = {[1]= 0, [2]=0, [3]=0,[4]= 0,[5]= 0, [6]=0, [7]=0, [8]=0, [9]=0, [10]=0, [11]=0,[12]= 0,[13]= 0, [14]=0, [15]=0, [16]=0,[17]= 0,[18]= 0, [19]=0,[20]= 0 }
 function Yield ()
@@ -10,6 +11,15 @@ Cur[9],Cur[10],Cur[11],Cur[12],Cur[13],Cur[14],Cur[15],Cur[16],Cur[17],Cur[18],C
 DOut[15],DOut[14],DOut[13],DOut[12],DOut[11],DOut[10],DOut[9],DOut[8],DOut[7],DOut[6],DOut[5],DOut[4],DOut[3],DOut[2],DOut[1])
 delayms = delayms/100
 end
+function getOutStatus( ch )
+   if ch <11 then
+	return (DOUTSTATUS[1] >> (ch-1)*2) & 0x03
+   elseif ch <=20 then
+	return (DOUTSTATUS[2] >> (ch-11)*2) & 0x03
+   end
+end
+
+
 function getOut( ch )
 	return (ch<=20) and ch or 0
 end
