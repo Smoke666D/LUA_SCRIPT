@@ -30,13 +30,13 @@ init = function()
         setDINConfig(9,2)
         setDINConfig(10,1)
         setDINConfig(11,1)
-        CAN_EXCHENGE    = CanRequest:new()
-	if ( CAN_EXCHENGE:waitCAN(0x615,0x595,8000,0x2F,0x03,0x20,0x03,0x06,0x00,0x00,0x00) == true) then
-		local dd1,dd2,dd3,dd4,dd5,dd6,dd7,dd8 = CAN_EXCHENGE:getData()
-		if dd1 == 0x60 then
-		        setOut(13,true )
-		end
-	end
+--        CAN_EXCHENGE    = CanRequest:new()
+--	if ( CAN_EXCHENGE:waitCAN(0x615,0x595,8000,0x2F,0x03,0x20,0x03,0x06,0x00,0x00,0x00) == true) then
+--		local dd1,dd2,dd3,dd4,dd5,dd6,dd7,dd8 = CAN_EXCHENGE:getData()
+--		if dd1 == 0x60 then
+--		        setOut(13,true )
+--		end
+--	end
 end
 ----
 main = function ()

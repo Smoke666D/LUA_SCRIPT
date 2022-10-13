@@ -22,7 +22,7 @@ end
 
 function getDIN( ch)
 	if (ch <= 11 ) then
-	   return (((DIN >> (ch-1)) & 0x1) == 1 ) true or false
+	   return (((DIN >> (ch-1)) & 0x1) == 1 ) or true and false
 	else
 	  return false
 	end
