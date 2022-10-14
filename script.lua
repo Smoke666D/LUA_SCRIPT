@@ -12,6 +12,7 @@ init = function()
 	setOutConfig(11,8,0,10)
 	setOutConfig(12,8,0,10)
 	setOutConfig(13,8,0,10)
+	OutResetConfig(13,0,3000)
 	setOutConfig(14,8,0,10)
 	setOutConfig(15,8,0,10)
 	setOutConfig(16,8,0,10)
@@ -61,20 +62,21 @@ main = function ()
 	local CAN_CH2		= CanInput:new(0x511)
 	local CAN_CH3         	= CanInput:new(0x5F2)
 	local CAN_ALARM 	= CanInput:new(0x034)
-	local DASH		= Dashboard:new(0x00,1000)
+	local DASH		= Dashboard:new(0x00,500)
 	
-	DASH:init("PDM20","HORN","WASHER","LEFT TURN","REAR GEAR LIGHT","WIPERS","HIGHBEAM","RIGHTTURN","LOWBEAM","N/A","N/A","FUELPUMP","PREHEAT","PREHEAT","COOLFAN","STARTER","IGNITION","REAR_PDM")
+	DASH:init("PDM20","HORN","WASHER","LEFT TURN","REAR GEAR LIGHT","WIPERS","HIGHBEAM","RIGHTTURN","LOWBEAM","N/A","N/A","FUELPUMP","PREHEAT","PREHEAT","COOLFAN","STARTER","IGNITION")
+
 	local temp_out		= true	
 	local counter		= 0
 --	local Wiper 	        = Wipers:new(2000,3)
 	while true do
 			DASH:process()
-			counter = counter + 1
-			if counter == 1000 then
-				counter = 0
-				temp_out = not temp_out
+--			counter = counter + 1
+--			if counter == 1000 then
+--				counter = 0
+--				temp_out = not temp_out
 				setOut(13,temp_out)
-			end
+--			end
 			
 			KeyPad:process()
 			CAN_CH2:process()
