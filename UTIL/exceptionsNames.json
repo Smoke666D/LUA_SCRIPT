@@ -17,7 +17,12 @@
     "sendCandRequest",
     "CheckAnswer",
     "GetRequest",
-    "GetRequestToTable"
+    "GetRequestToTable",
+    "SetEEPROM",
+    "GetEEPROM",
+    "ConfigCan",
+    "EXT_CAN_ID",
+    "getOut"
   ], 
   "vars" : [
     "do",

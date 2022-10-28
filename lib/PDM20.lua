@@ -16,29 +16,25 @@ function getOutStatus( ch )
 	return (DOUTSTATUS[1] >> (ch-1)*2) & 0x03
    elseif ch <=20 then
 	return (DOUTSTATUS[2] >> (ch-11)*2) & 0x03
-   end     
+   end
 --     return DOut[ch] == true and 0x01 or 0x00
 end
-
-
 function boltoint( data)
    return (data) and 1 or 0
 end
 function getDelay()
 	return delayms
 end
-
 function getDIN( ch)
 	if (ch <= 11 ) then
 	   return (((DIN >> (ch-1)) & 0x1) == 1 ) or true and false
 	else
 	  return false
 	end
-	
 --	return (ch<11) and DInput[ch] or false
 end
 function igetDIN( ch)
-  	if ch <= 11 then
+	if ch <= 11 then
 	   return ((DIN >> (ch-1)) & 0x1)
 	else
 	  return 0

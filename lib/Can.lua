@@ -34,11 +34,10 @@ function CanInput:process()
 	   if  (self.MASK & 0x40) then  self.data[7] = self.DefData[7] end
 	   if  (self.MASK & 0x80) then  self.data[8] = self.DefData[8] end
            self.timer = 0
-	end	
+	end
    else
        self.timer = 0
    end
-
 end
 function CanInput:getBit( nb, nbit)
 	return ((self.data[nb] & (0x01<<(nbit-1))) >0 ) and true or false
@@ -52,7 +51,7 @@ end
 CanOut = {}
 CanOut.__index = CanOut
 function CanOut:new ( addr , time , size, d1, d2, d3, d4, d5, d6, d7, d8)
-	local obj = { ADDR = addr, 
+	local obj = { ADDR = addr,
 		      data = { [1]= (d1 ~= nil) and d1 or 0,
 			       [2]= (d2 ~= nil) and d2 or 0,
 			       [3]= (d3 ~= nil) and d3 or 0,
@@ -61,8 +60,8 @@ function CanOut:new ( addr , time , size, d1, d2, d3, d4, d5, d6, d7, d8)
 			       [6]= (d6 ~= nil) and d6 or 0,
 			       [7]= (d7 ~= nil) and d7 or 0,
 			       [8]= (d8 ~= nil) and d8 or 0,
-			}, 
-			delay = ( time ~= nil ) and time or 100, 
+			},
+			delay = ( time ~= nil ) and time or 100,
 			timer = 0,
 			sz = ( size ~= nil) and size or 8
 			}
