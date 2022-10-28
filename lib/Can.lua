@@ -52,7 +52,20 @@ end
 CanOut = {}
 CanOut.__index = CanOut
 function CanOut:new ( addr , time , size, d1, d2, d3, d4, d5, d6, d7, d8)
-	local obj = { ADDR = addr, data={[1]=d1,[2]=d2,[3]=d3,[4]=d4,[5]=d5,[6]=d6,[7]=d7,[8]=d8}, delay = time, timer = 0, sz =size}
+	local obj = { ADDR = addr, 
+		      data = { [1]= (d1 ~= nil) and d1 or 0,
+			       [2]= (d2 ~= nil) and d2 or 0,
+			       [3]= (d3 ~= nil) and d3 or 0,
+			       [4]= (d4 ~= nil) and d4 or 0,
+			       [5]= (d5 ~= nil) and d5 or 0,
+			       [6]= (d6 ~= nil) and d6 or 0,
+			       [7]= (d7 ~= nil) and d7 or 0,
+			       [8]= (d8 ~= nil) and d8 or 0,
+			}, 
+			delay = ( time ~= nil ) and time or 100, 
+			timer = 0,
+			sz = ( size ~= nil) and size or 8
+			}
 	setmetatable( obj, self )
 	return obj
 end
