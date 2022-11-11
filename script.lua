@@ -1,5 +1,5 @@
 init = function()
-        ConfigCan(1,500);
+        ConfigCan(1,1000);
         setOutConfig(1,10,2000,60)
 	setOutConfig(2,10,2000,60)
 	setOutConfig(3,10,2000,60)
@@ -13,7 +13,7 @@ init = function()
 	setOutConfig(11,8,0,10)
 	setOutConfig(12,8,0,10)
 	setOutConfig(13,8,0,10)
-	OutResetConfig(13,0,3000)
+	OutResetConfig(13,1,0)
 	setOutConfig(14,8,0,10)
 	setOutConfig(15,8,0,10)
 	setOutConfig(16,8,0,10)
@@ -71,15 +71,24 @@ main = function ()
 
 	local temp_out		= true	
 	local counter		= 0
---	local Wiper 	        = Wipers:new(2000,3)
+	local Wiper 	        = Wipers:new(2000,3)
+	local RPM1		= 0	
 	while true do
 			DASH:process()
---			counter = counter + 1
---			if counter == 1000 then
---				counter = 0
---				temp_out = not temp_out
+			RPM1 = getRPM(1)
+		        if RPM1 < 725 then
+				setOut(14, true  )
+				setOut(15, false  )
+			else
+				setOut(14, false  )
+				setOut(15, true  )
+			end
+			counter = counter + 1
+			if counter == 20 then
+				counter = 0
+				temp_out = not temp_out
 				setOut(13,temp_out)
---			end
+			end
 			
 			KeyPad:process()
 			CAN_CH2:process()
@@ -89,7 +98,7 @@ main = function ()
 			local starter  = CAN_CH3:getBit(1,4)
 			local ignition = CAN_CH3:getBit(1,1)
 			CAN_ALARM:process()
---			CAN_OUT1:process()
+			CAN_OUT1:process()
 --		        CAN_OUT2:process()
 --		        CAN_OUT3:process()
 --		        CAN_OUT4:process()
