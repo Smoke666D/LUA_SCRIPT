@@ -1,19 +1,21 @@
 init = function()
         ConfigCan(1,1000);
-        setOutConfig(1,10,2000,60)
-	setOutConfig(2,10,2000,60)
-	setOutConfig(3,10,2000,60)
-	setOutConfig(4,5,2000,60)
-	setOutConfig(5,5,2000,60)
-	setOutConfig(6,5,2000,60)
-	setOutConfig(7,5,2000,60)
-	setOutConfig(8,10,2000,60)
+        setOutConfig(1,45,0,60)
+	OutResetConfig(1,1,0)
+	setOutConfig(2,20,0,60)
+	setOutConfig(3,20,0,60)
+	setOutConfig(4,20,0,60)
+	setOutConfig(5,20,0,60)
+	setOutConfig(6,20,0,60)
+	setOutConfig(7,20,0,60)
+	setOutConfig(8,20,0,60)
 	setOutConfig(9,8,0,10)
 	setOutConfig(10,8,0,10)
 	setOutConfig(11,8,0,10)
 	setOutConfig(12,8,0,10)
-	setOutConfig(13,8,0,10)
+	setOutConfig(13,10,0,30)
 	OutResetConfig(13,1,0)
+
 	setOutConfig(14,8,0,10)
 	setOutConfig(15,8,0,10)
 	setOutConfig(16,8,0,10)
@@ -29,7 +31,7 @@ init = function()
         setDINConfig(6,1)
         setDINConfig(7,1)
         setDINConfig(8,1)
-        setDINConfig(9,2)
+        setDINConfig(9,1)
         setDINConfig(10,1)
         setDINConfig(11,1)
 --        SetEEPROM(0x01,0x6743)
@@ -67,29 +69,43 @@ main = function ()
 	local CAN_ALARM 	= CanInput:new(0x034)
 	local DASH		= Dashboard:new(0x00,500)
 	
+
 	DASH:init("PDM20","HORN","WASHER","LEFT TURN","REAR GEAR LIGHT","WIPERS","HIGHBEAM","RIGHTTURN","LOWBEAM","N/A","N/A","FUELPUMP","PREHEAT","PREHEAT","COOLFAN","STARTER","IGNITION")
 
 	local temp_out		= true	
+	local temp_out1		= true
 	local counter		= 0
+	local counter1		= 0
 	local Wiper 	        = Wipers:new(2000,3)
-	local RPM1		= 0	
+	setOut(1,false)
+	setOut(2,true)
+	setOut(4,false)
+	setOut(7,false)
 	while true do
 			DASH:process()
-			RPM1 = getRPM(1)
-		        if RPM1 < 725 then
-				setOut(14, true  )
-				setOut(15, false  )
-			else
-				setOut(14, false  )
-				setOut(15, true  )
-			end
 			counter = counter + 1
-			if counter == 20 then
+			counter1 = counter1 + 1
+
+			if counter > 500 then
 				counter = 0
 				temp_out = not temp_out
-				setOut(13,temp_out)
+                                setOut(13, temp_out )
+--		                OutSetPWM(1, temp_out and 30 or 60)
+			--	setOut(7,temp_out)
+			--	setOut(4,temp_out)
 			end
-			
+			if counter1 > 50 then
+				counter1 = 0
+				temp_out1 = not temp_out1
+			        OutSetPWM(2, temp_out1 and 30 or 90)
+--                                setOut(2, temp_out1 )
+			end
+		--	if counter2 > 1000 then
+		--		counter2 = 0
+		--		temp_out2 = not temp_out2
+                --               setOut(1, temp_out2 )
+		--	end
+
 			KeyPad:process()
 			CAN_CH2:process()
 			CAN_RPM:process()
