@@ -1,4 +1,4 @@
---Важно!!!! Для редактировани использовать редактор, где можно ставить кодировку UTF-8. 
+--Важно Для редактировани использовать редактор, где можно ставить кодировку UTF-8. 
 --При кодировке ANSI ломаются скрипты обработки
 init = function() --функция иницализации
         ConfigCan(1,1000);
@@ -11,17 +11,21 @@ init = function() --функция иницализации
 	setOutConfig(2,20,0,60)
 	setOutConfig(3,20,0,60)
 	setOutConfig(4,20,0,60)
+	OutResetConfig(4,0,1000)	
 	setOutConfig(5,20,0,60)
 	setOutConfig(6,20,0,60)
 	setOutConfig(7,20,0,60)
 	setOutConfig(8,20,0,60)
 	setOutConfig(9,8,0,10)
+	OutResetConfig(9,0,500)
 	setOutConfig(10,8,0,10)
+	OutResetConfig(10,0,10)
 	setOutConfig(11,8,0,10)
 	setOutConfig(12,8,0,10)
 	setOutConfig(13,10,0,30)
-	OutResetConfig(13,1,500)
+	OutResetConfig(13,0,10)
 	setOutConfig(14,8,0,10)
+	OutResetConfig(14,0,10)
 	setOutConfig(15,8,0,10)
 	setOutConfig(16,8,0,10)
 	setOutConfig(17,8,0,10)
@@ -52,7 +56,7 @@ end
 main = function ()
 
 
-
+    local KeyBoard		=  KeyPad8:new(0x15)
 	local temp_out		= true	
 	local temp_out1		= true
 	local counter		= 0
@@ -62,40 +66,54 @@ main = function ()
 
 	setOut(4,true)	
 	setOut(7,false)
+        setOut(10, true )
+	setOut(14,true)
 	while true do  -- начало рабочего цикла ( цикл может быть любой, хоть do until, хоть for
 	-- цикл может быть конечным. Т.е из цикла можно выйти. После этого LUA машина заночит работу и перейдет в безопасный режим,
 	-- т.е. выклчюит все выхода. Ну и запуситься токо после перезапуска питания.
+	KeyBoard:process()
+	KeyBoard:setLedGreen(1,true)
+	KeyBoard:setLedGreen(2,true)
+
 			counter = counter + 1
 			counter1 = counter1 + 1
 
-			if counter > 500 then
+			if counter > 1000 then
 				counter = 0
 				temp_out = not temp_out
-                setOut(13, temp_out )
+		        --        setOut(14, temp_out )
+			--	 setOut(9, temp_out)
+				KeyBoard:setLedGreen(3,temp_out)
 			end
 			if counter1 > 50 then
 				counter1 = 0
 				temp_out1 = not temp_out1
-			        OutSetPWM(4, temp_out1 and 30 or 90)
+		--	        OutSetPWM(4, temp_out1 and 30 or 90)
 --                                setOut(2, temp_out1 )
 			end
 		-- Работа с аналоговыми входами	и выходами
 		-- выключить выход 1 если  напряжение питания меньше 5.5 и включить если больше
 		-- через работу с локальной переменной
-		if ( getBat() < 10.0 ) then		    
+		if ( getAin (3)  < 10.0 ) then		    
 		 	OUT1 = false
 		else
 			OUT1 = true
 		end		
-		setOut(1,OUT1)
+		setOut(13,OUT1)
+		setOut(9,OUT1)
+
+	--	setOut(14,OUT1)
+	--	setOut(10,OUT1)
+		
+
 		-- тоже самое для выхода 2 и AIN1 но напрямую
 		if ( getAin( 1 ) < 10.0 ) then
 		    setOut(2,false)		 	
 		else
-			setOut(2,true)			
+		    setOut(2,true)			
 		end				
 		-- тоже самое для выхода 3 и AIN2 но с фишкой LUA синтаксиса				
-		setOut(3, ( getAin( 2 ) > 10.0 ) and true or false )
+		setOut(1, ( getAin( 2 ) > 10.0 ) and true or false )
 		-- прикол в том, что оно работает как    (условие) and (возвращаемое значеие если условие true) or (возвращаемое значение если условие false)
 		-- и возвращамое начение может быть любым, вклчюая числа. Прикольно же?
 		
