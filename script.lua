@@ -10,7 +10,7 @@ init = function() --функция иницализации
 	-- в ядре есть алгоримт софт-старта. Пока не вытащил его в скрит. Скоро будет.
 	setOutConfig(2,20,0,60)
 	setOutConfig(3,20,0,60)
-	setOutConfig(4,20,0,60)
+	setOutConfig(4,20,0,50)
 	OutResetConfig(4,0,1000)	
 	setOutConfig(5,20,0,60)
 	setOutConfig(6,20,0,60)
@@ -19,13 +19,13 @@ init = function() --функция иницализации
 	setOutConfig(9,8,0,10)
 	OutResetConfig(9,0,500)
 	setOutConfig(10,8,0,10)
-	OutResetConfig(10,0,10)
+	OutResetConfig(10,0,1000)
 	setOutConfig(11,8,0,10)
 	setOutConfig(12,8,0,10)
 	setOutConfig(13,10,0,30)
 	OutResetConfig(13,0,10)
 	setOutConfig(14,8,0,10)
-	OutResetConfig(14,0,10)
+	OutResetConfig(14,0,1000)
 	setOutConfig(15,8,0,10)
 	setOutConfig(16,8,0,10)
 	setOutConfig(17,8,0,10)
@@ -43,80 +43,98 @@ init = function() --функция иницализации
         setDINConfig(9,1)
         setDINConfig(10,1)
         setDINConfig(11,1)
---        SetEEPROM(0x01,0x6743)
---        CAN_EXCHENGE    = CanRequest:new()
---	if ( CAN_EXCHENGE:waitCAN(0x615,0x595,8000,0x2F,0x03,0x20,0x03,0x06,0x00,0x00,0x00) == true) then
---		local dd1,dd2,dd3,dd4,dd5,dd6,dd7,dd8 = CAN_EXCHENGE:getData()
---		if dd1 == 0x60 then
---		        setOut(13,true )
---		end
---	end
 end
 ----
+-- немножко вкинуну херни про системные функции
+--
+
+
 main = function ()
-
-
     local KeyBoard		=  KeyPad8:new(0x15)
+	local Turns	        =  TurnSygnals:new(800)
+	local BeamCounter   = Counter:new(1,3,1,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)
+	local Flashing_Light_Timer = 0	
+    local Flashing_Light_counter = 4
 	local temp_out		= true	
-	local temp_out1		= true
 	local counter		= 0
-	local counter1		= 0
-	local Wiper 	        = Wipers:new(2000,3)
-	local OUT1		= false
-
-	setOut(4,true)	
-	setOut(7,false)
-        setOut(10, true )
-	setOut(14,true)
-	while true do  -- начало рабочего цикла ( цикл может быть любой, хоть do until, хоть for
-	-- цикл может быть конечным. Т.е из цикла можно выйти. После этого LUA машина заночит работу и перейдет в безопасный режим,
-	-- т.е. выклчюит все выхода. Ну и запуситься токо после перезапуска питания.
-	KeyBoard:process()
-	KeyBoard:setLedGreen(1,true)
-	KeyBoard:setLedGreen(2,true)
-
-			counter = counter + 1
-			counter1 = counter1 + 1
-
-			if counter > 1000 then
-				counter = 0
-				temp_out = not temp_out
-		        --        setOut(14, temp_out )
-			--	 setOut(9, temp_out)
-				KeyBoard:setLedGreen(3,temp_out)
-			end
-			if counter1 > 50 then
-				counter1 = 0
-				temp_out1 = not temp_out1
-		--	        OutSetPWM(4, temp_out1 and 30 or 90)
---                                setOut(2, temp_out1 )
-			end
-		-- Работа с аналоговыми входами	и выходами
-		-- выключить выход 1 если  напряжение питания меньше 5.5 и включить если больше
-		-- через работу с локальной переменной
-		if ( getAin (3)  < 10.0 ) then		    
-		 	OUT1 = false
-		else
-			OUT1 = true
-		end		
-		setOut(13,OUT1)
-		setOut(9,OUT1)
-
-	--	setOut(14,OUT1)
-	--	setOut(10,OUT1)
+	local LEFT		= false
+	local RIGTH		= false
+	local ALARM		= false	
+	local right_front	= false
+	local left_front	= false
+	local right_front_side	= false
+	local rigth_side	= false
+	local Ligth_Enable	= false
+	local High_beam = false
+	local Low_beam = false	
+	KeyBoard:setBackLigthBrigth(15)
+	while true do 
+	
+		--процесс работы с клавиатурой
+		KeyBoard:process()			   		
 		
-
-		-- тоже самое для выхода 2 и AIN1 но напрямую
-		if ( getAin( 1 ) < 10.0 ) then
-		    setOut(2,false)		 	
-		else
-		    setOut(2,true)			
-		end				
-		-- тоже самое для выхода 3 и AIN2 но с фишкой LUA синтаксиса				
-		setOut(1, ( getAin( 2 ) > 10.0 ) and true or false )
-		-- прикол в том, что оно работает как    (условие) and (возвращаемое значеие если условие true) or (возвращаемое значение если условие false)
-		-- и возвращамое начение может быть любым, вклчюая числа. Прикольно же?
 		
+		--управление дальним и билжним светом
+		BeamCounter:process(KeyBoard:getKey(2),false,false)  -- cчетчик process( инкримент, дикремент, сборс)
+		Ligth_Enable = (BeamCounter:get() ~= 1 ) and true or false -- если счетчик не равен 1  то true
+		-- переменная используется для влючения ближнего света и для разрешения мигалки
+		setOut(1, Ligth_Enable ) 
+		setOut(2, (BeamCounter:get() == 3 ) and true or false) -- если счетчи равен 3, то вклчюаем дальний
+		KeyBoard:setLedGreen( 2, (BeamCounter:get() == 2 ) and true or false ) -- если 2 (билжний счет, то зажигаем светодиод)
+		KeyBoard:setLedBlue( 2, (BeamCounter:get() == 3 ) and true or false	) -- если 3 ( дальний свет, то зажигаем синий свет)
+		
+		--аогоритм управления с 2-х клавиш повортниками и если 2 вместе, то аварийка
+		if  ALARM then	
+			ALARM = (not ( KeyBoard:getToggle(5) or KeyBoard:getToggle(6))) and true or false									
+			KeyBoard:resetToggle(5,not ALARM )		
+			KeyBoard:resetToggle(6,not ALARM )																
+		else				
+			LEFT = KeyBoard:getToggle(5)
+			RIGTH =KeyBoard:getToggle(6)
+			KeyBoard:resetToggle(5,KeyBoard:getKey(6) )		
+			KeyBoard:resetToggle(6,KeyBoard:getKey(5) )
+			ALARM = KeyBoard:getKey(5) and KeyBoard:getKey(6)  														
+		end
+		
+		
+		
+        Turns:process( true, LEFT, RIGTH, ALARM)
+		
+		--это просто цикл мигания светодиодом клавиатуре, что бы видиеть что система живет.
+		counter = counter + 1		
+		if counter > 1000 then
+			counter = 0
+			temp_out = not temp_out	      
+			KeyBoard:setLedGreen(4,temp_out)
+		end														
+	
+		if  (not LEFT) and (not RIGTH) and (not ALARM) and Ligth_Enable then
+			Flashing_Light_Timer = Flashing_Light_Timer +getDelay()
+			if Flashing_Light_Timer > 500 then		  
+				Flashing_Light_Timer = 0	     	
+				-- конструция LUA  and or  ( условие) and выполняется если истинно or выполняется если ложно
+				-- единсвенное, что оператор, которые стоит после and не должен быть 0 или false или nil 
+				Flashing_Light_counter =  (Flashing_Light_counter < 3) and Flashing_Light_counter + 1 or 0 		 
+				right_front = ( Flashing_Light_counter == 0 )  and true or false
+				left_front  = ( Flashing_Light_counter == 1 )  and true or false
+				right_side  = ( Flashing_Light_counter == 2 )  and true or false
+				left_side   = ( Flashing_Light_counter == 3 )  and true or false		    
+			end		
+		else
+			right_front =  false
+			left_front  =  false
+			right_side  =  false
+			left_side   =  false		    		
+		end
+		
+		--упавление светодиодами 5 и 6-й конопо и выходами повортников
+		KeyBoard:setLedGreen(5, Turns:getLeft() or Turns:getAlarm()	)
+		KeyBoard:setLedGreen(6, Turns:getRight() or Turns:getAlarm())	
+		setOut(10, right_front or Turns:getAlarm() or Turns:getRight())
+		setOut(11, left_front  or Turns:getAlarm() or Turns:getLeft())
+		setOut(12, right_side  or Turns:getAlarm() or Turns:getRight())
+		setOut(13, left_side   or Turns:getAlarm() or Turns:getLeft())
+
 		
 		Yield() -- ключевая функция рабочего цикла. Она 1. Загоняте в ядро новые значения выходов, которые устнавливаются в setOut()
 		-- 2. Приостанавливает работу скрипта, что бы ядро могло выполнить сервисные процессы
