@@ -3,27 +3,30 @@
 init = function() --функция иницализации
         ConfigCan(1,1000);
 	-- Функции конфинурации канала. Если не вызвать setOutConfig, то канал будет в режиме DISABLE на урвоне ядра. Т.е. физический будет принудительнов выключен, токи не будет считаться, на команды из скрипта не регаирует.
-    setOutConfig(1,45,0,60)  --  Конфигурация выхода  1. номер канала (1-20), 2. номинальный ток (пока еще не определился с верхней границей), 3. время работы в перегузке в мс., 4. ток перегрузки
-	OutResetConfig(1,0,1000)    -- Конфигурация режима перегрузки  1. номера канала 2. Кол-во циклов перегрукзи, если 0, то будет пытаться рестартовать бесконечно, если 1, то сразу после перегрузки удейт в ошибку
+    setOutConfig(1,65,0,60)  --  Конфигурация выхода  1. номер канала (1-20), 2. номинальный ток (пока еще не определился с верхней границей), 3. время работы в перегузке в мс., 4. ток перегрузки
+	--OutResetConfig(1,0,1000)    -- Конфигурация режима перегрузки  1. номера канала 2. Кол-во циклов перегрукзи, если 0, то будет пытаться рестартовать бесконечно, если 1, то сразу после перегрузки удейт в ошибку
 						     -- если больше 1, то соотвесвенно будет патться стартануть указаное кол-во раз. 3. Таймаут перед новым запускаом при перегузке
 							-- Если не вызывать OutResetConfig, по умолчанию канал после пегрузки идет в ошибку.
 	-- в ядре есть алгоримт софт-старта. Пока не вытащил его в скрит. Скоро будет.
-	setOutConfig(2,20,0,60)
-	setOutConfig(3,20,0,60)
-	setOutConfig(4,20,0,50)
+	setOutConfig(2,10,0,10)	
+	--OutResetConfig(2,1,1)
+	setOutConfig(3,60,0,60)
+	--OutResetConfig(3,1,1)
+	setOutConfig(4,10,1000,50)
 	OutResetConfig(4,0,1000)	
 	setOutConfig(5,20,0,60)
 	setOutConfig(6,20,0,60)
 	setOutConfig(7,20,0,60)
 	setOutConfig(8,20,0,60)
-	setOutConfig(9,8,0,10)
-	OutResetConfig(9,0,500)
-	setOutConfig(10,8,0,10)
-	OutResetConfig(10,0,1000)
+	setOutConfig(9,5,0,50)
+	OutResetConfig(9,1,10)	
+	setOutConfig(10,8,0,10)	
 	setOutConfig(11,8,0,10)
+	OutResetConfig(11,1,0)
 	setOutConfig(12,8,0,10)
-	setOutConfig(13,10,0,30)
-	OutResetConfig(13,0,10)
+	OutResetConfig(12,1,0)
+	setOutConfig(13,25,0,30)
+	--OutResetConfig(13,0,10)
 	setOutConfig(14,8,0,10)
 	OutResetConfig(14,0,1000)
 	setOutConfig(15,8,0,10)
@@ -49,37 +52,69 @@ end
 --
 
 
+
 main = function ()
     local KeyBoard		=  KeyPad8:new(0x15)
 	local Turns	        =  TurnSygnals:new(800)
 	local BeamCounter   = Counter:new(1,3,1,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)
 	local Flashing_Light_Timer = 0	
-    local Flashing_Light_counter = 4
+    local Flashing_Light_counter = 0
 	local temp_out		= true	
+	local temp_out1		= true	
 	local counter		= 0
 	local LEFT		= false
 	local RIGTH		= false
 	local ALARM		= false	
-	local right_front	= false
-	local left_front	= false
-	local right_front_side	= false
-	local rigth_side	= false
+	local right_turn	= false
+	local left_turn	= false
 	local Ligth_Enable	= false
 	local High_beam = false
-	local Low_beam = false	
+	local Low_beam = false		
 	KeyBoard:setBackLigthBrigth(15)
+
 	while true do 
 	
 		--процесс работы с клавиатурой
 		KeyBoard:process()			   		
 		
+	
+		
+		--if temp_out1 then 
+		--	if delay_couter > 5 then
+		--		delay_couter = 0
+		--		temp_out1 = false		
+		--		end
+	--	else 
+	--		if delay_couter > 5 then
+	--			delay_couter = 0
+	--			temp_out1 = true
+--end
+	--	end		
+       -- temp_out1 = not temp_out1		
+		
+	--	setOut(2,temp_out1)
+		--	if (math.abs(getROLL()) > 45.0) or (math.abs(getPITCH()) > 45.0 ) then
+	--		setOut(3,true)
+	--	else
+	--		setOut(3,false)
+	--	end
 		
 		--управление дальним и билжним светом
 		BeamCounter:process(KeyBoard:getKey(2),false,false)  -- cчетчик process( инкримент, дикремент, сборс)
 		Ligth_Enable = (BeamCounter:get() ~= 1 ) and true or false -- если счетчик не равен 1  то true
-		-- переменная используется для влючения ближнего света и для разрешения мигалки
-		setOut(1, Ligth_Enable ) 
-		setOut(2, (BeamCounter:get() == 3 ) and true or false) -- если счетчи равен 3, то вклчюаем дальний
+		
+		
+		setOut(10, Ligth_Enable )  -- ближний свет
+				
+		setOut(9, Ligth_Enable or KeyBoard:getToggle(3) )  --ближний свет и стоп сигнал
+	    OutSetPWM(9,KeyBoard:getToggle(3) and 99 or 40) -- 	
+		setOut(2, KeyBoard:getToggle(4)) --задний ход
+		
+	
+		setOut(1,(BeamCounter:get() == 3 ) and true or false)
+		
+		
+		--setOut(9, (BeamCounter:get() == 3 ) and true or false) -- если счетчи равен 3, то вклчюаем дальний
 		KeyBoard:setLedGreen( 2, (BeamCounter:get() == 2 ) and true or false ) -- если 2 (билжний счет, то зажигаем светодиод)
 		KeyBoard:setLedBlue( 2, (BeamCounter:get() == 3 ) and true or false	) -- если 3 ( дальний свет, то зажигаем синий свет)
 		
@@ -110,31 +145,31 @@ main = function ()
 	
 		if  (not LEFT) and (not RIGTH) and (not ALARM) and Ligth_Enable then
 			Flashing_Light_Timer = Flashing_Light_Timer +getDelay()
-			if Flashing_Light_Timer > 500 then		  
-				Flashing_Light_Timer = 0	     	
-				-- конструция LUA  and or  ( условие) and выполняется если истинно or выполняется если ложно
-				-- единсвенное, что оператор, которые стоит после and не должен быть 0 или false или nil 
-				Flashing_Light_counter =  (Flashing_Light_counter < 3) and Flashing_Light_counter + 1 or 0 		 
-				right_front = ( Flashing_Light_counter == 0 )  and true or false
-				left_front  = ( Flashing_Light_counter == 1 )  and true or false
-				right_side  = ( Flashing_Light_counter == 2 )  and true or false
-				left_side   = ( Flashing_Light_counter == 3 )  and true or false		    
+			if Flashing_Light_Timer > 10 then		  
+				Flashing_Light_Timer = 0	     					
+				Flashing_Light_counter =  (Flashing_Light_counter < 15) and Flashing_Light_counter + 1 or 0 		 
+				right_turn = (( Flashing_Light_counter == 1 ) or ( Flashing_Light_counter == 4 )) and true or false
+				left_turn  = (( Flashing_Light_counter == 7 ) or ( Flashing_Light_counter == 11 )) and true or false							
 			end		
+			    		
 		else
-			right_front =  false
-			left_front  =  false
-			right_side  =  false
-			left_side   =  false		    		
+
+			right_turn =  false
+			left_turn  =  false
+			
 		end
+		
+		
+		
+		KeyBoard:setLedGreen(3, KeyBoard:getToggle(3))
+	
 		
 		--упавление светодиодами 5 и 6-й конопо и выходами повортников
 		KeyBoard:setLedGreen(5, Turns:getLeft() or Turns:getAlarm()	)
-		KeyBoard:setLedGreen(6, Turns:getRight() or Turns:getAlarm())	
-		setOut(10, right_front or Turns:getAlarm() or Turns:getRight())
-		setOut(11, left_front  or Turns:getAlarm() or Turns:getLeft())
-		setOut(12, right_side  or Turns:getAlarm() or Turns:getRight())
-		setOut(13, left_side   or Turns:getAlarm() or Turns:getLeft())
-
+		KeyBoard:setLedGreen(6, Turns:getRight() or Turns:getAlarm())		
+		setOut(11, right_turn  or Turns:getAlarm() or Turns:getRight())
+		setOut(12, left_turn   or Turns:getAlarm() or Turns:getLeft())
+    
 		
 		Yield() -- ключевая функция рабочего цикла. Она 1. Загоняте в ядро новые значения выходов, которые устнавливаются в setOut()
 		-- 2. Приостанавливает работу скрипта, что бы ядро могло выполнить сервисные процессы
