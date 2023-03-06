@@ -1,51 +1,59 @@
 --Важно Для редактировани использовать редактор, где можно ставить кодировку UTF-8. 
 --При кодировке ANSI ломаются скрипты обработки
-init = function() --функция иницализации
+function init() --функция иницализации
         ConfigCan(1,1000);
 	-- Функции конфинурации канала. Если не вызвать setOutConfig, то канал будет в режиме DISABLE на урвоне ядра. Т.е. физический будет принудительнов выключен, токи не будет считаться, на команды из скрипта не регаирует.
-    setOutConfig(1,65,0,60)  --  Конфигурация выхода  1. номер канала (1-20), 2. номинальный ток (пока еще не определился с верхней границей), 3. время работы в перегузке в мс., 4. ток перегрузки
+    setOutConfig(1,20,0,0,60)   -- 1.  номер канала (1-20), 
+								-- 2.  номинальный ток (пока еще не определился с верхней границей), 
+								-- 3.  Необязательный агрумент - Сборс ошибки выключением - значение по умолчанию <1>  0 - сборс ошибки  только рестатром системы 1 - сборс ошибки выклчюением канала
+								-- 4.  Необязательный агрумент  -время работы в перегузке в мс - значение по умолчанию  - 0, 
+							    -- 5.  Необязательный аргумент, - ток перегрузки, значение по умолчанию - номинальный ток. 
+							   
+	
 	--OutResetConfig(1,0,1000)    -- Конфигурация режима перегрузки  1. номера канала 2. Кол-во циклов перегрукзи, если 0, то будет пытаться рестартовать бесконечно, если 1, то сразу после перегрузки удейт в ошибку
 						     -- если больше 1, то соотвесвенно будет патться стартануть указаное кол-во раз. 3. Таймаут перед новым запускаом при перегузке
 							-- Если не вызывать OutResetConfig, по умолчанию канал после пегрузки идет в ошибку.
 	-- в ядре есть алгоримт софт-старта. Пока не вытащил его в скрит. Скоро будет.
-	setOutConfig(2,10,0,10)	
+	setOutConfig(2,11)	
 	--OutResetConfig(2,1,1)
-	setOutConfig(3,60,0,60)
+	setOutConfig(3,60)
 	--OutResetConfig(3,1,1)
-	setOutConfig(4,10,1000,50)
+	setOutConfig(4,10,1,1000,50)
 	OutResetConfig(4,0,1000)	
-	setOutConfig(5,20,0,60)
-	setOutConfig(6,20,0,60)
-	setOutConfig(7,20,0,60)
-	setOutConfig(8,20,0,60)
-	setOutConfig(9,5,0,50)
-	OutResetConfig(9,1,10)	
-	setOutConfig(10,8,0,10)	
-	setOutConfig(11,8,0,10)
+	setOutConfig(5,20)
+	setOutConfig(6,20)
+	setOutConfig(7,20)
+	setOutConfig(8,20)
+	setOutConfig(9,5)
+	OutResetConfig(9,1,0)	
+	setOutConfig(10,8,0)	
+	OutResetConfig(10,1,0)	
+	setOutConfig(11,8,0)
 	OutResetConfig(11,1,0)
-	setOutConfig(12,8,0,10)
+	setOutConfig(12,8,0)
 	OutResetConfig(12,1,0)
-	setOutConfig(13,25,0,30)
+	setOutConfig(13,25)
 	--OutResetConfig(13,0,10)
-	setOutConfig(14,8,0,10)
+	setOutConfig(14,8)
 	OutResetConfig(14,0,1000)
-	setOutConfig(15,8,0,10)
-	setOutConfig(16,8,0,10)
-	setOutConfig(17,8,0,10)
-	setOutConfig(18,8,0,10)
-	setOutConfig(19,8,0,10)
-	setOutConfig(20,8,0,10)
-        setDINConfig(1,1)
-        setDINConfig(2,1)
-        setDINConfig(3,1)
-        setDINConfig(4,1)
-        setDINConfig(5,1)
-        setDINConfig(6,1)
-        setDINConfig(7,1)
-        setDINConfig(8,1)
-        setDINConfig(9,1)
-        setDINConfig(10,1)
-        setDINConfig(11,1)
+	setOutConfig(15,8)
+	setOutConfig(16,8)
+	setOutConfig(17,8)
+	setOutConfig(18,8)
+	setOutConfig(19,8)
+	setOutConfig(20,8)
+    setDINConfig(1,1)
+    setDINConfig(2,1)
+    setDINConfig(3,1)
+    setDINConfig(4,1)
+    setDINConfig(5,1)
+    setDINConfig(6,1)
+    setDINConfig(7,1)
+    setDINConfig(8,1)
+    setDINConfig(9,1)
+    setDINConfig(10,1)
+    setDINConfig(11,1)
+	setPWMGroupeFreq(0, 200)
 end
 ----
 -- немножко вкинуну херни про системные функции
@@ -56,6 +64,7 @@ end
 main = function ()
     local KeyBoard		=  KeyPad8:new(0x15)
 	local Turns	        =  TurnSygnals:new(800)
+	local DASH			= Dashboard:new(0x10,800)
 	local BeamCounter   = Counter:new(1,3,1,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)
 	local Flashing_Light_Timer = 0	
     local Flashing_Light_counter = 0
@@ -70,35 +79,17 @@ main = function ()
 	local Ligth_Enable	= false
 	local High_beam = false
 	local Low_beam = false		
+	
+	init()
 	KeyBoard:setBackLigthBrigth(15)
-
+    DASH:init()	
 	while true do 
 	
 		--процесс работы с клавиатурой
 		KeyBoard:process()			   		
+		DASH:process()
 		
 	
-		
-		--if temp_out1 then 
-		--	if delay_couter > 5 then
-		--		delay_couter = 0
-		--		temp_out1 = false		
-		--		end
-	--	else 
-	--		if delay_couter > 5 then
-	--			delay_couter = 0
-	--			temp_out1 = true
---end
-	--	end		
-       -- temp_out1 = not temp_out1		
-		
-	--	setOut(2,temp_out1)
-		--	if (math.abs(getROLL()) > 45.0) or (math.abs(getPITCH()) > 45.0 ) then
-	--		setOut(3,true)
-	--	else
-	--		setOut(3,false)
-	--	end
-		
 		--управление дальним и билжним светом
 		BeamCounter:process(KeyBoard:getKey(2),false,false)  -- cчетчик process( инкримент, дикремент, сборс)
 		Ligth_Enable = (BeamCounter:get() ~= 1 ) and true or false -- если счетчик не равен 1  то true
@@ -108,10 +99,9 @@ main = function ()
 				
 		setOut(9, Ligth_Enable or KeyBoard:getToggle(3) )  --ближний свет и стоп сигнал
 	    OutSetPWM(9,KeyBoard:getToggle(3) and 99 or 40) -- 	
-		setOut(2, KeyBoard:getToggle(4)) --задний ход
+		setOut(1, KeyBoard:getToggle(4)) --задний ход
 		
-	
-		setOut(1,(BeamCounter:get() == 3 ) and true or false)
+		setOut(2,(BeamCounter:get() == 3 ) and true or false)
 		
 		
 		--setOut(9, (BeamCounter:get() == 3 ) and true or false) -- если счетчи равен 3, то вклчюаем дальний
@@ -145,7 +135,7 @@ main = function ()
 	
 		if  (not LEFT) and (not RIGTH) and (not ALARM) and Ligth_Enable then
 			Flashing_Light_Timer = Flashing_Light_Timer +getDelay()
-			if Flashing_Light_Timer > 10 then		  
+			if Flashing_Light_Timer > 20 then		  
 				Flashing_Light_Timer = 0	     					
 				Flashing_Light_counter =  (Flashing_Light_counter < 15) and Flashing_Light_counter + 1 or 0 		 
 				right_turn = (( Flashing_Light_counter == 1 ) or ( Flashing_Light_counter == 4 )) and true or false
