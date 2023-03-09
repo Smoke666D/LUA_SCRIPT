@@ -25,9 +25,9 @@ function init() --функция иницализации
 	setOutConfig(7,20)
 	setOutConfig(8,20)
 	setOutConfig(9,5)
-	OutResetConfig(9,1,0)	
+	--OutResetConfig(9,1,0)	
 	setOutConfig(10,8,0)	
-	OutResetConfig(10,1,0)	
+	--OutResetConfig(10,1,0)	
 	setOutConfig(11,8,0)
 	OutResetConfig(11,1,0)
 	setOutConfig(12,8,0)
@@ -53,7 +53,7 @@ function init() --функция иницализации
     setDINConfig(9,1)
     setDINConfig(10,1)
     setDINConfig(11,1)
-	setPWMGroupeFreq(0, 200)
+	setPWMGroupeFreq(0, 100)
 end
 ----
 -- немножко вкинуну херни про системные функции
@@ -65,6 +65,7 @@ main = function ()
     local KeyBoard		=  KeyPad8:new(0x15)
 	local Turns	        =  TurnSygnals:new(800)
 	local DASH			= Dashboard:new(0x10,800)
+	local wipers	    = Wipers:new(100, 3)
 	local BeamCounter   = Counter:new(1,3,1,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)
 	local Flashing_Light_Timer = 0	
     local Flashing_Light_counter = 0
@@ -95,13 +96,20 @@ main = function ()
 		Ligth_Enable = (BeamCounter:get() ~= 1 ) and true or false -- если счетчик не равен 1  то true
 		
 		
-		setOut(10, Ligth_Enable )  -- ближний свет
-				
-		setOut(9, Ligth_Enable or KeyBoard:getToggle(3) )  --ближний свет и стоп сигнал
-	    OutSetPWM(9,KeyBoard:getToggle(3) and 99 or 40) -- 	
+		
+		setOut(10, Ligth_Enable )  -- ближний свет				
+		setOut(9, Ligth_Enable or KeyBoard:getToggle(8) )  --ближний свет и стоп сигнал
+	    OutSetPWM(9,KeyBoard:getToggle(3) and 99 or 40)  	
+		
 		setOut(1, KeyBoard:getToggle(4)) --задний ход
 		
 		setOut(2,(BeamCounter:get() == 3 ) and true or false)
+		
+		
+		wipers:process( false, KeyBoard:getKey(3), false, getDIN(1))
+		setOut(13, wipers:getOut())
+		KeyBoard:setLedGreen( 3, KeyBoard:getKey(3) )
+		
 		
 		
 		--setOut(9, (BeamCounter:get() == 3 ) and true or false) -- если счетчи равен 3, то вклчюаем дальний
@@ -150,8 +158,6 @@ main = function ()
 		end
 		
 		
-		
-		KeyBoard:setLedGreen(3, KeyBoard:getToggle(3))
 	
 		
 		--упавление светодиодами 5 и 6-й конопо и выходами повортников
