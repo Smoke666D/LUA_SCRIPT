@@ -132,19 +132,19 @@ main = function ()
 			--после отпускания они остаются в преженем положении
 			KeyBoard:setLedGreen(3, wipers_on and (not water) )
 			KeyBoard:setLedBlue(3, water)				
-			if (KeyBoard:getKey(3) and (wipers_on == false)) then			
+			if (KeyBoard:getKey(3) and (wipers_on == false)) then		-- если все выключено, запускаем алгоримт	
 				wipers_on  = true
 				work_state = false
 				wait_flag  = true			
 			end
 			if wipers_on then			
-				if wait_flag then
+				if wait_flag then									-- смотрим, сколько удерживается кнопка
 					water_counter = water_counter + getDelay()
-					if water_counter > 1200 then
+					if water_counter > 1200 then 				  -- если больше 1200 мс, то включаем воду
 						water = true				
 					end
-					if not KeyBoard:getKey(3) then
-						if not (work_state and water )then
+					if not KeyBoard:getKey(3) then			       -- если кнопка отпущена
+						if not (work_state and water )then		-- условие, которео позволяет не реагировать на отпускание кнопки после самого первого нажатия	
 							work_state = not work_state	
 						end
 						water_counter = 0
@@ -152,8 +152,8 @@ main = function ()
 						water = false
 					end			
 				else
-					wait_flag = work_state and KeyBoard:getKey(3)
-					wipers_on = not ( ( not work_state ) and (  not KeyBoard:getKey(3) ) ) 									
+					wait_flag = work_state and KeyBoard:getKey(3)	-- если нажали кнопку в дворники рабоатают
+					wipers_on = not ( ( not work_state ) and (  not KeyBoard:getKey(3) ) ) 	-- выклчюаем, если было нажатие на конопку меньше 1200 мс.								
 				end				
 			end		
 			location = location and getDIN(1)
