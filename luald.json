@@ -3,7 +3,6 @@
     "PDM20.lua",
     "KeyPad8.lua",
     "Can.lua",
-    "Wiper.lua",
     "Counter.lua",
     "Delay.lua",
     "TurnSygnals.lua",

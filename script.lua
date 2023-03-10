@@ -68,14 +68,10 @@ main = function ()
     local KeyBoard		= KeyPad8:new(0x15)--создание объекта клавиатура c адресом 0x15
 	local Turns	        = TurnSygnals:new(800)
 	local DASH			= Dashboard:new(0x10,800)
-	local wipers	    = Wipers:new(100, 3)
 	local BeamCounter   = Counter:new(1,3,1,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)
 	local GearCounter   = Counter:new(0,2,1,false)
 	local Flashing_Light_Timer = 0
     local Flashing_Light_counter = 0
-	local temp_out		= true
-	local temp_out1		= true
-	local counter		= 0
 	local LEFT		= false
 	local RIGTH		= false
 	local ALARM		= false
@@ -100,15 +96,11 @@ main = function ()
 		DASH:process()				
 	    start = getDIN(2)
 		
-			--это просто цикл мигания светодиодом клавиатуре, что бы видиеть что система живет.
-			counter = counter + 1
-			if counter > 1000 then
-				counter = 0
-				temp_out = not temp_out
-				KeyBoard:setLedGreen(7,temp_out)
-			end
-		
-		
+	
+		--фишка lua - конструкция  <условие> and <значение если true> or <значение если false>. Но <значение если true> не должно быть false
+		--при этом <значения ...> могут быть вычисляемыми, а не только числами или true/false, например ниже есть 
+		--Flashing_Light_counter =  (Flashing_Light_counter < 15) and Flashing_Light_counter + 1 or 0  - фактический это перзагружаемый счетчик вверх до 14
+		--очень удобная штука как по мне, и с точки зрения LUA виртуальной машины рабоатет быстро
 		KeyBoard:setBackLigthBrigth( start and 15 or 3 )	-- подсветка клавиатуры
 		
 		-- блок переключением передач и заденего хода
@@ -140,7 +132,7 @@ main = function ()
 			--после отпускания они остаются в преженем положении
 			KeyBoard:setLedGreen(3, wipers_on and (not water) )
 			KeyBoard:setLedBlue(3, water)				
-			if KeyBoard:getKey(3) and wipers_on == false then			
+			if (KeyBoard:getKey(3) and (wipers_on == false)) then			
 				wipers_on  = true
 				work_state = false
 				wait_flag  = true			
