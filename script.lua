@@ -4,14 +4,18 @@ LOW_BEAM_CH = 10
 STOP_CH	    = 9
 WATER_CH    = 14
 WIPERS_CH   = 13
-REAR_LIGTH  = 1
+RIGTH_TURN_CH = 11
+LEFT_TURN_CH = 12
+REAR_LIGTH_CH  = 1
 HIGH_BEAM   = 2
 UP_GEAR     = 15
-DOWN_GEAR   = 16
+DOWN_GEAR_CH   = 16
+REAR_HORN_CH   = 17
+HORN_СH      = 18
 function init() --функция иницализации
         ConfigCan(1,1000);
 	-- Функции конфинурации канала. Если не вызвать setOutConfig, то канал будет в режиме DISABLE на урвоне ядра. Т.е. физический будет принудительнов выключен, токи не будет считаться, на команды из скрипта не регаирует.
-    setOutConfig(REAR_LIGTH,20,0,0,60)   -- 1.  номер канала (1-20), 
+    setOutConfig(REAR_LIGTH_CH,20,0,0,60)   -- 1.  номер канала (1-20), 
 								-- 2.  номинальный ток (пока еще не определился с верхней границей), 
 								-- 3.  Необязательный агрумент - Сборс ошибки выключением - значение по умолчанию <1>  0 - сборс ошибки  только рестатром системы 1 - сборс ошибки выклчюением канала
 								-- 4.  Необязательный агрумент  -время работы в перегузке в мс - значение по умолчанию  - 0, 
@@ -33,19 +37,18 @@ function init() --функция иницализации
 	setOutConfig(7,20)
 	setOutConfig(8,20)
 	setOutConfig(STOP_CH,5)	
-	setOutConfig(LOW_BEAM_CH,3)
-	--OutResetConfig(10,1,0)
-	setOutConfig(11,8,0)
-	OutResetConfig(11,1,0)
-	setOutConfig(12,8,0)
-	OutResetConfig(12,1,0)
+	setOutConfig(LOW_BEAM_CH,3)	
+	setOutConfig(LEFT_TURN_CH,8,0) -- для повортников влючен режим ухода в ошибку до перезапуска
+	OutResetConfig(LEFT_TURN_CH,1,0) 
+	setOutConfig(RIGTH_TURN_CH,8,0)
+	OutResetConfig(RIGTH_TURN_CH,1,0)
 	setOutConfig(WIPERS_CH,10,0,100,30)
 	setOutConfig(WATER_CH,8,0,100,30)
 	
 	setOutConfig(UP_GEAR, 8)
-	setOutConfig(DOWN_GEAR,8)
-	setOutConfig(17,8)
-	setOutConfig(18,8)
+	setOutConfig(DOWN_GEAR_CH,8)
+	setOutConfig(REAR_HORN_CH,8)
+	setOutConfig(HORN_CH,8)
 	setOutConfig(19,8)
 	setOutConfig(20,8)
     setDINConfig(1,1)
@@ -88,6 +91,8 @@ main = function ()
 	local wait_flag  = false		
 	local stop_signal = false
 	local start =  false
+	local REAR_MOVE = false
+	local HORN = false
 	init()
     DASH:init()
 	while true do
@@ -105,12 +110,19 @@ main = function ()
 		
 		-- блок переключением передач и заденего хода
 		GearCounter:process(KeyBoard:getKey(4),KeyBoard:getKey(8), KeyBoard:getKey(1) or (not start) )												
-		KeyBoard:setLedGreen(4, (GearCounter:get() == 2)  and true or false )
-		KeyBoard:setLedGreen(8, (GearCounter:get() == 0) and true or false )
+		KeyBoard:setLedGreen(4, (GearCounter:get() == 2)  and true or false )		
 		setOut(UP_GEAR,   (GearCounter:get() == 2) and true or false)
-		setOut(DOWN_GEAR, (GearCounter:get() == 0) and true or false)
-		setOut(REAR_LIGTH, (GearCounter:get() == 0) and true or false) --задний ход
+		--ниже сделал отдельную переменную для что бы не вствлять одну и туже конструкцию, работать будет быстрее
+		REAR_MOVE = (GearCounter:get() == 0) and true or false
+		KeyBoard:setLedGreen(8, REAR_MOVE)
+		setOut(DOWN_GEAR_CH,  REAR_MOVE)
+		setOut(REAR_LIGTH_CH, REAR_MOVE) --задний ход
+		setOut(REAR_HORN_CH,  REAR_MOVE) --сигнал заднего хода
 		--конец блока переключения передач
+		
+		HORN = KeyBoard:getKey(7) and start
+		setOut(HORN_CH, HORN)
+		KeyBoard:setLedGreen(7,HORN )		
 		
 		--Блок управления дальним и билжним светом и стоп сигналом
 		BeamCounter:process(KeyBoard:getKey(2),false, not start)  -- cчетчик process( инкримент, дикремент, сборс)
@@ -193,8 +205,8 @@ main = function ()
 			--упавление светодиодами 5 и 6-й конопо и выходами повортников
 			KeyBoard:setLedGreen(5, Turns:getLeft() or Turns:getAlarm()	)
 			KeyBoard:setLedGreen(6, Turns:getRight() or Turns:getAlarm())
-			setOut(11, right_turn  or Turns:getAlarm() or Turns:getRight())
-			setOut(12, left_turn   or Turns:getAlarm() or Turns:getLeft())
+			setOut(RIGTH_TURN_CH, right_turn  or Turns:getAlarm() or Turns:getRight())
+			setOut(LEFT_TURN_CH, left_turn   or Turns:getAlarm() or Turns:getLeft())
 		
 	   Yield() 
 	end
