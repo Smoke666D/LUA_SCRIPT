@@ -48,6 +48,9 @@ function KeyPad8:resetToggle( n , state)
 		 self.tog =  (~(0x01<< ( n-1 ) )) & self.tog
 	 end
 end
+function KeyPad8:setToggle( n )	 
+		 self.tog =  (0x01<< ( n-1 ) ) | self.tog	 
+end
 function KeyPad8:setLedRed( n , state)
 	self.old = (state ) and  self.ledRed | (0x01<<(n-1)) or self.ledRed & (~(0x01<<( n-1 )))
 	if ( self.old ~= self.ledRed ) then
