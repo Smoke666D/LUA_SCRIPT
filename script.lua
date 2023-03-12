@@ -62,7 +62,8 @@ main = function ()
 	local FlashTimer    = Delay:new( 20, true )
 	local WaterKeyDelay = Delay:new( 1200, false)
 	local FlashEnabel   = true
-	local TURNS		= false
+	local LEFT		= false
+	local RIGTH   = false
 	local ALARM		= false
 	local right_flash	= false
 	local left_flash	= false
@@ -168,7 +169,8 @@ main = function ()
 				KeyBoard:resetToggle(5,not ALARM )
 				KeyBoard:resetToggle(6,not ALARM )
 			else  
-				TURNS = KeyBoard:getToggle(6) or KeyBoard:getToggle(5)
+			    RIGTH = KeyBoard:getToggle(6)
+				LEFT =  KeyBoard:getToggle(5)
 				KeyBoard:resetToggle(5,KeyBoard:getKey(6) or (not start) )
 				KeyBoard:resetToggle(6,KeyBoard:getKey(5) or (not start) )
 				ALARM = KeyBoard:getKey(5) and KeyBoard:getKey(6)
@@ -179,7 +181,7 @@ main = function ()
 			KeyBoard:setLedGreen(6, Turns:getRight() or Turns:getAlarm())
 			
 		    --Блок управление вспышками на повортниках
-		    FlashEnabel =   (not TURNS) and (not ALARM) and Ligth_Enable  
+		    FlashEnabel =   (not (RIGTH or LEFT) and (not ALARM) and Ligth_Enable  
 			FlashTimer:process( true, not FlashEnabel )
 			FlashCounter:process(FlashTimer:get(),false, not FlashEnabel )
 			right_flash = ( FlashCounter:get() == 1 ) or ( FlashCounter:get() == 4 )
