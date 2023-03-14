@@ -160,7 +160,7 @@ main = function ()
 		Ligth_Enable = (BeamCounter:get() ~= 1 )  -- если счетчик не равен 1  то true
 		setOut(LOW_BEAM_CH, Ligth_Enable )  -- ближний свет
 		setOut(STOP_CH, Ligth_Enable or (stop_signal and start) )  --ближний свет и стоп сигнал
-		
+		stop_signal = KeyBoard:getKey(7)
 		OutSetPWM(STOP_CH, stop_signal and 99 or 40)		
 		setOut(HIGH_BEAM,(BeamCounter:get() == 3 ) )
 		KeyBoard:setLedGreen( 2, (BeamCounter:get() == 2 )  ) -- если 2 (билжний счет, то зажигаем светодиод)
