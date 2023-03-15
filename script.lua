@@ -56,11 +56,14 @@ function init() --функция иницализации
 	setOutConfig(PREHEAT_CH2,2)
 	
 	setOutConfig(COOLFAN_CH,8)
-	setOutConfig(HORN_CH,8)
+	setOutConfig(HORN_CH,7,1)
+	OutResetConfig(HORN_CH,1,0)
 	setOutConfig(20,8)
     setDINConfig(1,1)
     setDINConfig(2,1)
 	setPWMGroupeFreq(0, 100)
+	setPWMGroupeFreq(4, 5000)
+	setOutSoftStart(HORN_CH,5000,40)
 end
 ----
 -- немножко вкинуну херни про системные функции
@@ -98,7 +101,7 @@ main = function ()
     local PREHEAT = false	
 	local speed = 0
 	local temp = 30
-	
+
     
     local PreheatTimer = 0
     init()
@@ -152,7 +155,9 @@ main = function ()
 		--конец блока переключения передач
 		
 		HORN = KeyBoard:getKey(7) and start
-		setOut(HORN_CH, HORN)
+		
+		setOut(HORN_CH, HORN )
+		
 		KeyBoard:setLedGreen(7,HORN )		
 		
 		--Блок управления дальним и билжним светом и стоп сигналом
@@ -160,7 +165,7 @@ main = function ()
 		Ligth_Enable = (BeamCounter:get() ~= 1 )  -- если счетчик не равен 1  то true
 		setOut(LOW_BEAM_CH, Ligth_Enable )  -- ближний свет
 		setOut(STOP_CH, Ligth_Enable or (stop_signal and start) )  --ближний свет и стоп сигнал
-		stop_signal = KeyBoard:getKey(7)
+		--stop_signal = KeyBoard:getKey(7)
 		OutSetPWM(STOP_CH, stop_signal and 99 or 40)		
 		setOut(HIGH_BEAM,(BeamCounter:get() == 3 ) )
 		KeyBoard:setLedGreen( 2, (BeamCounter:get() == 2 )  ) -- если 2 (билжний счет, то зажигаем светодиод)
