@@ -1,44 +1,55 @@
 --Важно Для редактировани использовать редактор, где можно ставить кодировку UTF-8. 
 --При кодировке ANSI ломаются скрипты обработки
 
-REAR_LIGTH_CH   = 6
-HIGH_BEAM   	= 2
+
+GLOW_PLUG_1_2 	= 1
+GLOW_PLUG_3_4  	= 2
+KL30			= 12
+STOP_CH	    	= 19
+
 STARTER_CH	 	= 3
-PREHEAT_CH2  	= 4
-PREHEAT_CH1  	= 5
-FUEL_PUMP_CH    = 1
+REAR_LIGTH_CH   = 6
+HIGH_BEAM   	= 7
+FUEL_PUMP_CH    = 5
 IGNITION_CH     = 7
 STOP_CH	    	= 9
 LOW_BEAM_CH 	= 10
 RIGTH_TURN_CH 	= 11
-LEFT_TURN_CH 	= 12
+LEFT_TURN_CH 	= 20
 WIPERS_CH   	= 13
 WATER_CH    	= 14
 UP_GEAR     	= 15
 DOWN_GEAR_CH   	= 16
 REAR_HORN_CH   	= 17
 HORN_CH 		= 18
-COOLFAN_CH    	= 19
-WIPER_IN		= 1
-ING_IN			= 2
+COOLFAN_CH    	= 18
+WIPER_IN		= 4
+ING_IN			= 6
+STOP_SW			= 4
+PARKING_SW		= 1
+
 function init() --функция иницализации
      ConfigCan(1,1000);
 	 setOutConfig(FUEL_PUMP_CH,2,1,4500,60)	
 	-- Функции конфинурации канала. Если не вызвать setOutConfig, то канал будет в режиме DISABLE на урвоне ядра. Т.е. физический будет принудительнов выключен, токи не будет считаться, на команды из скрипта не регаирует.
-    setOutConfig(REAR_LIGTH_CH,20)   -- 1.  номер канала (1-20), 
+     setOutConfig(REAR_LIGTH_CH,20)   -- 1.  номер канала (1-20), 
 								-- 2.  номинальный ток (пока еще не определился с верхней границей), 
 								-- 3.  Необязательный агрумент - Сборс ошибки выключением - значение по умолчанию <1>  0 - сборс ошибки  только рестатром системы 1 - сборс ошибки выклчюением канала
 								-- 4.  Необязательный агрумент  -время работы в перегузке в мс - значение по умолчанию  - 0, 
 							    -- 5.  Необязательный аргумент, - ток перегрузки, значение по умолчанию - номинальный ток. 
 							   
 	
-	   -- Конфигурация режима перегрузки  1. номера канала 2. Кол-во циклов перегрукзи, если 0, то будет пытаться рестартовать бесконечно, если 1, то сразу после перегрузки удейт в ошибку
-						     -- если больше 1, то соотвесвенно будет патться стартануть указаное кол-во раз. 3. Таймаут перед новым запускаом при перегузке
-							-- Если не вызывать OutResetConfig, по умолчанию канал после пегрузки идет в ошибку.
-	-- в ядре есть алгоримт софт-старта. Пока не вытащил его в скрит. Скоро будет.
+	   
+	setOutConfig(GLOW_PLUG_1_2,30,1,5000,40) -- на пуске свечи жрут 32-35А. Поскольку в ядре номинальный ток ограничен 30а, ставлю задержку на 5с
+	setOutConfig(GLOW_PLUG_3_4,30,1,5000,40)
+	setOutConfig(STARTER_CH,15,1,100,40)
+	setOutConfig(KL30,5)
+	
+	
+	
 	setOutConfig(HIGH_BEAM,11)
 	--OutResetConfig(2,1,1)
-	setOutConfig(STARTER_CH,15,1,100,40)
+	
 	setOutConfig(STOP_CH,5)	
 	
 	setOutConfig(IGNITION_CH,15)	
@@ -52,17 +63,21 @@ function init() --функция иницализации
 	setOutConfig(UP_GEAR, 8)
 	setOutConfig(DOWN_GEAR_CH,8)
 	setOutConfig(REAR_HORN_CH,8)
-	setOutConfig(PREHEAT_CH1,2)
-
-	setOutConfig(PREHEAT_CH2,2)
+	
 	
 	setOutConfig(COOLFAN_CH,8)
 	setOutConfig(HORN_CH,7,1)
 	OutResetConfig(HORN_CH,1,0)
 	setOutConfig(20,8)
-    setDINConfig(ING_IN,1)
+	
+	
+	
+    setDINConfig(ING_IN,0)	
+	setDINConfig(STOP_SW,0)
     setDINConfig(WIPER_IN,1)
-	setDINConfig(4,0)
+	
+	
+	
     setDINConfig(6,0)
 	setDINConfig(8,0)
 	setPWMGroupeFreq(0, 100)
@@ -76,7 +91,7 @@ main = function ()
   
   
 	local start_enable = false
-	local CanTempIn     = CanInput:new(0x28,100,0x01, 30) -- <адрес can>, < таймаут>
+	local CanTempIn     = CanInput:new(0x28,100,0x03,30,1) -- <адрес can>, < таймаут>
     local KeyBoard		= KeyPad8:new(0x15)--создание объекта клавиатура c адресом 0x15
 	local Turns	        = TurnSygnals:new(800)
 	local DASH			= Dashboard:new(0x10,800)
@@ -127,12 +142,19 @@ main = function ()
 		DASH:process()		
 		CanTempIn:process()
 	    temp = CanTempIn:getByte(1)   -- получаем первый байт из фрейма
+		start = CanTempIn:getByte(2)  -- команда зажигания от приборки. Сигнализирует о том, что она ожила и может выдать температуру
+		
+		setOut(KL30, true )
+		
 		INGNITION = getDIN(ING_IN)	
-		start = start or INGNITION
-		if start and not INGNITION then		 
-		  SYSTEM_RESTASRT()  -- системный вызов перезапуска. !!!Важно, перезапуск будет выполнен после вызова Yield, весь код от вывзова перезапуска до Yield быдут выполнен
+		start = start and INGNITION
+		
+		--if start and not INGNITION then		 
+		--  SYSTEM_RESTASRT()  -- системный вызов перезапуска. !!!Важно, перезапуск будет выполнен после вызова Yield, весь код от вывзова перезапуска до Yield быдут выполнен
 							 -- если надо вы
-		end
+		--end
+		
+		
 		setOut(FUEL_PUMP_CH, start )
 		setOut(IGNITION_CH, INGNITION)
 		
@@ -166,6 +188,7 @@ main = function ()
 		KeyBoard:setLedGreen(7,HORN )		
 		
 		--Блок управления дальним и билжним светом и стоп сигналом
+		stop_signal = getDIN(STOP_SW)
 		BeamCounter:process(KeyBoard:getKey(2),false, not start)  -- cчетчик process( инкримент, дикремент, сборс)
 		Ligth_Enable = (BeamCounter:get() ~= 1 )  -- если счетчик не равен 1  то true
 		setOut(LOW_BEAM_CH, Ligth_Enable )  -- ближний свет
@@ -245,9 +268,8 @@ main = function ()
 			setOut(RIGTH_TURN_CH, right_flash or Turns:getAlarm() or Turns:getRight())
 			setOut(LEFT_TURN_CH,  left_flash  or Turns:getAlarm() or Turns:getLeft())
 		    
-			--блока предпрогрева 
-			if start then
-				
+			--блока предпрогрева. 
+			if start then				
 				PreheatTimer = PreheatTimer + getDelay()
 			     if temp < 40 then
 				   PREHEAT = (PreheatTimer < 8000 ) 
@@ -262,9 +284,11 @@ main = function ()
 				elseif temp>= 100 then
 					PREHEAT = false
 				end					
+			else
+				PreheatTimer = 0					--сбрасываем таймер, если зажигание выключено
 			end
-			setOut(PREHEAT_CH1, PREHEAT and start)
-			setOut(PREHEAT_CH2, PREHEAT and start)				  										
+			setOut(GLOW_PLUG_1_2, PREHEAT and start)
+			setOut(GLOW_PLUG_3_4, PREHEAT and start)				  										
 		   
 	   Yield() 
 	end
