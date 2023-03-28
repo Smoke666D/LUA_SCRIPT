@@ -4,35 +4,41 @@
 
 GLOW_PLUG_1_2 	= 1
 GLOW_PLUG_3_4  	= 2
-KL30			= 12
-STOP_CH	    	= 19
-
 STARTER_CH	 	= 3
-REAR_LIGTH_CH   = 6
-HIGH_BEAM   	= 7
-FUEL_PUMP_CH    = 5
-IGNITION_CH     = 7
-STOP_CH	    	= 9
-LOW_BEAM_CH 	= 10
-RIGTH_TURN_CH 	= 11
-LEFT_TURN_CH 	= 20
-WIPERS_CH   	= 13
-WATER_CH    	= 14
-UP_GEAR     	= 15
-DOWN_GEAR_CH   	= 16
-REAR_HORN_CH   	= 17
-HORN_CH 		= 18
-COOLFAN_CH    	= 18
-WIPER_IN		= 4
-ING_IN			= 6
+OIL_FAN_CH		= 4
+CUT_VALVE		= 5
+HIGH_BEAM   	= 6
+REAR_LIGTH_CH   = 7
+FUEL_PUMP_CH    = 8
+STOP_VALVE		= 9
+WATER_CH    	= 10
+DOWN_GEAR_CH   	= 11
+KL30			= 12
+HORN_CH 		= 13
+UP_GEAR     	= 14
+REAR_HORN_CH   	= 15
+WIPERS_CH   	= 16
+LEFT_TURN_CH 	= 17
+RIGTH_TURN_CH 	= 18
+STOP_CH	    	= 19
+LOW_BEAM_CH 	= 20
+
+
+STARTER_IN		= 2
+DOOR2_SW		= 3
 STOP_SW			= 4
-PARKING_SW		= 1
+DOOR1_SW		= 5
+ING_IN			= 6
+PARKING_SW		= 7
+WIPER_IN		= 8
+
+
 
 function init() --функция иницализации
      ConfigCan(1,1000);
-	 setOutConfig(FUEL_PUMP_CH,2,1,4500,60)	
+	-- setOutConfig(CUT_VALVE,2,1,4500,60)	
 	-- Функции конфинурации канала. Если не вызвать setOutConfig, то канал будет в режиме DISABLE на урвоне ядра. Т.е. физический будет принудительнов выключен, токи не будет считаться, на команды из скрипта не регаирует.
-     setOutConfig(REAR_LIGTH_CH,20)   -- 1.  номер канала (1-20), 
+    -- setOutConfig(REAR_LIGTH_CH,20)   -- 1.  номер канала (1-20), 
 								-- 2.  номинальный ток (пока еще не определился с верхней границей), 
 								-- 3.  Необязательный агрумент - Сборс ошибки выключением - значение по умолчанию <1>  0 - сборс ошибки  только рестатром системы 1 - сборс ошибки выклчюением канала
 								-- 4.  Необязательный агрумент  -время работы в перегузке в мс - значение по умолчанию  - 0, 
@@ -40,58 +46,48 @@ function init() --функция иницализации
 							   
 	
 	   
-	setOutConfig(GLOW_PLUG_1_2,30,1,5000,40) -- на пуске свечи жрут 32-35А. Поскольку в ядре номинальный ток ограничен 30а, ставлю задержку на 5с
-	setOutConfig(GLOW_PLUG_3_4,30,1,5000,40)
-	setOutConfig(STARTER_CH,15,1,100,40)
+	--setOutConfig(GLOW_PLUG_1_2,30,1,5000,40) -- на пуске свечи жрут 32-35А. Поскольку в ядре номинальный ток ограничен 30а, ставлю задержку на 5с
+	--setOutConfig(GLOW_PLUG_3_4,30,1,5000,40)
+	--setOutConfig(STARTER_CH,15,1,100,40)
 	setOutConfig(KL30,5)
+	--setOutConfig(LEFT_TURN_CH,2,0) -- для повортников влючен режим ухода в ошибку до перезапуска
+	--OutResetConfig(LEFT_TURN_CH,1,0) 
+	--setOutConfig(RIGTH_TURN_CH,2,0)
+	--OutResetConfig(RIGTH_TURN_CH,1,0)
+	--setOutConfig(OIL_FAN_CH,10)		
+	--setOutConfig(HIGH_BEAM,11)
+	--setOutConfig(STOP_CH,5)	
+	--setOutConfig(FUEL_PUMP_CH,15)		
+	--setOutConfig(WIPERS_CH,10,0,100,30)
+	--setOutConfig(WATER_CH,8,0,100,30)
+	--setOutConfig(UP_GEAR, 8)
+	--setOutConfig(DOWN_GEAR_CH,8)
+	--setOutConfig(REAR_HORN_CH,8)	
+	--setOutConfig(REAR_LIGTH_CH,8)	
+	setOutConfig(STOP_VALVE,8)	
+	--setOutConfig(COOLFAN_CH,8)
+	--setOutConfig(HORN_CH,7,1)	
+	--setOutConfig(LOW_BEAM_CH,3)		
 	
+    --setDINConfig(ING_IN,0)	
+	setDINConfig(STOP_SW,1)
+--    setDINConfig(WIPER_IN,1)
+ --   setDINConfig(STARTER_IN,0)
+	--setDINConfig(PARKING_SW,0)	
+   -- setDINConfig(DOOR2_SW,0)
+	--setDINConfig(DOOR1_SW,0)
+	--setPWMGroupeFreq(5, 100)
 	
-	
-	setOutConfig(HIGH_BEAM,11)
-	--OutResetConfig(2,1,1)
-	
-	setOutConfig(STOP_CH,5)	
-	
-	setOutConfig(IGNITION_CH,15)	
-	setOutConfig(LOW_BEAM_CH,3)	
-	setOutConfig(LEFT_TURN_CH,8,0) -- для повортников влючен режим ухода в ошибку до перезапуска
-	OutResetConfig(LEFT_TURN_CH,1,0) 
-	setOutConfig(RIGTH_TURN_CH,8,0)
-	OutResetConfig(RIGTH_TURN_CH,1,0)
-	setOutConfig(WIPERS_CH,10,0,100,30)
-	setOutConfig(WATER_CH,8,0,100,30)
-	setOutConfig(UP_GEAR, 8)
-	setOutConfig(DOWN_GEAR_CH,8)
-	setOutConfig(REAR_HORN_CH,8)
-	
-	
-	setOutConfig(COOLFAN_CH,8)
-	setOutConfig(HORN_CH,7,1)
-	OutResetConfig(HORN_CH,1,0)
-	setOutConfig(20,8)
-	
-	
-	
-    setDINConfig(ING_IN,0)	
-	setDINConfig(STOP_SW,0)
-    setDINConfig(WIPER_IN,1)
-	
-	
-	
-    setDINConfig(6,0)
-	setDINConfig(8,0)
-	setPWMGroupeFreq(0, 100)
-	setPWMGroupeFreq(4, 5000)
-	setOutSoftStart(HORN_CH,5000,40)
 end
-----
+
+
 -- немножко вкинуну херни про системные функции
 --
-main = function ()
-  
-  
+main = function () 
 	local start_enable = false
-	local CanTempIn     = CanInput:new(0x28,100,0x03,30,1) -- <адрес can>, < таймаут>
+--	local CanTempIn     = CanInput:new(0x28,9000,0x01,30) -- <адрес can>, < таймаут>
+	--local CanOilTempIn  = CanInput:new(0x29,100,0x01,30) -- <адрес can>, < таймаут>
+	--local CanRPMTempIn  = CanInput:new(0x30,100,0x01,00) -- <адрес can>, < таймаут>
     local KeyBoard		= KeyPad8:new(0x15)--создание объекта клавиатура c адресом 0x15
 	local Turns	        = TurnSygnals:new(800)
 	local DASH			= Dashboard:new(0x10,800)
@@ -121,32 +117,28 @@ main = function ()
 	local speed = 0
 	local temp = 30
     local INGNITION = false
-    
+    local OilTemp = 30
     local PreheatTimer = 0
-    init()
-	setAINCalTable(1,			-- установка калибровочной таблицы для канала. Первый параметр - номер канала. Дальше
-					0,0,	    -- идут пары чисел X - Y.  Количество точек калиборвки для канала не рагеламентировано. 
-					1,0.1,	    -- есть сумарное кол-во точек, равное <20* кол-во каналов>. В данном случае каналов 3, точеR 60.
-					3,0.4,		-- т.е. можно запилить 60 точек на первый канал, но тогда не останеться на осавшиеся.
-					5,0.6,		-- Выделение точек под каналы идет по мере вызова. Если при устновкое точек для очередного канал, 
-					13,1.1)		-- кол-во точек привышает свобдоные, калиборвака для канала игнорируется.
-								-- Коофициеты можно ментяь на лету. В этом случае, нужно что-бы кол-во новых точек не превышала предидущую калиборву.
-								-- т.е. если вначале канал откаоиброван на 10 точек, то если дальше по коду попытаться сделать 12 точек, то новая калибровка игнорируется
-					
-	KeyBoard:setBackLigthBrigth( 3 )	-- подсветка клавиатуры		
-	
-
-    DASH:init()
+    init()				
+    DASH:init()	
 	while true do		
 		KeyBoard:process() --процесс работы с клавиатурой
 		DASH:process()		
-		CanTempIn:process()
-	    temp = CanTempIn:getByte(1)   -- получаем первый байт из фрейма
-		start = CanTempIn:getByte(2)  -- команда зажигания от приборки. Сигнализирует о том, что она ожила и может выдать температуру
+	--	CanTempIn:process()
+		--CanOilTempIn:process()
+	--    temp = CanTempIn:getByte(1)   -- получаем первый байт из фрейма, температура охлаждающей жидкости
+		--OilTemp = CanOilTempIn:getByte(1)  -- получаем первый байт из фрейма, температура масла
 		
+		
+	
+	
 		setOut(KL30, true )
+		setOut(STOP_VALVE, true  and  getDIN(STOP_SW) )
+
+
 		
-		INGNITION = getDIN(ING_IN)	
+		
+	--[[	INGNITION = getDIN(ING_IN)	
 		start = start and INGNITION
 		
 		--if start and not INGNITION then		 
@@ -158,34 +150,19 @@ main = function ()
 		setOut(FUEL_PUMP_CH, start )
 		setOut(IGNITION_CH, INGNITION)
 		
-		--фишка lua - конструкция  <условие> and <значение если true> or <значение если false>. Но <значение если true> не должно быть false
-		--при этом <значения ...> могут быть вычисляемыми, а не только числами или true/false, например ниже есть 
-		--Flashing_Light_counter =  (Flashing_Light_counter < 15) and Flashing_Light_counter + 1 or 0  - фактический это перзагружаемый счетчик вверх до 14
-		--очень удобная штука как по мне, и с точки зрения LUA виртуальной машины рабоатет быстро
-		 KeyBoard:setBackLigthBrigth( (start == true) and 15 or 3 )	-- подсветка клавиатуры
+		
+		KeyBoard:setBackLigthBrigth( (start == true) and 15 or 3 )	-- подсветка клавиатуры
 
 		KeyBoard:setLedRed( 1,  PREHEAT  )
 		 
         START_ENABLE = KeyBoard:getKey(1) and start and (not PREHEAT)
 		setOut( STARTER_CH, START_ENABLE)
 		KeyBoard:setLedGreen( 1, START_ENABLE  )
-		-- блок переключением передач и заденего хода
-		GearCounter:process(KeyBoard:getKey(4),KeyBoard:getKey(8), KeyBoard:getKey(1) or (not start) )												
-		KeyBoard:setLedGreen(4, (GearCounter:get() == 2)   )		
-		setOut(UP_GEAR,   (GearCounter:get() == 2) )
-		--ниже сделал отдельную переменную для что бы не вствлять одну и туже конструкцию, работать будет быстрее
-		REAR_MOVE = (GearCounter:get() == 0) 
-		KeyBoard:setLedGreen(8, REAR_MOVE)
-		setOut(DOWN_GEAR_CH,  REAR_MOVE)
-		setOut(REAR_LIGTH_CH, REAR_MOVE) --задний ход
-		setOut(REAR_HORN_CH,  REAR_MOVE) --сигнал заднего хода
-		--конец блока переключения передач
+	
+	
+	
 		
-		HORN = KeyBoard:getKey(7) and start
-		
-		setOut(HORN_CH, HORN )
-		
-		KeyBoard:setLedGreen(7,HORN )		
+	
 		
 		--Блок управления дальним и билжним светом и стоп сигналом
 		stop_signal = getDIN(STOP_SW)
@@ -198,6 +175,9 @@ main = function ()
 		setOut(HIGH_BEAM,(BeamCounter:get() == 3 ) )
 		KeyBoard:setLedGreen( 2, (BeamCounter:get() == 2 )  ) -- если 2 (билжний счет, то зажигаем светодиод)
 		KeyBoard:setLedBlue( 2, (BeamCounter:get() == 3 ) 	) -- если 3 ( дальний свет, то зажигаем синий свет)
+		
+		
+		
 		--конец блока управления
 			--Блок управления дврониками и омывателем
 			--Поскольку мотор останавливается с задержкой и переезжает датчик
@@ -253,7 +233,7 @@ main = function ()
 				KeyBoard:resetToggle(6,KeyBoard:getKey(5) or (not start) )
 				ALARM = KeyBoard:getKey(5) and KeyBoard:getKey(6)
 			end
-			Turns:process( start, LEFT, RIGTH, ALARM)
+			Turns:process( true, LEFT, RIGTH, ALARM)
 			--упавление светодиодами 5 и 6-й конопо и выходами повортников
 			KeyBoard:setLedGreen(5, Turns:getLeft()  or Turns:getAlarm())
 			KeyBoard:setLedGreen(6, Turns:getRight() or Turns:getAlarm())
@@ -289,7 +269,7 @@ main = function ()
 			end
 			setOut(GLOW_PLUG_1_2, PREHEAT and start)
 			setOut(GLOW_PLUG_3_4, PREHEAT and start)				  										
-		   
+		   ]]--
 	   Yield() 
 	end
 end

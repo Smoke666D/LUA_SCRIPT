@@ -22,6 +22,7 @@
     "GetEEPROM",
     "ConfigCan",
     "EXT_CAN_ID",
+    "setPWMGroupeFreq",
     "getOut"
   ], 
   "vars" : [
