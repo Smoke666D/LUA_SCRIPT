@@ -31,11 +31,11 @@ function init()
 	setOutConfig(GLOW_PLUG_1_2,30,1,5000,40) -- на пуске свечи жрут 32-35А. Поскольку в ядре номинальный ток ограничен 30а, ставлю задержку на 5с
 	setOutConfig(GLOW_PLUG_3_4,30,1,5000,40)
 	setOutConfig(STARTER_CH,15,1,100,40)
-	setOutConfig(CUT_VALVE,2,1,4500,60)
+	setOutConfig(CUT_VALVE,4,1,4500,60)
 	setOutConfig(KL30,5)
-	setOutConfig(LEFT_TURN_CH,2,0) -- для повортников влючен режим ухода в ошибку до перезапуска. Если так не сделать, при кз будет постоянно сбрасываться ошибка
+	setOutConfig(LEFT_TURN_CH,4,0) -- для повортников влючен режим ухода в ошибку до перезапуска. Если так не сделать, при кз будет постоянно сбрасываться ошибка
 	OutResetConfig(LEFT_TURN_CH,1,0)
-	setOutConfig(RIGTH_TURN_CH,2,0)
+	setOutConfig(RIGTH_TURN_CH,4,0)
 	OutResetConfig(RIGTH_TURN_CH,1,0)
 	setOutConfig(OIL_FAN_CH,10)
 	setOutConfig(HIGH_BEAM,11)
@@ -61,6 +61,8 @@ function init()
 end
 --главная функция
 main = function ()
+
+
     local KeyBoard		= KeyPad8:new(0x15)--создание объекта клавиатура c адресом 0x15
 	local DASH			= Dashboard:new(0x10,800)
 	local CanIn         = CanInput:new(0x28) -- <адрес can>, < таймаут>	
@@ -70,6 +72,7 @@ main = function ()
 	local WaterKeyDelay = Delay:new( 1200, false)
 	local BeamCounter   = Counter:new(1,3,1,true) 
 	local FlashTimer    = Delay:new( 20,  true )
+	local PumpTimer		= Delay:new( 30000,  false )
 	local FlashEnabel   = true	
 	local LEFT		= false
 	local RIGTH   = false
@@ -104,7 +107,10 @@ main = function ()
 		KeyBoard:setBackLigthBrigth( start and 15 or 3 )	-- подсветка клавиатуры
 		--как только приходит сигнал зажигания
         setOut(CUT_VALVE, start )
-		setOut(FUEL_PUMP_CH, start)
+		
+		-- управление топливным насосм
+		PumpTimer:process(start,false)
+		setOut(FUEL_PUMP_CH, (not PumpTimer:get()) and start)
         KeyBoard:setLedRed( 1,  PREHEAT  )		
         local START_ENABLE = KeyBoard:getKey(1) and start and (not PREHEAT)
 		setOut( STARTER_CH, START_ENABLE)
@@ -136,7 +142,7 @@ main = function ()
 		Ligth_Enable = (BeamCounter:get() ~= 1 )  -- если счетчик не равен 1  то true
 	    setOut(LOW_BEAM_CH, Ligth_Enable )  -- ближний свет
 		setOut(STOP_CH, Ligth_Enable or (stop_signal and start) )  --ближний свет и стоп сигнал
-		OutSetPWM(STOP_CH, stop_signal and 99 or 40)
+		OutSetPWM(STOP_CH, stop_signal and 99 or 30)
 		setOut(HIGH_BEAM,(BeamCounter:get() == 3 ) )
 		KeyBoard:setLedGreen( 2, (BeamCounter:get() == 2 )  ) -- если 2 (билжний счет, то зажигаем светодиод)
 		KeyBoard:setLedBlue( 2, (BeamCounter:get() == 3 ) 	) -- если 3 ( дальний свет, то зажигаем синий свет)
@@ -162,7 +168,7 @@ main = function ()
 					if not KeyBoard:getKey(3) then			       -- если кнопка отпущена
 						if not (work_state and water_enable )then		-- условие, которео позволяет не реагировать на отпускание кнопки после самого первого нажатия
 							work_state = not work_state
-						--end
+						end
 						wait_flag = false		 
 					end
 				else
@@ -170,7 +176,7 @@ main = function ()
 					wipers_on = not ( ( not work_state ) and (  not KeyBoard:getKey(3) ) )  	-- выклчюаем, если было нажатие на конопку меньше 1200 мс
 				end
 			end
-			location = location and getDIN(1)
+			location = location and getDIN(WIPER_IN)
 			if wipers_on then
 				location = true
 			end
