@@ -72,7 +72,7 @@ main = function ()
 	local WaterKeyDelay = Delay:new( 1200, false)
 	local BeamCounter   = Counter:new(1,3,1,true) 
 	local FlashTimer    = Delay:new( 20,  true )
-	local PumpTimer		= Delay:new( 30000,  false )
+	--local PumpTimer		= Delay:new( 60000,  false )
 	local FlashEnabel   = true	
 	local LEFT		= false
 	local RIGTH   = false
@@ -109,28 +109,31 @@ main = function ()
         setOut(CUT_VALVE, start )
 		
 		-- управление топливным насосм
-		PumpTimer:process(start,false)
-		setOut(FUEL_PUMP_CH, (not PumpTimer:get()) and start)
+		--PumpTimer:process(start,false)
+	--	setOut(FUEL_PUMP_CH, (not PumpTimer:get()) and start)
+	    setOut(FUEL_PUMP_CH, start)
         KeyBoard:setLedRed( 1,  PREHEAT  )		
         local START_ENABLE = KeyBoard:getKey(1) and start and (not PREHEAT)
 		setOut( STARTER_CH, START_ENABLE)
 		KeyBoard:setLedGreen( 1, START_ENABLE  )		
 		setOut(KL30, true )
-		setOut(STOP_VALVE, getDIN(STOP_SW) )
+		--setOut(STOP_VALVE, getDIN(STOP_SW) )
 		setOut(OIL_FAN_CH, OilTemp > 80)
-		-- блок переключением передач и заденего хода		
-		rear_ligth = KeyBoard:getToggle(8) and ( not start)   -- зажигаем задний фонраь и подсвечиваем кнопку R синими, если жмем на нее без зажигания
-		KeyBoard:setLedBlue(8, rear_ligth)
-	    gear_enable = stop_signal -- and (speed == 0) and ( RPM < 1000 )
+		-- блок переключением передач и заденего хода	
+
+		
+	--	rear_ligth = KeyBoard:getToggle(8) and ( not start)   -- зажигаем задний фонраь и подсвечиваем кнопку R синими, если жмем на нее без зажигания
+	--	KeyBoard:setLedBlue(8, rear_ligth)
+	    gear_enable = true--stop_signal -- and (speed == 0) and ( RPM < 1000 )
 		GearCounter:process(KeyBoard:getKey(4) and gear_enable,KeyBoard:getKey(8) and gear_enable, KeyBoard:getKey(1) or (not start) )												
 		KeyBoard:setLedGreen(4, (GearCounter:get() == 2) )		
-		setOut(UP_GEAR,   (GearCounter:get() == 2) )
+		setOut(STOP_VALVE,   (GearCounter:get() == 2) )
 		--ниже сделал отдельную переменную для что бы не вствлять одну и туже конструкцию, работать будет быстрее
 		REAR_MOVE = (GearCounter:get() == 0) 
 		KeyBoard:setLedGreen(8, REAR_MOVE)
-		setOut(DOWN_GEAR_CH,  REAR_MOVE)		
-		setOut(REAR_LIGTH_CH, REAR_MOVE or rear_ligth) --задний ход
-		setOut(REAR_HORN_CH,  REAR_MOVE) --сигнал заднего хода
+		setOut(REAR_HORN_CH,  REAR_MOVE)		
+	--	setOut(REAR_LIGTH_CH, REAR_MOVE or rear_ligth) --задний ход
+	--	setOut(REAR_HORN_CH,  REAR_MOVE) --сигнал заднего хода
 		--конец блока переключения передач
 		--блок управления горном
         local HORN = KeyBoard:getKey(7) and start
