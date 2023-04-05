@@ -25,6 +25,7 @@ DOOR1_SW		= 5
 ING_IN			= 6
 PARKING_SW		= 7
 WIPER_IN		= 8
+
  --функция иницализации
 function init()
     ConfigCan(1,1000);	 								   
@@ -72,7 +73,7 @@ main = function ()
 	local WaterKeyDelay = Delay:new( 1200, false)
 	local BeamCounter   = Counter:new(1,3,1,true) 
 	local FlashTimer    = Delay:new( 20,  true )
-	--local PumpTimer		= Delay:new( 60000,  false )
+	local PumpTimer		= Delay:new( 30000,  false )
 	local FlashEnabel   = true	
 	local LEFT		= false
 	local RIGTH   = false
@@ -91,12 +92,12 @@ main = function ()
 	local gear_enable = false
 	local dash_start = 0
     init()				   		
-    DASH:init()	
+   -- DASH:init()	
 	KeyBoard:setBackLigthBrigth(  3 )
 	--рабочий цикл
 	while true do		
 		KeyBoard:process() --процесс работы с клавиатурой
-		DASH:process()	   --процесс отправки данных о каналах в даш
+		--DASH:process()	   --процесс отправки данных о каналах в даш
 		dash_start = CanIn:process() --процесс получение данных с входа Can. Переменная становится единицей, как только что-то получили от приборки
 		local start = getDIN(ING_IN)	
 	    local temp     = (dash_start == 1 ) and CanIn:getByte(1) or 0   -- получаем первый байт из фрейма, температура охлаждающей жидкости
@@ -109,15 +110,15 @@ main = function ()
         setOut(CUT_VALVE, start )
 		
 		-- управление топливным насосм
-		--PumpTimer:process(start,false)
-	--	setOut(FUEL_PUMP_CH, (not PumpTimer:get()) and start)
-	    setOut(FUEL_PUMP_CH, start)
+	    PumpTimer:process(start,false)
+		setOut(FUEL_PUMP_CH, (not PumpTimer:get()) and start)
+	  
         KeyBoard:setLedRed( 1,  PREHEAT  )		
         local START_ENABLE = KeyBoard:getKey(1) and start and (not PREHEAT)
 		setOut( STARTER_CH, START_ENABLE)
 		KeyBoard:setLedGreen( 1, START_ENABLE  )		
 		setOut(KL30, true )
-		--setOut(STOP_VALVE, getDIN(STOP_SW) )
+		--setOut(STOP_VALVE, getDIN(PARKING_SW) )
 		setOut(OIL_FAN_CH, OilTemp > 80)
 		-- блок переключением передач и заденего хода	
 
