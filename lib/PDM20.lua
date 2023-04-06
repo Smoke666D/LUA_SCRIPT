@@ -79,6 +79,12 @@ end
 function getCurMSB10( ch )
 	return  (( Cur[ch]*10//1 ) >>8 )
 end
+function getBatLSB10(  )
+	return (((AIN[4]*10)//1) & 0xFF )
+end
+function getBatMSB10(  )
+	return  (( AIN[4]*10//1 ) >>8 )
+end
 function setOut( ch, data)
 	if ch <=20 then
 		DOut[ch] = data;

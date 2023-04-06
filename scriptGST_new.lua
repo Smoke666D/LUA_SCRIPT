@@ -12,12 +12,13 @@ DOWN_GEAR_CH   	= 11
 KL30			= 12
 HORN_CH 		= 13
 UP_GEAR     	= 14
-REAR_HORN_CH   	= 15
+STEERING_WEEL_VALVE_CH   	= 15
 WIPERS_CH   	= 16
 LEFT_TURN_CH 	= 17
 RIGTH_TURN_CH 	= 18
 STOP_CH	    	= 19
 LOW_BEAM_CH 	= 20
+PRESSURE_IN 	= 1
 STARTER_IN		= 2
 DOOR2_SW		= 3
 STOP_SW			= 4
@@ -33,7 +34,7 @@ function init()
 	setOutConfig(GLOW_PLUG_3_4,30,1,5000,40)
 	setOutConfig(STARTER_CH,15,1,100,40)
 	setOutConfig(CUT_VALVE,4,1,4500,60)
-	setOutConfig(KL30,5)
+	setOutConfig(KL30,8,1,3000,20)
 	setOutConfig(LEFT_TURN_CH,4,0) -- для повортников влючен режим ухода в ошибку до перезапуска. Если так не сделать, при кз будет постоянно сбрасываться ошибка
 	OutResetConfig(LEFT_TURN_CH,1,0)
 	setOutConfig(RIGTH_TURN_CH,4,0)
@@ -46,12 +47,13 @@ function init()
 	setOutConfig(WATER_CH,8,0,100,30)
 	setOutConfig(UP_GEAR, 8)
 	setOutConfig(DOWN_GEAR_CH,8)
-	setOutConfig(REAR_HORN_CH,8)
+	setOutConfig(STEERING_WEEL_VALVE_CH,8)
 	setOutConfig(REAR_LIGTH_CH,20)
 	setOutConfig(STOP_VALVE,8)
 	setOutConfig(HORN_CH,7,1)
 	setOutConfig(LOW_BEAM_CH,3)
 	setPWMGroupeFreq(5, 100)
+    setDINConfig(PRESSURE_IN,0)
 	setDINConfig(ING_IN,0)
 	setDINConfig(STOP_SW,0)
     setDINConfig(WIPER_IN,1)
@@ -65,7 +67,7 @@ main = function ()
 
 
     local KeyBoard		= KeyPad8:new(0x15)--создание объекта клавиатура c адресом 0x15
-	local DASH			= Dashboard:new(0x10,800)
+	local DASH			= Dashboard:new(0x505,800)
 	local CanIn         = CanInput:new(0x28) -- <адрес can>, < таймаут>	
 	local Turns	        = TurnSygnals:new(800)
 	local FlashCounter  = Counter:new(0,20,0,true)
@@ -92,12 +94,12 @@ main = function ()
 	local gear_enable = false
 	local dash_start = 0
     init()				   		
-   -- DASH:init()	
+    DASH:init()	
 	KeyBoard:setBackLigthBrigth(  3 )
 	--рабочий цикл
 	while true do		
 		KeyBoard:process() --процесс работы с клавиатурой
-		--DASH:process()	   --процесс отправки данных о каналах в даш
+		DASH:process()	   --процесс отправки данных о каналах в даш
 		dash_start = CanIn:process() --процесс получение данных с входа Can. Переменная становится единицей, как только что-то получили от приборки
 		local start = getDIN(ING_IN)	
 	    local temp     = (dash_start == 1 ) and CanIn:getByte(1) or 0   -- получаем первый байт из фрейма, температура охлаждающей жидкости
@@ -111,8 +113,8 @@ main = function ()
 		
 		-- управление топливным насосм
 	    PumpTimer:process(start,false)
-		setOut(FUEL_PUMP_CH, (not PumpTimer:get()) and start)
-	  
+		--setOut(FUEL_PUMP_CH, (not PumpTimer:get()) and start)
+	  setOut(FUEL_PUMP_CH, start)
         KeyBoard:setLedRed( 1,  PREHEAT  )		
         local START_ENABLE = KeyBoard:getKey(1) and start and (not PREHEAT)
 		setOut( STARTER_CH, START_ENABLE)
@@ -123,7 +125,7 @@ main = function ()
 		-- блок переключением передач и заденего хода	
 
 		
-	--	rear_ligth = KeyBoard:getToggle(8) and ( not start)   -- зажигаем задний фонраь и подсвечиваем кнопку R синими, если жмем на нее без зажигания
+		rear_ligth = KeyBoard:getToggle(8) and ( not start)   -- зажигаем задний фонраь и подсвечиваем кнопку R синими, если жмем на нее без зажигания
 	--	KeyBoard:setLedBlue(8, rear_ligth)
 	    gear_enable = true--stop_signal -- and (speed == 0) and ( RPM < 1000 )
 		GearCounter:process(KeyBoard:getKey(4) and gear_enable,KeyBoard:getKey(8) and gear_enable, KeyBoard:getKey(1) or (not start) )												
@@ -132,9 +134,8 @@ main = function ()
 		--ниже сделал отдельную переменную для что бы не вствлять одну и туже конструкцию, работать будет быстрее
 		REAR_MOVE = (GearCounter:get() == 0) 
 		KeyBoard:setLedGreen(8, REAR_MOVE)
-		setOut(REAR_HORN_CH,  REAR_MOVE)		
-	--	setOut(REAR_LIGTH_CH, REAR_MOVE or rear_ligth) --задний ход
-	--	setOut(REAR_HORN_CH,  REAR_MOVE) --сигнал заднего хода
+		setOut(STEERING_WEEL_VALVE_CH,  REAR_MOVE)		
+		--setOut(REAR_LIGTH_CH, REAR_MOVE or rear_ligth) --задний ход
 		--конец блока переключения передач
 		--блок управления горном
         local HORN = KeyBoard:getKey(7) and start
@@ -146,7 +147,7 @@ main = function ()
 		Ligth_Enable = (BeamCounter:get() ~= 1 )  -- если счетчик не равен 1  то true
 	    setOut(LOW_BEAM_CH, Ligth_Enable )  -- ближний свет
 		setOut(STOP_CH, Ligth_Enable or (stop_signal and start) )  --ближний свет и стоп сигнал
-		OutSetPWM(STOP_CH, stop_signal and 99 or 30)
+		OutSetPWM(STOP_CH, stop_signal and 99 or 20)
 		setOut(HIGH_BEAM,(BeamCounter:get() == 3 ) )
 		KeyBoard:setLedGreen( 2, (BeamCounter:get() == 2 )  ) -- если 2 (билжний счет, то зажигаем светодиод)
 		KeyBoard:setLedBlue( 2, (BeamCounter:get() == 3 ) 	) -- если 3 ( дальний свет, то зажигаем синий свет)
