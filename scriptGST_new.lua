@@ -75,7 +75,7 @@ main = function ()
 	local WaterKeyDelay = Delay:new( 1200, false)
 	local BeamCounter   = Counter:new(1,3,1,true) 
 	local FlashTimer    = Delay:new( 20,  true )
-	local PumpTimer		= Delay:new( 30000,  false )
+	local PumpTimer		= Delay:new( 6000,  false )
 	local FlashEnabel   = true	
 	local LEFT		= false
 	local RIGTH   = false
@@ -93,6 +93,7 @@ main = function ()
     local PreheatTimer = 0
 	local gear_enable = false
 	local dash_start = 0
+	local wheel_start = false
     init()				   		
     DASH:init()	
 	KeyBoard:setBackLigthBrigth(  3 )
@@ -102,7 +103,7 @@ main = function ()
 		DASH:process()	   --процесс отправки данных о каналах в даш
 		dash_start = CanIn:process() --процесс получение данных с входа Can. Переменная становится единицей, как только что-то получили от приборки
 		local start = getDIN(ING_IN)	
-	    local temp     = (dash_start == 1 ) and CanIn:getByte(1) or 0   -- получаем первый байт из фрейма, температура охлаждающей жидкости
+	    local temp     = (dash_start == 1 ) and CanIn:getByte(1) or 50   -- получаем первый байт из фрейма, температура охлаждающей жидкости
 		local OilTemp  = (dash_start == 1 ) and CanIn:getByte(2) or 0 --  CanOilTempIn:getByte(1)  -- получаем первый байт из фрейма, температура масла
 		local RPM =     (dash_start == 1 ) and CanIn:getWord(4) or 0
 		local speed =   (dash_start == 1 ) and CanIn:getByte(3) or 0		
@@ -112,7 +113,7 @@ main = function ()
         setOut(CUT_VALVE, start )
 		
 		-- управление топливным насосм
-	    PumpTimer:process(start,false)
+	    
 		--setOut(FUEL_PUMP_CH, (not PumpTimer:get()) and start)
 	  setOut(FUEL_PUMP_CH, start)
         KeyBoard:setLedRed( 1,  PREHEAT  )		
@@ -120,22 +121,24 @@ main = function ()
 		setOut( STARTER_CH, START_ENABLE)
 		KeyBoard:setLedGreen( 1, START_ENABLE  )		
 		setOut(KL30, true )
-		--setOut(STOP_VALVE, getDIN(PARKING_SW) )
+		setOut(STOP_VALVE, not getDIN(PARKING_SW) )
 		setOut(OIL_FAN_CH, OilTemp > 80)
-		-- блок переключением передач и заденего хода	
-
+		-- блок переключением передач и заденего хода
+		wheel_start  = (wheel_start or START_ENABLE) and start
+        PumpTimer:process(wheel_start,false)		
+		setOut(STEERING_WEEL_VALVE_CH,  PumpTimer:get() )		
 		
 		rear_ligth = KeyBoard:getToggle(8) and ( not start)   -- зажигаем задний фонраь и подсвечиваем кнопку R синими, если жмем на нее без зажигания
-	--	KeyBoard:setLedBlue(8, rear_ligth)
+		--KeyBoard:setLedBlue(8, rear_ligth)
 	    gear_enable = true--stop_signal -- and (speed == 0) and ( RPM < 1000 )
 		GearCounter:process(KeyBoard:getKey(4) and gear_enable,KeyBoard:getKey(8) and gear_enable, KeyBoard:getKey(1) or (not start) )												
 		KeyBoard:setLedGreen(4, (GearCounter:get() == 2) )		
-		setOut(STOP_VALVE,   (GearCounter:get() == 2) )
+		setOut(UP_GEAR ,   (GearCounter:get() == 2) )
 		--ниже сделал отдельную переменную для что бы не вствлять одну и туже конструкцию, работать будет быстрее
 		REAR_MOVE = (GearCounter:get() == 0) 
 		KeyBoard:setLedGreen(8, REAR_MOVE)
-		setOut(STEERING_WEEL_VALVE_CH,  REAR_MOVE)		
-		--setOut(REAR_LIGTH_CH, REAR_MOVE or rear_ligth) --задний ход
+        setOut(DOWN_GEAR_CH,  REAR_MOVE)
+		setOut(REAR_LIGTH_CH, REAR_MOVE or rear_ligth) --задний ход
 		--конец блока переключения передач
 		--блок управления горном
         local HORN = KeyBoard:getKey(7) and start
