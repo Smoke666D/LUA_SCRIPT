@@ -97,7 +97,8 @@ main = function ()
     DASH:init()	
 	KeyBoard:setBackLigthBrigth(  3 )
 	--рабочий цикл
-	while true do		
+	while true do	
+		setOut(KL30, true )  -- подаем питание на клавиатуру и даш	
 		KeyBoard:process() --процесс работы с клавиатурой
 		DASH:process()	   --процесс отправки данных о каналах в даш
 		dash_start = (CanIn:process()==1) --процесс получение данных с входа Can. Переменная становится единицей, как только что-то получили от приборки
@@ -107,29 +108,29 @@ main = function ()
 		local RPM =     ( dash_start ) and CanIn:getWord(4) or 0
 		local speed =   ( dash_start ) and CanIn:getByte(3) or 0		
 		local stop_signal = getDIN(STOP_SW)
+		
 		KeyBoard:setBackLigthBrigth( start and 15 or 3 )	-- подсветка клавиатуры
 		--как только приходит сигнал зажигания
         setOut(CUT_VALVE, start )
-		
 		-- управление топливным насосм
-	    
 		--setOut(FUEL_PUMP_CH, (not PumpTimer:get()) and start)
 	    setOut(FUEL_PUMP_CH, start)
+		
+		--блок управления стартером
         KeyBoard:setLedRed( 1,  PREHEAT  )		
         local START_ENABLE = KeyBoard:getKey(1) and start --and (not PREHEAT)
 		setOut( STARTER_CH, START_ENABLE)
 		KeyBoard:setLedGreen( 1, START_ENABLE  )		
-		setOut(KL30, true )
 		
-		setOut(STEERING_WEEL_VALVE_CH,  KeyBoard:getToggle(3)  )	
-		setOut(STOP_VALVE, KeyBoard:getToggle(7)  )
-		KeyBoard:setLedRed( 3,  KeyBoard:getToggle(3) )
-		KeyBoard:setLedRed( 7,  KeyBoard:getToggle(7)  )
 		
-		setOut(OIL_FAN_CH, (temp>30) and true or false)
+		--setOut(STEERING_WEEL_VALVE_CH,  KeyBoard:getToggle(3)  )	
+		--setOut(STOP_VALVE, KeyBoard:getToggle(7)  )
+		
+		
+		setOut(OIL_FAN_CH, ( (temp>30)  and true or false) )
 		CanSend( 0x666    ,temp,1,2,3,4,5,6,7)
 		-- блок переключением передач и заденего хода
-		wheel_start  = (wheel_start or START_ENABLE) and start
+		--wheel_start  = (wheel_start or START_ENABLE) and start
       --  PumpTimer:process(wheel_start,false)		
 		--setOut(STEERING_WEEL_VALVE_CH,  PumpTimer:get() )		
 		
@@ -145,11 +146,11 @@ main = function ()
         setOut(DOWN_GEAR_CH,  REAR_MOVE)
 		setOut(REAR_LIGTH_CH, REAR_MOVE or rear_ligth) --задний ход
 		--конец блока переключения передач
-		--[[блок управления горном
+		--блок управления горном
         local HORN = KeyBoard:getKey(7) and start
 		setOut(HORN_CH, HORN )
 		KeyBoard:setLedGreen(7,HORN )
-		--конец блока упрвления горонм]]
+		--конец блока упрвления горонм
 	    --Блок управления дальним и билжним светом и стоп сигналом
 		BeamCounter:process(KeyBoard:getKey(2),false, not start)  -- cчетчик process( инкримент, дикремент, сборс)
 		Ligth_Enable = (BeamCounter:get() ~= 1 )  -- если счетчик не равен 1  то true
@@ -159,7 +160,7 @@ main = function ()
 		setOut(HIGH_BEAM,(BeamCounter:get() == 3 ) )
 		KeyBoard:setLedGreen( 2, (BeamCounter:get() == 2 )  ) -- если 2 (билжний счет, то зажигаем светодиод)
 		KeyBoard:setLedBlue( 2, (BeamCounter:get() == 3 ) 	) -- если 3 ( дальний свет, то зажигаем синий свет)
-		--[[Блок управления дврониками и омывателем
+		--Блок управления дврониками и омывателем
 			--Поскольку мотор останавливается с задержкой и переезжает датчик
 			--то сделан триггер loacation
 			--При нажатии на кнопку 3 ключаются дворники и загарается зеленый светодид
@@ -196,7 +197,7 @@ main = function ()
 			wipers_on = wipers_on and start
 			water = water and start
 			setOut(WIPERS_CH, wipers_on or location )
-			setOut(WATER_CH , water )]]
+			setOut(WATER_CH , water )
 			-- конец блока дворников
 		--аогоритм управления с 2-х клавиш повортниками и если 2 вместе, то аварийка
 		if  ALARM then
