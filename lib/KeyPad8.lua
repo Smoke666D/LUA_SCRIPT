@@ -22,16 +22,20 @@
 KeyPad8 = {}
 KeyPad8.__index = KeyPad8
 function KeyPad8:new( addr)
-      local obj = {key = 0x00, ADDR = addr, new = true,  tog= 0x00, old =0x00, ledRed=0x00,ledGreen=0x00, ledBlue =0x00, temp={[1]=0}, backligth = 0, led_brigth = 0}	  
+      local obj = {key = 0x00, ADDR = addr, new = true, alive =false, tog= 0x00, old =0x00, ledRed=0x00,ledGreen=0x00, ledBlue =0x00, temp={[1]=0}, backligth = 0, led_brigth = 0}	  
       setmetatable (obj, self)
 	  
       setCanFilter(0x180 +addr)
+	  setCanFilter(0x700 +addr)
       return obj
 end
 function KeyPad8:process()
 	if (GetCanToTable(0x180 + self.ADDR,self.temp) ==1 ) then
 		self.tog = (~ self.key & self.temp[1]) ~ self.tog
 		self.key =self.temp[1]
+	end
+	if (GetCanToTable(0x700 +addr,self.temp ) == 1 ) then
+	   self.new = true
 	end
 	if self.new == true then
 		self.new = false		
@@ -87,7 +91,7 @@ function KeyPad8:setLedBrigth( brigth )
 end
 function KeyPad8:setBackLigthBrigth( brigth )
 	self.old = brigth
-	if (self.old ~= self.backligt) then
+	if (self.old ~= self.backlight) then
 		self.backligth =self.old
 		self.new = true
 		--CanSend(0x600 + self.ADDR,0x2F,0x03,0x20,0x02,self.backligth,0,0,0)
