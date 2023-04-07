@@ -34,7 +34,7 @@ function KeyPad8:process()
 		self.tog = (~ self.key & self.temp[1]) ~ self.tog
 		self.key =self.temp[1]
 	end
-	if (GetCanToTable(0x700 +addr,self.temp ) == 1 ) then
+	if (GetCanToTable(0x700 +self.ADDR,self.temp ) == 1 ) then
 	   self.new = true
 	end
 	if self.new == true then

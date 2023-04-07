@@ -65,7 +65,7 @@ end
 --главная функция
 main = function ()
 
-
+    init()	
     local KeyBoard		= KeyPad8:new(0x15)--создание объекта клавиатура c адресом 0x15
 	local DASH			= Dashboard:new(0x505,800)
 	local CanIn         = CanInput:new(0x28) -- <адрес can>, < таймаут>	
@@ -93,8 +93,7 @@ main = function ()
     local PreheatTimer = 0
 	local gear_enable = false
 	local dash_start = false
-	local wheel_start = false
-    init()				   		
+	local wheel_start = false		   		
     DASH:init()	
 	KeyBoard:setBackLigthBrigth(  3 )
 	--рабочий цикл
@@ -121,16 +120,20 @@ main = function ()
 		setOut( STARTER_CH, START_ENABLE)
 		KeyBoard:setLedGreen( 1, START_ENABLE  )		
 		setOut(KL30, true )
-		setOut(STOP_VALVE, not getDIN(PARKING_SW) )
+		
+		setOut(STEERING_WEEL_VALVE_CH,  KeyBoard:getToggle(3)  )	
+		setOut(STOP_VALVE, KeyBoard:getToggle(7)  )
+		KeyBoard:setLedRed( 3,  KeyBoard:getToggle(3) )
+		KeyBoard:setLedRed( 7,  KeyBoard:getToggle(7)  )
 		
 		setOut(OIL_FAN_CH, (temp>30) and true or false)
 		CanSend( 0x666    ,temp,1,2,3,4,5,6,7)
 		-- блок переключением передач и заденего хода
 		wheel_start  = (wheel_start or START_ENABLE) and start
-        PumpTimer:process(wheel_start,false)		
-		setOut(STEERING_WEEL_VALVE_CH,  PumpTimer:get() )		
+      --  PumpTimer:process(wheel_start,false)		
+		--setOut(STEERING_WEEL_VALVE_CH,  PumpTimer:get() )		
 		
-		rear_ligth = KeyBoard:getToggle(8) and ( not start)   -- зажигаем задний фонраь и подсвечиваем кнопку R синими, если жмем на нее без зажигания
+		rear_ligth = REAR_MOVE and ( not start)   -- зажигаем задний фонраь и подсвечиваем кнопку R синими, если жмем на нее без зажигания
 		--KeyBoard:setLedBlue(8, rear_ligth)
 	    gear_enable = true--stop_signal -- and (speed == 0) and ( RPM < 1000 )
 		GearCounter:process(KeyBoard:getKey(4) and gear_enable,KeyBoard:getKey(8) and gear_enable, KeyBoard:getKey(1) or (not start) )												
@@ -156,7 +159,7 @@ main = function ()
 		setOut(HIGH_BEAM,(BeamCounter:get() == 3 ) )
 		KeyBoard:setLedGreen( 2, (BeamCounter:get() == 2 )  ) -- если 2 (билжний счет, то зажигаем светодиод)
 		KeyBoard:setLedBlue( 2, (BeamCounter:get() == 3 ) 	) -- если 3 ( дальний свет, то зажигаем синий свет)
-		--Блок управления дврониками и омывателем
+		--[[Блок управления дврониками и омывателем
 			--Поскольку мотор останавливается с задержкой и переезжает датчик
 			--то сделан триггер loacation
 			--При нажатии на кнопку 3 ключаются дворники и загарается зеленый светодид
@@ -193,7 +196,7 @@ main = function ()
 			wipers_on = wipers_on and start
 			water = water and start
 			setOut(WIPERS_CH, wipers_on or location )
-			setOut(WATER_CH , water )
+			setOut(WATER_CH , water )]]
 			-- конец блока дворников
 		--аогоритм управления с 2-х клавиш повортниками и если 2 вместе, то аварийка
 		if  ALARM then
@@ -225,7 +228,7 @@ main = function ()
 		if start then
 				PreheatTimer = PreheatTimer + getDelay()
 			     if temp < 40 then
-				   PREHEAT = (PreheatTimer < 8000 )
+				   PREHEAT = (PreheatTimer < 10000 )
 				elseif temp < 50 then
 					PREHEAT = (PreheatTimer < 4000 )
 			    elseif temp < 60 then
@@ -237,11 +240,12 @@ main = function ()
 				elseif temp>= 100 then
 					PREHEAT = false
 				end
-			else
+		else
 				PreheatTimer = 0					--сбрасываем таймер, если зажигание выключено
-			end
-			setOut(GLOW_PLUG_1_2, PREHEAT and start)
-			setOut(GLOW_PLUG_3_4, PREHEAT and start)
+				PREHEAT = false
+		end
+		setOut(GLOW_PLUG_1_2, PREHEAT and start)
+		setOut(GLOW_PLUG_3_4, PREHEAT and start)
 		--конец блока предпрогрева
 	   Yield()
 	end
