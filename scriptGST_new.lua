@@ -64,7 +64,6 @@ function init()
 end
 --главная функция
 main = function ()
-
     init()	
     local KeyBoard		= KeyPad8:new(0x15)--создание объекта клавиатура c адресом 0x15
 	local DASH			= Dashboard:new(0x505,800)
@@ -78,29 +77,28 @@ main = function ()
 	local FlashTimer    = Delay:new( 20,  true )
 	local PumpTimer		= Delay:new( 6000,  false )
 	local FlashEnabel   = true	
-	local LEFT		= false
-	local RIGTH   = false
-	local ALARM		= false	
-    local REAR_MOVE = false
-	local UP_MOVE   = false
-	local RIGTH_ENABLE = false
-	local LEFT_ENABLE = false
-	local N_MOVE 	= false
-	local PREHEAT = false
-	local HIGH_BEAM = false
-	local LOW_BEAM = false
-	local rear_ligth =  false	
+	local LEFT			= false
+	local RIGTH   		= false
+	local ALARM			= false	
+    local REAR_MOVE 	= false
+	local UP_MOVE   	= false
+	local RIGTH_ENABLE 	= false
+	local LEFT_ENABLE 	= false
+	local N_MOVE 		= false
+	local PREHEAT 		= false
+	local HIGH_BEAM 	= false
+	local LOW_BEAM 		= false
 	local Ligth_Enable	= false
-	local wipers_on = false
-	local location = false
-	local water  = false
-	local water_enable = false
-	local work_state = false
-	local wait_flag  = false	
-    local PreheatTimer = 0
-	local gear_enable = false
-	local dash_start = false
-	local wheel_start = false		   		
+	local wipers_on 	= false
+	local location 		= false
+	local water  		= false
+	local water_enable	= false
+	local work_state 	= false
+	local wait_flag  	= false	
+    local PreheatTimer 	= 0
+	local gear_enable 	= false
+	local dash_start 	= false
+	local wheel_start 	= false		   		
     DASH:init()	
 	KeyBoard:setBackLigthBrigth(  3 )
 	--рабочий цикл
@@ -114,7 +112,7 @@ main = function ()
 		local OilTemp  =( dash_start ) and CanIn:getByte(2) or 0 --  CanOilTempIn:getByte(1)  -- получаем первый байт из фрейма, температура масла
 		local RPM 	   =( dash_start ) and CanIn:getWord(4) or 0
 		local speed    =( dash_start ) and CanIn:getByte(3) or 0		
-		local stop_signal = getDIN(STOP_SW)
+		local stop_signal = getDIN(STOP_SW) and (not START_ENABLE)
 		KeyBoard:setBackLigthBrigth( start and 15 or 3 )	-- подсветка клавиатуры
 		--как только приходит сигнал зажигания
         setOut(CUT_VALVE, start )
@@ -122,27 +120,25 @@ main = function ()
 		--setOut(FUEL_PUMP_CH, (not PumpTimer:get()) and start)
 	    setOut(FUEL_PUMP_CH, start)
         KeyBoard:setLedRed( 1,  PREHEAT  )		
-        local START_ENABLE = KeyBoard:getKey(1) and start --and (not PREHEAT)
+        local START_ENABLE = KeyBoard:getKey(1) and start 
 		setOut( STARTER_CH, START_ENABLE)
 		KeyBoard:setLedGreen( 1, START_ENABLE  )		
 		setOut(KL30, true )
-		
 		--setOut(STEERING_WEEL_VALVE_CH,  KeyBoard:getToggle(3)  )	
 		setOut(STOP_VALVE, not PARKING_SW)
 		--KeyBoard:setLedRed( 3,  KeyBoard:getToggle(3) )
 		--KeyBoard:setLedRed( 7,  KeyBoard:getToggle(7)  )
 		
-		setOut(OIL_FAN_CH, (temp>30) and true or false)
+		setOut(OIL_FAN_CH, ( (temp>30) and (not START_ENABLE) ) and true or false)
 		
 		-- блок переключением передач и заденего хода
 		wheel_start  = (wheel_start or START_ENABLE) and start
       --  PumpTimer:process(wheel_start,false)		
 		--setOut(STEERING_WEEL_VALVE_CH,  PumpTimer:get() )		
 		
-		rear_ligth = REAR_MOVE and ( not start)   -- зажигаем задний фонраь и подсвечиваем кнопку R синими, если жмем на нее без зажигания
 		--KeyBoard:setLedBlue(8, rear_ligth)
 	    gear_enable = true--stop_signal -- and (speed == 0) and ( RPM < 1000 )
-		GearCounter:process(KeyBoard:getKey(4) and gear_enable,KeyBoard:getKey(8) and gear_enable, KeyBoard:getKey(1) or (not start) )
+		GearCounter:process(KeyBoard:getKey(4) and gear_enable,KeyBoard:getKey(8) and gear_enable, START_ENABLE or (not start) )
 		UP_MOVE	 = (GearCounter:get() == 2)	and true or false
 		KeyBoard:setLedGreen(4, UP_MOVE)		
 		setOut(UP_GEAR ,  UP_MOVE )
@@ -150,7 +146,7 @@ main = function ()
 		REAR_MOVE = (GearCounter:get() == 0) 
 		KeyBoard:setLedGreen(8, REAR_MOVE)
         setOut(DOWN_GEAR_CH,  REAR_MOVE)
-		setOut(REAR_LIGTH_CH, REAR_MOVE or rear_ligth) --задний ход
+		setOut(REAR_LIGTH_CH, REAR_MOVE) --задний ход
 		N_MOVE = not ( REAR_MOVE and UP_MOVE )
 		--конец блока переключения передач
 		--блок управления горном
@@ -160,13 +156,13 @@ main = function ()
 		--конец блока упрвления горонм
 	    --Блок управления дальним и билжним светом и стоп сигналом
 		BeamCounter:process(KeyBoard:getKey(2),false, not start)  -- cчетчик process( инкримент, дикремент, сборс)
-		Ligth_Enable = (BeamCounter:get() ~= 1 )  -- если счетчик не равен 1  то true
-	    setOut(LOW_BEAM_CH, Ligth_Enable and (not START_ENABLE) )  -- ближний свет
-		setOut(STOP_CH, ( Ligth_Enable or (stop_signal and start) ) and (not START_ENABLE) )  --ближний свет и стоп сигнал
+		Ligth_Enable = (BeamCounter:get() ~= 1 ) and (not START_ENABLE) -- если счетчик не равен 1  то true
+	    setOut(LOW_BEAM_CH, Ligth_Enable  )  -- ближний свет
+		setOut(STOP_CH,  Ligth_Enable or (stop_signal and start))  --ближний свет и стоп сигнал
 		OutSetPWM(STOP_CH, stop_signal and 99 or 20)
 		HIGH_BEAM = (BeamCounter:get() == 3 ) and true or false
 		LOW_BEAM = (BeamCounter:get() == 2 ) and true or false
-		setOut(HIGH_BEAM_CH,HIGH_BEAM and (not START_ENABLE) )
+		setOut(HIGH_BEAM_CH, HIGH_BEAM and (not START_ENABLE) )
 		KeyBoard:setLedGreen( 2, LOW_BEAM  ) -- если 2 (билжний счет, то зажигаем светодиод)
 		KeyBoard:setLedBlue( 2,  HIGH_BEAM ) -- если 3 ( дальний свет, то зажигаем синий свет)
 		--Блок управления дврониками и омывателем
@@ -240,6 +236,7 @@ main = function ()
 		if start then
 			if START_ENABLE then
 				PreheatTimer = 11000
+				PREHEAT 	 = false
 			end 
 			if PreheatTimer < 11000 then	
 				PreheatTimer = PreheatTimer + getDelay()
@@ -256,8 +253,6 @@ main = function ()
 				elseif temp>= 100 then
 					PREHEAT = false
 				end
-			else
-				PREHEAT = false
 			end
 		else
 			PreheatTimer = 0					--сбрасываем таймер, если зажигание выключено
@@ -266,8 +261,6 @@ main = function ()
 		setOut(GLOW_PLUG_1_2, PREHEAT )
 		setOut(GLOW_PLUG_3_4, PREHEAT )
 		--конец блока предпрогрева
-		
-		
 		CanToDash:setBit(1, 8, HIGH_BEAM )
 		CanToDash:setBit(1, 7, Ligth_Enable)
 		CanToDash:setBit(1, 6, Turns:getAlarm())
