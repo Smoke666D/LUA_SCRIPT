@@ -50,7 +50,7 @@ function init()
 	setOutConfig(STEERING_WEEL_VALVE_CH,8)
 	setOutConfig(REAR_LIGTH_CH,20)
 	setOutConfig(STOP_VALVE,8)
-	setOutConfig(HORN_CH,7,1)
+	setOutConfig(HORN_CH,7,1,1000,15)
 	setOutConfig(LOW_BEAM_CH,3)
 	setPWMGroupeFreq(5, 100)
     setDINConfig(PRESSURE_IN,0)
@@ -139,8 +139,8 @@ main = function ()
 			
 			local stop_signal = getDIN(STOP_SW) and (not START_ENABLE)
 			
-			parking_on = getDIN(PARKING_SW) or getDIN(DOOR2_SW) or getDIN(DOOR1_SW)
-			setOut(STOP_VALVE, parking_on )
+			parking_on =  getDIN(PARKING_SW) or getDIN(DOOR2_SW) or getDIN(DOOR1_SW)
+			setOut(STOP_VALVE, not parking_on )
 			
 			--блок управления вентилятром охлаждения масла
 			if  ( ( OilTemp > (60+ TEMP_OFFSET)) or ( OilTemp == 0) ) then
