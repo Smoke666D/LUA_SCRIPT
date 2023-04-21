@@ -124,7 +124,7 @@ main = function ()
 			dash_start 		= (CanIn:process()==1) --процесс получение данных с входа Can. Переменная становится единицей, как только что-то получили от приборки
 			local start 	= getDIN(ING_IN)	
 			local temp     	= ( dash_start ) and ( CanIn:getByte(1) ) or 0   -- получаем первый байт из фрейма, температура охлаждающей жидкости
-			local OilTemp  	= ( dash_start ) and ( CanIn:getByte(6)  ) or 0 --  CanOilTempIn:getByte(1)  -- получаем первый байт из фрейма, температура масла
+			local OilTemp  	= ( dash_start ) and ( CanIn:getByte(6)  ) or 40 --  CanOilTempIn:getByte(1)  -- получаем первый байт из фрейма, температура масла
 			local RPM 	  	= ( dash_start ) and CanIn:getWord(2) or 0
 			local speed     = ( dash_start ) and CanIn:getWord(4) or 0		
 			
@@ -143,10 +143,10 @@ main = function ()
 			setOut(STOP_VALVE, parking_on )
 			
 			--блок управления вентилятром охлаждения масла
-			if  ( ( OilTemp > (69+ TEMP_OFFSET)) ) then
+			if  ( ( OilTemp > (60+ TEMP_OFFSET)) or ( OilTemp == 0) ) then
 				oil_fan_enable = true
 			end
-			if  ( ( OilTemp < (55+ TEMP_OFFSET)) ) then
+			if  ( ( OilTemp < (40+ TEMP_OFFSET)) ) then
 				oil_fan_enable = false
 			end
 			setOut(OIL_FAN_CH, oil_fan_enable and (not START_ENABLE)  )
