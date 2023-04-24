@@ -1,69 +1,30 @@
 --Важно Для редактировани использовать редактор, где можно ставить кодировку UTF-8. 
 --При кодировке ANSI ломаются скрипты обработки
 
-REAR_LIGTH_CH   = 6
-HIGH_BEAM   	= 2
-STARTER_CH	 	= 3
-PREHEAT_CH2  	= 4
-PREHEAT_CH1  	= 5
-FUEL_PUMP_CH    = 1
-IGNITION_CH     = 7
-STOP_CH	    	= 9
-LOW_BEAM_CH 	= 10
-RIGTH_TURN_CH 	= 11
-LEFT_TURN_CH 	= 12
-WIPERS_CH   	= 13
-WATER_CH    	= 14
-UP_GEAR     	= 15
-DOWN_GEAR_CH   	= 16
-REAR_HORN_CH   	= 17
-HORN_CH 		= 18
-COOLFAN_CH    	= 19
+
 
 function init() --функция иницализации
-     ConfigCan(1,1000);
-	 setOutConfig(FUEL_PUMP_CH,2,1,4500,60)	
-	-- Функции конфинурации канала. Если не вызвать setOutConfig, то канал будет в режиме DISABLE на урвоне ядра. Т.е. физический будет принудительнов выключен, токи не будет считаться, на команды из скрипта не регаирует.
-    setOutConfig(REAR_LIGTH_CH,20)   -- 1.  номер канала (1-20), 
-								-- 2.  номинальный ток (пока еще не определился с верхней границей), 
-								-- 3.  Необязательный агрумент - Сборс ошибки выключением - значение по умолчанию <1>  0 - сборс ошибки  только рестатром системы 1 - сборс ошибки выклчюением канала
-								-- 4.  Необязательный агрумент  -время работы в перегузке в мс - значение по умолчанию  - 0, 
-							    -- 5.  Необязательный аргумент, - ток перегрузки, значение по умолчанию - номинальный ток. 
-							   
-	
-	   -- Конфигурация режима перегрузки  1. номера канала 2. Кол-во циклов перегрукзи, если 0, то будет пытаться рестартовать бесконечно, если 1, то сразу после перегрузки удейт в ошибку
-						     -- если больше 1, то соотвесвенно будет патться стартануть указаное кол-во раз. 3. Таймаут перед новым запускаом при перегузке
-							-- Если не вызывать OutResetConfig, по умолчанию канал после пегрузки идет в ошибку.
-	-- в ядре есть алгоримт софт-старта. Пока не вытащил его в скрит. Скоро будет.
-	setOutConfig(HIGH_BEAM,11)
-	--OutResetConfig(2,1,1)
-	setOutConfig(STARTER_CH,15,1,100,40)
-	setOutConfig(STOP_CH,5)	
-	
-	setOutConfig(IGNITION_CH,15)	
-	setOutConfig(LOW_BEAM_CH,3)	
-	setOutConfig(LEFT_TURN_CH,8,0) -- для повортников влючен режим ухода в ошибку до перезапуска
-	OutResetConfig(LEFT_TURN_CH,1,0) 
-	setOutConfig(RIGTH_TURN_CH,8,0)
-	OutResetConfig(RIGTH_TURN_CH,1,0)
-	setOutConfig(WIPERS_CH,10,0,100,30)
-	setOutConfig(WATER_CH,8,0,100,30)
-	setOutConfig(UP_GEAR, 8)
-	setOutConfig(DOWN_GEAR_CH,8)
-	setOutConfig(REAR_HORN_CH,8)
-	setOutConfig(PREHEAT_CH1,2)
-
-	setOutConfig(PREHEAT_CH2,2)
-	
-	setOutConfig(COOLFAN_CH,8)
-	setOutConfig(HORN_CH,7,1)
-	OutResetConfig(HORN_CH,1,0)
-	setOutConfig(20,8)
-    setDINConfig(1,1)
-    setDINConfig(2,1)
-	setPWMGroupeFreq(0, 100)
-	setPWMGroupeFreq(4, 5000)
-	setOutSoftStart(HORN_CH,5000,40)
+    ConfigCan(1,1000);
+	setOutConfig(1,4)
+	setOutConfig(2,4)
+	setOutConfig(3,4)
+	setOutConfig(4,4)
+	setOutConfig(5,4)
+	setOutConfig(6,4)
+	setOutConfig(7,4)
+	setOutConfig(8,4)
+	setOutConfig(9,4)
+	setOutConfig(10,4)
+	setOutConfig(11,4)
+	setOutConfig(12,4)
+	setOutConfig(13,4)
+	setOutConfig(14,4)
+	setOutConfig(15,4)
+	setOutConfig(16,4)
+	setOutConfig(17,4)
+	setOutConfig(18,4)
+	setOutConfig(19,4)
+	setOutConfig(20,4)
 end
 ----
 -- немножко вкинуну херни про системные функции
@@ -83,8 +44,10 @@ main = function ()
 	local Key6Counter   = Counter:new(0,3,0,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)	
 	local Key7Counter   = Counter:new(0,3,0,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)
 	local Key8Counter   = Counter:new(0,3,0,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)
+	local CanAIN1		= CanOut:new(0x29, 300)
+	local CanAIN2		= CanOut:new(0x30, 300)
+	local CanAIN3		= CanOut:new(0x31, 300)
 	
-
     
     
     init()
@@ -94,20 +57,57 @@ main = function ()
 	
 
    
-	while true do		
+	while true do	
+
+
+		CanAIN1:setByte(1,(getAin(1)//1) & 0xFF)
+		CanAIN1:setByte(2,(((getAin(1)*100)%100)//1) & 0xFF)
+		CanAIN1:setByte(3,(getAin(2)//1) & 0xFF)
+		CanAIN1:setByte(4,(((getAin(2)*100)%100)//1) & 0xFF)
+		CanAIN1:setByte(5,(getAin(3)//1) & 0xFF)
+		CanAIN1:setByte(6,(((getAin(3)*100)%100)//1) & 0xFF)
+		CanAIN1:setByte(7,(getAin(4)//1) & 0xFF)
+		CanAIN1:setByte(8,(((getAin(4)*100)%100)//1) & 0xFF)
+		CanAIN2:setByte(1,(getAin(5)//1) & 0xFF)
+		CanAIN2:setByte(2,(((getAin(5)*100)%100)//1) & 0xFF)
+		CanAIN2:setByte(3,(getAin(6)//1) & 0xFF)
+		CanAIN2:setByte(4,(((getAin(6)*100)%100)//1) & 0xFF)
+		CanAIN2:setByte(5,(getAin(7)//1) & 0xFF)
+		CanAIN2:setByte(6,(((getAin(7)*100)%100)//1) & 0xFF)
+		CanAIN2:setByte(7,(getAin(8)//1) & 0xFF)
+		CanAIN2:setByte(8,(((getAin(8)*100)%100)//1) & 0xFF)
+		CanAIN3:setByte(1,(getAin(9)//1) & 0xFF)
+		CanAIN3:setByte(2,(((getAin(9)*100)%100)//1) & 0xFF)
+		CanAIN3:setByte(3,(getAin(10)//1) & 0xFF)
+		CanAIN3:setByte(4,(((getAin(10)*100)%100)//1) & 0xFF)
+		CanAIN3:setByte(5,(getAin(11)//1) & 0xFF)
+		CanAIN3:setByte(6,(((getAin(11)*100)%100)//1) & 0xFF)
+		CanAIN3:setByte(7,(getBat()//1) & 0xFF)
+		CanAIN3:setByte(8,(((getBat()*100)%100)//1) & 0xFF)
+		
+		CanAIN1:process()
+	    CanAIN2:process()
+		CanAIN3:process()
+	
 		KeyBoard:process() --процесс работы с клавиатурой
 				
-		
+		KeyBoard:setLedRed(1, true)
 				
 		Key1Counter:process(KeyBoard:getKey(1),false,false);
 		KeyBoard:setLedRed( 1,  Key1Counter:get() ==1 )
 		KeyBoard:setLedGreen( 1,  Key1Counter:get() ==2 )
 		KeyBoard:setLedBlue( 1,  Key1Counter:get() ==3 )
 		
+		--setOut(1,( Key1Counter:get() ==1))
+		--setOut(2,( Key1Counter:get() ==2))
+		--setOut(3,( Key1Counter:get() ==3))
+		
 		Key2Counter:process(KeyBoard:getKey(2),false,false);
 		KeyBoard:setLedRed( 2,  Key2Counter:get() ==1 )
 		KeyBoard:setLedGreen( 2,  Key2Counter:get() ==2 )
 		KeyBoard:setLedBlue( 2,  Key2Counter:get() ==3 )
+		
+		--setOut(4,( Key2Counter:get() ==3))
 		 
 		Key3Counter:process(KeyBoard:getKey(3),false,false);
 		KeyBoard:setLedRed( 3,  Key3Counter:get() ==1 )
@@ -139,9 +139,26 @@ main = function ()
 		KeyBoard:setLedGreen( 8,  Key8Counter:get() ==2 )
 		KeyBoard:setLedBlue( 8,  Key8Counter:get() ==3 )
 		
-		 
-		 
-		 
+		setOut(1,true)
+		 setOut(2,true)
+		 setOut(3,true)
+		 setOut(4,true)
+		 setOut(5,true)
+		 setOut(6,true)
+		 setOut(7,true)
+		 setOut(8,true)
+		 setOut(9,true)
+		 setOut(10,true)
+		 setOut(11,true)
+		 setOut(12,true)
+		 setOut(13,true)
+		 setOut(14,true)
+		 setOut(15,true)
+		 setOut(16,true)
+		 setOut(17,true)
+		 setOut(18,true)
+		 setOut(19,true)
+		 setOut(20,true)
 					
 		   
 	   Yield() 

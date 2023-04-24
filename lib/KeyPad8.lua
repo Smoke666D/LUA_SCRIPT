@@ -91,7 +91,7 @@ function KeyPad8:setLedBrigth( brigth )
 end
 function KeyPad8:setBackLigthBrigth( brigth )
 	self.old = brigth
-	if (self.old ~= self.backlight) then
+	if (self.old ~= self.backligth) then
 		self.backligth =self.old
 		self.new = true
 		--CanSend(0x600 + self.ADDR,0x2F,0x03,0x20,0x02,self.backligth,0,0,0)
