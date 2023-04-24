@@ -97,7 +97,6 @@ main = function ()
 	local WaterKeyDelay = Delay:new( 800, false)
 	local BeamCounter   = Counter:new(1,3,1,true) 
 	local FlashTimer    = Delay:new( 20,  true )
-	local PumpTimer		= Delay:new( 6000,  false )
 	local LEFT			= false
 	local RIGTH   		= false
 	local ALARM			= false	
@@ -109,7 +108,6 @@ main = function ()
 	local wait_flag  	= false	
     local PreheatTimer 	= 0
 	local dash_start 	= false
-	local wheel_start 	= false	
   
     DASH:init()	
 	KeyBoard:setBackLigthBrigth(  3 )
@@ -132,27 +130,20 @@ main = function ()
 			--как только приходит сигнал зажигания
 			setOut(CUT_VALVE, start )
 			-- управление топливным насосм
-			--setOut(FUEL_PUMP_CH, (not PumpTimer:get()) and start)
+			
 			setOut(FUEL_PUMP_CH, start)
 			KeyBoard:setLedRed( 1,  PREHEAT  )		
 			local START_ENABLE = KeyBoard:getKey(1) and start 
 			setOut( STARTER_CH, START_ENABLE)
 			KeyBoard:setLedGreen( 1, START_ENABLE  )		
 			
-			
 			local stop_signal = getDIN(STOP_SW) and (not START_ENABLE)
-			--setOut(STEERING_WEEL_VALVE_CH,  KeyBoard:getToggle(3)  )	
 			setOut(STOP_VALVE,  getDIN(PARKING_SW))
-			--KeyBoard:setLedRed( 3,  KeyBoard:getToggle(3) )
-			--KeyBoard:setLedRed( 7,  KeyBoard:getToggle(7)  )dash_start
-			--setOut(OIL_FAN_CH, dash_start)
 			
 			setOut(OIL_FAN_CH, ( ( OilTemp > (30+ TEMP_OFFSET)) ) and (not START_ENABLE)  )
 			-- блок переключением передач и заденего хода
-			wheel_start  = (wheel_start or START_ENABLE) and start
-			--  PumpTimer:process(wheel_start,false)		
-			--setOut(STEERING_WEEL_VALVE_CH,  PumpTimer:get() )		
-			--KeyBoard:setLedBlue(8, rear_ligth)
+
+			
 			local gear_enable = true--stop_signal -- and (speed == 0) and ( RPM < 1000 )
 			GearCounter:process(KeyBoard:getKey(4) and gear_enable,KeyBoard:getKey(8) and gear_enable, START_ENABLE or (not start) )
 			local UP_MOVE	 = (GearCounter:get() == 2)	

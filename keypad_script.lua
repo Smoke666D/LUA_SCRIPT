@@ -1,6 +1,7 @@
 --Важно Для редактировани использовать редактор, где можно ставить кодировку UTF-8. 
 --При кодировке ANSI ломаются скрипты обработки
 
+<<<<<<< HEAD
 
 
 function init() --функция иницализации
@@ -25,6 +26,32 @@ function init() --функция иницализации
 	setOutConfig(18,4)
 	setOutConfig(19,4)
 	setOutConfig(20,4)
+=======
+
+
+function init() --функция иницализации
+     ConfigCan(1,1000);
+	 setOutConfig(1,2)	
+	 setOutConfig(2,2)	
+     setOutConfig(3,2)	
+     setOutConfig(4,2)	 
+     setOutConfig(5,2)	
+	 setOutConfig(6,2)	
+	 setOutConfig(7,2)	
+     setOutConfig(8,2)	
+     setOutConfig(9,2)	 
+     setOutConfig(10,2)
+	 setOutConfig(11,2)	
+	 setOutConfig(12,2)	
+     setOutConfig(13,2)	
+     setOutConfig(14,2)	 
+     setOutConfig(15,2)
+	 setOutConfig(16,2)	
+	 setOutConfig(17,2)	
+     setOutConfig(18,2)	
+     setOutConfig(19,2)	 
+     setOutConfig(20,2)
+>>>>>>> 6834365a65e2d38d409842e9db1990f83eb299da
 end
 ----
 -- немножко вкинуну херни про системные функции
@@ -98,47 +125,78 @@ main = function ()
 		KeyBoard:setLedGreen( 1,  Key1Counter:get() ==2 )
 		KeyBoard:setLedBlue( 1,  Key1Counter:get() ==3 )
 		
+<<<<<<< HEAD
 		--setOut(1,( Key1Counter:get() ==1))
 		--setOut(2,( Key1Counter:get() ==2))
 		--setOut(3,( Key1Counter:get() ==3))
+=======
+		setOut(1, Key1Counter:get() ==1)
+		setOut(2, Key1Counter:get() ==2)
+		setOut(3, Key1Counter:get() ==3)
+		
+>>>>>>> 6834365a65e2d38d409842e9db1990f83eb299da
 		
 		Key2Counter:process(KeyBoard:getKey(2),false,false);
 		KeyBoard:setLedRed( 2,  Key2Counter:get() ==1 )
 		KeyBoard:setLedGreen( 2,  Key2Counter:get() ==2 )
 		KeyBoard:setLedBlue( 2,  Key2Counter:get() ==3 )
 		
+<<<<<<< HEAD
 		--setOut(4,( Key2Counter:get() ==3))
+=======
+		setOut(4, Key2Counter:get() ==1)
+		
+>>>>>>> 6834365a65e2d38d409842e9db1990f83eb299da
 		 
 		Key3Counter:process(KeyBoard:getKey(3),false,false);
 		KeyBoard:setLedRed( 3,  Key3Counter:get() ==1 )
 		KeyBoard:setLedGreen( 3,  Key3Counter:get() ==2 )
 		KeyBoard:setLedBlue( 3,  Key3Counter:get() ==3 )
 		
+		setOut(5, Key3Counter:get() ==1)
+		setOut(6, Key3Counter:get() ==2)
+		setOut(7, Key3Counter:get() ==3)
+		
 		Key4Counter:process(KeyBoard:getKey(4),false,false);
 		KeyBoard:setLedRed( 4,  Key4Counter:get() ==1 )
 		KeyBoard:setLedGreen( 4,  Key4Counter:get() ==2 )
 		KeyBoard:setLedBlue( 4,  Key4Counter:get() ==3 )
+		
+		setOut(8, Key4Counter:get() ==3)
 		
 		Key5Counter:process(KeyBoard:getKey(5),false,false);
 		KeyBoard:setLedRed( 5,  Key5Counter:get() ==1 )
 		KeyBoard:setLedGreen( 5,  Key5Counter:get() ==2 )
 		KeyBoard:setLedBlue( 5,  Key5Counter:get() ==3 )
 		
+		setOut(9,  Key5Counter:get() ==1)
+		setOut(10, Key5Counter:get() ==2)
+		setOut(11, Key5Counter:get() ==3)
+		
 		Key6Counter:process(KeyBoard:getKey(6),false,false);
 		KeyBoard:setLedRed( 6,  Key6Counter:get() ==1 )
 		KeyBoard:setLedGreen( 6,  Key6Counter:get() ==2 )
 		KeyBoard:setLedBlue( 6,  Key6Counter:get() ==3 )
+		
+		setOut(12,  Key6Counter:get() ==1)
+		setOut(13, Key6Counter:get() ==2)
+		setOut(14, Key6Counter:get() ==3)
 		
 		Key7Counter:process(KeyBoard:getKey(7),false,false);
 		KeyBoard:setLedRed( 7,  Key7Counter:get() ==1 )
 		KeyBoard:setLedGreen( 7,  Key7Counter:get() ==2 )
 		KeyBoard:setLedBlue( 7,  Key7Counter:get() ==3 )
 		
+		setOut(15,  Key7Counter:get() ==1)
+		setOut(16, Key7Counter:get() ==2)
+		setOut(17, Key7Counter:get() ==3)
+		
 		Key8Counter:process(KeyBoard:getKey(8),false,false);
 		KeyBoard:setLedRed( 8,  Key8Counter:get() ==1 )
 		KeyBoard:setLedGreen( 8,  Key8Counter:get() ==2 )
 		KeyBoard:setLedBlue( 8,  Key8Counter:get() ==3 )
 		
+<<<<<<< HEAD
 		setOut(1,true)
 		 setOut(2,true)
 		 setOut(3,true)
@@ -159,6 +217,13 @@ main = function ()
 		 setOut(18,true)
 		 setOut(19,true)
 		 setOut(20,true)
+=======
+		setOut(18, Key8Counter:get() ==1)
+		setOut(19, Key8Counter:get() ==2)
+		setOut(20, Key8Counter:get() ==3)
+		 
+		 
+>>>>>>> 6834365a65e2d38d409842e9db1990f83eb299da
 					
 		   
 	   Yield() 
