@@ -33,7 +33,7 @@ main = function ()
   
   
 	local start_enable = false
-	
+		local DASH			= Dashboard:new(0x30,200)
     local KeyBoard		= KeyPad8:new(0x15)--создание объекта клавиатура c адресом 0x15
 	
 	local Key1Counter   = Counter:new(0,3,0,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)
@@ -62,7 +62,7 @@ main = function ()
 		
 	
 		KeyBoard:process() --процесс работы с клавиатурой
-				
+				DASH:process()
 		KeyBoard:setLedRed(1, true)
 				
 		Key1Counter:process(KeyBoard:getKey(1),false,false);

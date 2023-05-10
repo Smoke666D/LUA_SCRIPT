@@ -34,11 +34,15 @@ end
 function getRPM( ch)
   return (ch==1) and RPM[1] or RPM[2]
 end
+
+
+
+
 function getOutStatus( ch )
    if ch <11 then
-	return (DOUTSTATUS[1] >> (ch-1)*2) & 0x03
+	return (DOUTSTATUS[1] >> (ch-1)*3) & 0x07
    elseif ch <=20 then
-	return (DOUTSTATUS[2] >> (ch-11)*2) & 0x03
+	return (DOUTSTATUS[2] >> (ch-11)*3) & 0x07
    end
 --     return DOut[ch] == true and 0x01 or 0x00
 end

@@ -88,7 +88,7 @@ end
 main = function ()
     init()	
     local KeyBoard		= KeyPad8:new(0x15)--создание объекта клавиатура c адресом 0x15
-	local DASH			= Dashboard:new(0x505,800)
+	local DASH			= Dashboard:new(0x30,200)
 	local CanIn         = CanInput:new(0x28) -- <адрес can>, < таймаут>	
 	local CanToDash		= CanOut:new(0x29, 100)
 	local Turns	        = TurnSygnals:new(800)
@@ -111,7 +111,7 @@ main = function ()
 	local oil_fan_enable = false
 	local parking_on	= false
   
-    DASH:init()	
+
 	KeyBoard:setBackLigthBrigth(  3 )
 	--рабочий цикл
 	while true do		
@@ -123,11 +123,11 @@ main = function ()
 			DASH:process()	   --процесс отправки данных о каналах в даш
 			dash_start 		= (CanIn:process()==1) --процесс получение данных с входа Can. Переменная становится единицей, как только что-то получили от приборки
 			local start 	= getDIN(ING_IN)	
-			local temp     	= ( dash_start ) and ( CanIn:getByte(1) ) or 0   -- получаем первый байт из фрейма, температура охлаждающей жидкости
+			local temp     	= ( dash_start ) and ( CanIn:getByte(5) ) or 0   -- получаем первый байт из фрейма, температура охлаждающей жидкости
 			local OilTemp  	= ( dash_start ) and ( CanIn:getByte(6)  ) or 40 --  CanOilTempIn:getByte(1)  -- получаем первый байт из фрейма, температура масла
-			local RPM 	  	= ( dash_start ) and CanIn:getWord(2) or 0
-			local speed     = ( dash_start ) and CanIn:getWord(4) or 0		
-			
+			local RPM 	  	= ( dash_start ) and CanIn:getWord(1) or 0
+			local speed     = ( dash_start ) and CanIn:getWord(3) or 0		
+				
 			KeyBoard:setBackLigthBrigth( start and 15 or 3 )	-- подсветка клавиатуры
 			--как только приходит сигнал зажигания
 			setOut(CUT_VALVE, start )		
@@ -149,6 +149,7 @@ main = function ()
 			if  ( ( OilTemp < (40+ TEMP_OFFSET)) ) then
 				oil_fan_enable = false
 			end
+			
 			setOut(OIL_FAN_CH, oil_fan_enable and (not START_ENABLE)  )
 			--конец блока управления вентилятром охлаждения масла
 			
@@ -242,7 +243,7 @@ main = function ()
 			KeyBoard:setLedRed(5,  Turns:getAlarm() )
 			KeyBoard:setLedRed(6,  Turns:getAlarm() )
 			--Блок управление вспышками на повортниках
-			local FlashEnabel =   (not (RIGTH or LEFT)) and (not ALARM) and Ligth_Enable--start
+			local FlashEnabel =   (not (RIGTH or LEFT)) and (not ALARM) and start--Ligth_Enable--start
 			FlashTimer:process( true,  not FlashEnabel  )
 			FlashCounter:process(FlashTimer:get(),false, not FlashEnabel )
 			local right_flash = ( FlashCounter:get() == 1 ) or ( FlashCounter:get() == 4 )
