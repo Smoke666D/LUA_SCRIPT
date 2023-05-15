@@ -35,9 +35,9 @@ function init()
 	setOutConfig(STARTER_CH,15,1,100,40)
 	setOutConfig(CUT_VALVE,4,1,4500,60)
 	setOutConfig(KL30,8,1,3000,20)
-	setOutConfig(LEFT_TURN_CH,4,0) -- для повортников влючен режим ухода в ошибку до перезапуска. Если так не сделать, при кз будет постоянно сбрасываться ошибка
+	setOutConfig(LEFT_TURN_CH,5) -- для повортников влючен режим ухода в ошибку до перезапуска. Если так не сделать, при кз будет постоянно сбрасываться ошибка
 	OutResetConfig(LEFT_TURN_CH,1,0)
-	setOutConfig(RIGTH_TURN_CH,4,0)
+	setOutConfig(RIGTH_TURN_CH,5)
 	OutResetConfig(RIGTH_TURN_CH,1,0)
 	setOutConfig(OIL_FAN_CH,10,1,3000,50)
 	setOutConfig(HIGH_BEAM_CH,11)
@@ -117,6 +117,7 @@ local t_c = 0
 	KeyBoard:setBackLigthBrigth(  3 )
 	--рабочий цикл
 	while true do		
+	    DASH:process()	   --процесс отправки данных о каналах в даш
 	    if (( getBat() > 16 ) or (getBat()<7) ) then
 			ALL_OFF()
 		else
@@ -309,10 +310,6 @@ local t_c = 0
 				end
 				 LEFT_TO_CAN = (t_c ==0) and 0x01 or 0x00
 				 RIGHT_TO_CAN = (t_c == 0x01) and 0x01 or 0x00
-			
-			
-			-- LEFT_TO_CAN = (FlashToCanTimer:get()==true) or 0x01 and 0x00
-			-- RIGHT_TO_CAN = ( FlashToCanTimer:get()==false) or 0x01 and 0x00
 			end			
 	   end
 	   Yield()

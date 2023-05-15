@@ -35,9 +35,9 @@ function init()
 	setOutConfig(STARTER_CH,15,1,100,40)
 	setOutConfig(CUT_VALVE,4,1,4500,60)
 	setOutConfig(KL30,8,1,3000,20)
-	setOutConfig(LEFT_TURN_CH,4,0) -- для повортников влючен режим ухода в ошибку до перезапуска. Если так не сделать, при кз будет постоянно сбрасываться ошибка
+	setOutConfig(LEFT_TURN_CH,4) -- для повортников влючен режим ухода в ошибку до перезапуска. Если так не сделать, при кз будет постоянно сбрасываться ошибка
 	OutResetConfig(LEFT_TURN_CH,1,0)
-	setOutConfig(RIGTH_TURN_CH,4,0)
+	setOutConfig(RIGTH_TURN_CH,4)
 	OutResetConfig(RIGTH_TURN_CH,1,0)
 	setOutConfig(OIL_FAN_CH,10,1,3000,50)
 	setOutConfig(HIGH_BEAM_CH,11)
@@ -88,60 +88,77 @@ end
 --главная функция
 main = function ()
     init()	
-    local KeyBoard		= KeyPad8:new(0x15)--создание объекта клавиатура c адресом 0x15
-	local DASH			= Dashboard:new(0x30,200)
-	local CanIn         = CanInput:new(0x28) -- <адрес can>, < таймаут>	
-	local CanToDash		= CanOut:new(0x29, 100)
-	local Turns	        = TurnSygnals:new(800)
-	local FlashCounter  = Counter:new(0,20,0,true)
-	local GearCounter   = Counter:new(0,2,1,false)
-	local WaterKeyDelay = Delay:new( 800, false)
-	local BeamCounter   = Counter:new(1,3,1,true) 
-	local FlashTimer    = Delay:new( 20,  true )
-	local FlashToCanTimer    = Delay:new( 200,  true )
-	local LEFT			= false
-	local RIGTH   		= false
-	local ALARM			= false	
-	local PREHEAT 		= false
-	local wipers_on 	= false
-	local location 		= false
-	local water  		= false
-	local work_state 	= false
-	local wait_flag  	= false	
-    local PreheatTimer 	= 0
-	local dash_start 	= false
-	local oil_fan_enable = false
-	local parking_on	= false
+    local KeyBoard			= KeyPad8:new(0x15)--создание объекта клавиатура c адресом 0x15
+	local DASH				= Dashboard:new(0x30,200)
+	local CanIn         	= CanInput:new(0x28) -- <адрес can>, < таймаут>	
+	local CanToDash			= CanOut:new(0x29, 100)
+	local Turns	        	= TurnSygnals:new(800)
+	local FlashCounter  	= Counter:new(0,20,0,true)
+	local GearCounter   	= Counter:new(0,2,1,false)
+	local WaterKeyDelay 	= Delay:new( 800, false)
+	local DoorLDelay 		= Delay:new( 3000, false)
+	local DoorRDelay 		= Delay:new( 3000, false)
+	local BeamCounter   	= Counter:new(1,3,1,true) 
+	local FlashTimer    	= Delay:new( 50,  true )
+	local FlashToCanTimer   = Delay:new( 200,  true )
+	
+	local LEFT				= false
+	local LEFT_DOOR_EN		= false
+	
+	local RIGHT_DOOR_EN		= false
+	local RIGTH   			= false
+	local ALARM				= false	
+	local PREHEAT 			= false
+	local wipers_on 		= false
+	local location 			= false
+	local water  			= false
+	local work_state 		= false
+	local wait_flag  		= false	
+    local PreheatTimer 		= 0
+	local dash_start 		= false
+	local oil_fan_enable 	= false
+	local parking_on		= false
+	
 local t_c = 0
 
 	KeyBoard:setBackLigthBrigth(  3 )
 	--рабочий цикл
 	while true do		
+	    	   --процесс отправки данных о каналах в даш
 	    if (( getBat() > 16 ) or (getBat()<7) ) then
 			ALL_OFF()
 		else
 			setOut(KL30, true )
+			DASH:process()
 			KeyBoard:process() --процесс работы с клавиатурой
 			DASH:process()	   --процесс отправки данных о каналах в даш
 			dash_start 		= (CanIn:process()==1) --процесс получение данных с входа Can. Переменная становится единицей, как только что-то получили от приборки
-			local start 	= getDIN(ING_IN)	
+			local start 	= getDIN(ING_IN) 	
 			local temp     	= ( dash_start ) and ( CanIn:getByte(5) ) or 0   -- получаем первый байт из фрейма, температура охлаждающей жидкости
 			local OilTemp  	= ( dash_start ) and ( CanIn:getByte(6)  ) or 40 --  CanOilTempIn:getByte(1)  -- получаем первый байт из фрейма, температура масла
 			local RPM 	  	= ( dash_start ) and CanIn:getWord(1) or 0
 			local speed     = ( dash_start ) and CanIn:getWord(3) or 0		
 				
+			--GOD = GOD_TIMER	(KeyBoard:getKey(2) and KeyBoard:getKey(6), not (start or  KeyBoard:getKey(2) or KeyBoard:getKey(6)))
+				
 			KeyBoard:setBackLigthBrigth( start and 15 or 3 )	-- подсветка клавиатуры
 			--как только приходит сигнал зажигания
 			setOut(CUT_VALVE, start )		
 			setOut(FUEL_PUMP_CH, start)
-				
-			local START_ENABLE = KeyBoard:getKey(1) and start 
-			setOut( STARTER_CH, START_ENABLE)
+			local START_ENABLE = KeyBoard:getKey(1) and start --and (RPM < 900)
+			local stop_signal = getDIN(STOP_SW) 
+			 
+			setOut( STARTER_CH, START_ENABLE and stop_signal )
 			KeyBoard:setLedGreen( 1, START_ENABLE  )		
 			
-			local stop_signal = getDIN(STOP_SW) and (not START_ENABLE)
+			--задержка на срабатывания концевиков
+			DoorLDelay:process_delay( getDIN(DOOR2_SW))
+			DoorRDelay:process_delay( getDIN(DOOR1_SW))
 			
-			parking_on =  getDIN(PARKING_SW) or getDIN(DOOR2_SW) or getDIN(DOOR1_SW)
+		
+			local DOOR_BREAK =  DoorLDelay:get() or DoorRDelay:get()--
+			--включение концевиков
+			parking_on =  getDIN(PARKING_SW) or DOOR_BREAK
 			setOut(STOP_VALVE, not parking_on )
 			
 			--блок управления вентилятром охлаждения масла
@@ -151,13 +168,12 @@ local t_c = 0
 			if  ( ( OilTemp < (40+ TEMP_OFFSET)) ) then
 				oil_fan_enable = false
 			end
-			
-			setOut(OIL_FAN_CH, oil_fan_enable and (not START_ENABLE)  )
+			setOut(OIL_FAN_CH, oil_fan_enable and (not START_ENABLE) and start  )
 			--конец блока управления вентилятром охлаждения масла
-			
+	
 			-- блок переключением передач и заденего хода
-			local gear_enable = true--stop_signal -- and (speed == 0) and ( RPM < 1000 )
-			GearCounter:process(KeyBoard:getKey(4) and gear_enable,KeyBoard:getKey(8) and gear_enable, START_ENABLE or (not start) or parking_on )
+			local gear_enable =  stop_signal --and (speed == 0) --and ( RPM < 1000 )
+			GearCounter:process(KeyBoard:getKey(4) and gear_enable,KeyBoard:getKey(8) and gear_enable,  (not start) or parking_on  )
 			local UP_MOVE	 = (GearCounter:get() == 2)	
 			KeyBoard:setLedGreen(4, UP_MOVE)		
 			setOut(UP_GEAR ,  UP_MOVE )
@@ -173,8 +189,7 @@ local t_c = 0
 			setOut(HORN_CH, HORN )
 			KeyBoard:setLedGreen(7,HORN )
 			--конец блока упрвления горонм
-			
-			
+					
 			--Блок управления дальним и билжним светом и стоп сигналом
 			BeamCounter:process( KeyBoard:getKey(2), false, not start)  -- cчетчик process( инкримент, дикремент, сборс)
 			local Ligth_Enable = ( BeamCounter:get() ~= 1 ) and (not START_ENABLE) -- если счетчик не равен 1  то true
@@ -186,14 +201,9 @@ local t_c = 0
 			setOut(HIGH_BEAM_CH, HIGH_BEAM and (not START_ENABLE) )
 			KeyBoard:setLedGreen( 2, LOW_BEAM  ) -- если 2 (билжний счет, то зажигаем светодиод)
 			KeyBoard:setLedBlue( 2,  HIGH_BEAM ) -- если 3 ( дальний свет, то зажигаем синий свет)
-			--Блок управления дврониками и омывателем
-			--Поскольку мотор останавливается с задержкой и переезжает датчик
-			--то сделан триггер loacation
-			--При нажатии на кнопку 3 ключаются дворники и загарается зеленый светодид
-			--При потроном нажатии дворники выключаются, как толко доедут до базы
-			--При удержании кнопки более 1,2 секунд загарается синий светодиод и влючается мотор омывайки
-			--Если дворники выключены, то включаются, как буто просто нажата кнопка, если включены, то просто качает мторчик, 
-			--после отпускания они остаются в преженем положении
+			
+			
+			--Блок управления дврониками и омывателем		
 			KeyBoard:setLedGreen(3, wipers_on and (not water)  )
 			KeyBoard:setLedBlue(3, water)
 			if (KeyBoard:getKey(3) and (wipers_on == false)) then		-- если все выключено, запускаем алгоримт
@@ -250,10 +260,10 @@ local t_c = 0
 			FlashCounter:process(FlashTimer:get(),false, not FlashEnabel )
 			local right_flash = ( FlashCounter:get() == 1 ) or ( FlashCounter:get() == 4 )
 			local left_flash  = ( FlashCounter:get() == 7 ) or ( FlashCounter:get() == 11 )
-			local RIGTH_ENABLE = ( Turns:getAlarm() or Turns:getRight() ) and (not START_ENABLE)
-			local LEFT_ENABLE  = ( Turns:getAlarm() or Turns:getLeft() ) and (not START_ENABLE)
-			setOut(RIGTH_TURN_CH, right_flash or RIGTH_ENABLE )
-			setOut(LEFT_TURN_CH,  left_flash  or LEFT_ENABLE )
+			local RIGTH_ENABLE = ( Turns:getAlarm() or Turns:getRight() ) and (not START_ENABLE) 
+			local LEFT_ENABLE  = ( Turns:getAlarm() or Turns:getLeft() ) and (not START_ENABLE)  
+			setOut(RIGTH_TURN_CH, (right_flash or RIGTH_ENABLE) and start )
+			setOut(LEFT_TURN_CH,  (left_flash  or LEFT_ENABLE) and start )
 			
 			--блока предпрогрева.
 			if start then
@@ -298,10 +308,11 @@ local t_c = 0
 			CanToDash:setBit(2, 1, not ( REAR_MOVE or UP_MOVE or parking_on ) )
 			CanToDash:setBit(1, 4, parking_on )
 			CanToDash:process()
-			FlashToCanTimer:process(true, not FlashEnabel)
 			
-		   if ( not FlashEnabel) then
-			 LEFT_TO_CAN = getOutStatus(LEFT_TURN_CH)
+			--блок для передачи сигналов поворотников в дашборд, что бы было видно их работу в сервисном режиме
+			FlashToCanTimer:process(true, not FlashEnabel)
+		    if ( not FlashEnabel) then
+			 LEFT_TO_CAN  = getOutStatus(LEFT_TURN_CH)
 			 RIGHT_TO_CAN = getOutStatus(RIGTH_TURN_CH)
 			else
 			    if (FlashToCanTimer:get()==true) then
@@ -309,10 +320,6 @@ local t_c = 0
 				end
 				 LEFT_TO_CAN = (t_c ==0) and 0x01 or 0x00
 				 RIGHT_TO_CAN = (t_c == 0x01) and 0x01 or 0x00
-			
-			
-			-- LEFT_TO_CAN = (FlashToCanTimer:get()==true) or 0x01 and 0x00
-			-- RIGHT_TO_CAN = ( FlashToCanTimer:get()==false) or 0x01 and 0x00
 			end			
 	   end
 	   Yield()
