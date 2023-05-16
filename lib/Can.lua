@@ -27,7 +27,10 @@ end
 function CanInput:getByte( nb )
 	return self.data[nb]
 end
-function CanInput:getWord( nb )
+function CanInput:getWordLSB( nb )
+	return (nb < 7) and ( self.data[nb] | self.data[nb+1]<<8) or 0
+end
+function CanInput:getWordMSB( nb )
 	return (nb < 7) and ( self.data[nb]<<8 | self.data[nb+1]) or 0
 end
 --[[CanDefInput = {}
