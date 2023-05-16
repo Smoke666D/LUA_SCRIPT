@@ -35,13 +35,13 @@ function init()
 	setOutConfig(STARTER_CH,15,1,100,40)
 	setOutConfig(CUT_VALVE,4,1,4500,60)
 	setOutConfig(KL30,8,1,3000,20)
-	setOutConfig(LEFT_TURN_CH,4) -- для повортников влючен режим ухода в ошибку до перезапуска. Если так не сделать, при кз будет постоянно сбрасываться ошибка
+	setOutConfig(LEFT_TURN_CH,4,1,0,4,0) -- для повортников влючен режим ухода в ошибку до перезапуска. Если так не сделать, при кз будет постоянно сбрасываться ошибка
 	OutResetConfig(LEFT_TURN_CH,1,0)
-	setOutConfig(RIGTH_TURN_CH,4)
+	setOutConfig(RIGTH_TURN_CH,4,1,0,4,0)
 	OutResetConfig(RIGTH_TURN_CH,1,0)
 	setOutConfig(OIL_FAN_CH,20,1,3000,50)
 	setOutConfig(HIGH_BEAM_CH,11)
-	setOutConfig(STOP_CH,5)
+	setOutConfig(STOP_CH,5,1,0,5,0)
 	setOutConfig(FUEL_PUMP_CH,15)	
 	setOutConfig(WIPERS_CH,10,0,100,30)
 	setOutConfig(WATER_CH,8,0,100,30)
@@ -145,7 +145,7 @@ local t_c = 0
 			--как только приходит сигнал зажигания
 			setOut(CUT_VALVE, start )		
 			setOut(FUEL_PUMP_CH, start)
-			local START_ENABLE = KeyBoard:getKey(1) and start --and (RPM < 900)
+			local START_ENABLE = KeyBoard:getKey(1) and start and (RPM < 900)
 			local stop_signal = getDIN(STOP_SW) 
 			 
 			setOut( STARTER_CH, START_ENABLE and stop_signal )

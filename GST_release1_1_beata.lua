@@ -39,7 +39,7 @@ function init()
 	OutResetConfig(LEFT_TURN_CH,1,0)
 	setOutConfig(RIGTH_TURN_CH,4)
 	OutResetConfig(RIGTH_TURN_CH,1,0)
-	setOutConfig(OIL_FAN_CH,20,1,3000,50)
+	setOutConfig(OIL_FAN_CH,10,1,3000,50)
 	setOutConfig(HIGH_BEAM_CH,11)
 	setOutConfig(STOP_CH,5)
 	setOutConfig(FUEL_PUMP_CH,15)	
@@ -162,7 +162,7 @@ local t_c = 0
 			setOut(STOP_VALVE, not parking_on )
 			
 			--блок управления вентилятром охлаждения масла
-			if  ( ( OilTemp > (50+ TEMP_OFFSET)) or ( OilTemp == 0) ) then
+			if  ( ( OilTemp > (60+ TEMP_OFFSET)) or ( OilTemp == 0) ) then
 				oil_fan_enable = true
 			end
 			if  ( ( OilTemp < (40+ TEMP_OFFSET)) ) then
