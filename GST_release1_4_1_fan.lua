@@ -5,14 +5,14 @@ OIL_FAN_CH		= 4
 CUT_VALVE		= 5
 HIGH_BEAM_CH   	= 6
 REAR_LIGTH_CH   = 7
-FUEL_PUMP_CH    = 8
+FUEL_PUMP_CH    = 15
 STOP_VALVE		= 9
 WATER_CH    	= 10
 DOWN_GEAR_CH   	= 11
 KL30			= 12
 HORN_CH 		= 13
 UP_GEAR     	= 14
-STEERING_WEEL_VALVE_CH   	= 15
+WATER_FAN   	= 8
 WIPERS_CH   	= 16
 LEFT_TURN_CH 	= 18
 RIGTH_TURN_CH 	= 17
@@ -29,7 +29,7 @@ WIPER_IN		= 8
 TEMP_OFFSET		= 40
  --функция иницализации
 function init()
-    ConfigCan(1,500);	 								   
+    ConfigCan(1,1000);	 								   
 	setOutConfig(GLOW_PLUG_1_2,30,1,5000,40) -- на пуске свечи жрут 32-35А. Поскольку в ядре номинальный ток ограничен 30а, ставлю задержку на 5с
 	setOutConfig(GLOW_PLUG_3_4,30,1,5000,40)
 	setOutConfig(STARTER_CH,15,1,100,40)
@@ -40,14 +40,16 @@ function init()
 	setOutConfig(RIGTH_TURN_CH,4,1,0,4,0)
 	OutResetConfig(RIGTH_TURN_CH,1,0)
 	setOutConfig(OIL_FAN_CH,20,1,3000,50)
+	OutResetConfig(OIL_FAN_CH,0,3000)
 	setOutConfig(HIGH_BEAM_CH,11)
 	setOutConfig(STOP_CH,5,1,0,5,0)
-	setOutConfig(FUEL_PUMP_CH,15)	
+	setOutConfig(FUEL_PUMP_CH,8)	
 	setOutConfig(WIPERS_CH,10,0,100,30)
 	setOutConfig(WATER_CH,8,0,100,30)
 	setOutConfig(UP_GEAR, 8)
 	setOutConfig(DOWN_GEAR_CH,8)
-	setOutConfig(STEERING_WEEL_VALVE_CH,8)
+	setOutConfig(WATER_FAN,12,1,3000,60)
+	OutResetConfig(WATER_FAN,0,3000)
 	setOutConfig(REAR_LIGTH_CH,20)
 	setOutConfig(STOP_VALVE,8)
 	setOutConfig(HORN_CH,7,1,1000,15)
@@ -59,8 +61,8 @@ function init()
     setDINConfig(WIPER_IN,1)
     setDINConfig(STARTER_IN,0)
 	setDINConfig(PARKING_SW,1)
-    setDINConfig(DOOR2_SW,0)
-	setDINConfig(DOOR1_SW,0)
+    setDINConfig(DOOR2_SW,0,3000,0)
+	setDINConfig(DOOR1_SW,0,3000,0)
 end
 
 function ALL_OFF()
@@ -96,12 +98,12 @@ main = function ()
 	local FlashCounter  	= Counter:new(0,20,0,true)
 	local GearCounter   	= Counter:new(0,2,1,false)
 	local WaterKeyDelay 	= Delay:new( 800, false)
-	local DoorLDelay 		= Delay:new( 3000, false)
-	local DoorRDelay 		= Delay:new( 3000, false)
+
 	local BeamCounter   	= Counter:new(1,3,1,true) 
 	local FlashTimer    	= Delay:new( 50,  true )
 	local FlashToCanTimer   = Delay:new( 200,  true )
-	local OilFanTimer		= Delay:new(3000, false)
+	local OilFanTimer		= Delay:new(5000, false)
+	local WaterFanTimer		= Delay:new(5000, false)
 	local LEFT				= false
 	local LEFT_DOOR_EN		= false
 	
@@ -117,6 +119,7 @@ main = function ()
     local PreheatTimer 		= 0
 	local dash_start 		= false
 	local oil_fan_enable 	= false
+	local water_fan_enable 	= false
 	local parking_on		= false
 	
 local t_c = 0
@@ -151,27 +154,37 @@ local t_c = 0
 			setOut( STARTER_CH, START_ENABLE and stop_signal )
 			KeyBoard:setLedGreen( 1, START_ENABLE  )		
 			
-			--задержка на срабатывания концевиков
-			DoorLDelay:process_delay( getDIN(DOOR2_SW))
-			DoorRDelay:process_delay( getDIN(DOOR1_SW))
-			
 		
-			local DOOR_BREAK =  DoorLDelay:get() or DoorRDelay:get()
 			--включение концевиков
-			parking_on =  getDIN(PARKING_SW) or DOOR_BREAK
-			setOut(STOP_VALVE, not parking_on )
-			
+			parking_on =  getDIN(PARKING_SW) or getDIN(DOOR1_SW) or getDIN(DOOR2_SW)
+			setOut(STOP_VALVE, (not parking_on )  and start )
 			--блок управления вентилятром охлаждения масла
+			
 			if  ( ( OilTemp >= (50+ TEMP_OFFSET)) or ( OilTemp == 0) ) then
 				oil_fan_enable = true
-			end
-			if  ( ( OilTemp < (40+ TEMP_OFFSET)) ) then
-				oil_fan_enable = false
+			else
+				if  ( ( OilTemp < (40+ TEMP_OFFSET)) ) then
+					oil_fan_enable = false
+				end
 			end
 			local oilfan_start = oil_fan_enable and (not START_ENABLE) and start 
 			OilFanTimer:process( oilfan_start )
-			setOut(OIL_FAN_CH, OilFanTimer:get() )
+			setOut(OIL_FAN_CH, OilFanTimer:get())
 			--конец блока управления вентилятром охлаждения масла
+	         
+			--блока у праления вентелятором охлаждения
+			if  ( ( temp >= (50+ TEMP_OFFSET)) or ( temp == 0) ) then
+				water_fan_enable = true
+			else
+				if  ( ( temp < (40+ TEMP_OFFSET)) ) then
+					water_fan_enable = false
+				end
+			end
+			local tempfan_start = water_fan_enable and (not START_ENABLE) and start 
+			WaterFanTimer:process( tempfan_start )
+			setOut(WATER_FAN , WaterFanTimer:get())
+			
+			
 	
 			-- блок переключением передач и заденего хода
 			local gear_enable =  stop_signal --and (speed == 0) --and ( RPM < 1000 )

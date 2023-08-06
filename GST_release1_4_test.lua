@@ -29,7 +29,7 @@ WIPER_IN		= 8
 TEMP_OFFSET		= 40
  --функция иницализации
 function init()
-    ConfigCan(1,500);	 								   
+    ConfigCan(1,1000);	 								   
 	setOutConfig(GLOW_PLUG_1_2,30,1,5000,40) -- на пуске свечи жрут 32-35А. Поскольку в ядре номинальный ток ограничен 30а, ставлю задержку на 5с
 	setOutConfig(GLOW_PLUG_3_4,30,1,5000,40)
 	setOutConfig(STARTER_CH,15,1,100,40)
@@ -40,6 +40,7 @@ function init()
 	setOutConfig(RIGTH_TURN_CH,4,1,0,4,0)
 	OutResetConfig(RIGTH_TURN_CH,1,0)
 	setOutConfig(OIL_FAN_CH,20,1,3000,50)
+	OutResetConfig(OIL_FAN_CH,0,3000)
 	setOutConfig(HIGH_BEAM_CH,11)
 	setOutConfig(STOP_CH,5,1,0,5,0)
 	setOutConfig(FUEL_PUMP_CH,15)	
@@ -54,13 +55,13 @@ function init()
 	setOutConfig(LOW_BEAM_CH,3)
 	setPWMGroupeFreq(5, 100)
     setDINConfig(PRESSURE_IN,0)
-	setDINConfig(ING_IN,0)
+	setDINConfig(ING_IN,1)
 	setDINConfig(STOP_SW,0)
     setDINConfig(WIPER_IN,1)
     setDINConfig(STARTER_IN,0)
 	setDINConfig(PARKING_SW,1)
-    setDINConfig(DOOR2_SW,0)
-	setDINConfig(DOOR1_SW,0)
+    setDINConfig(DOOR2_SW,0,3000,0)
+	setDINConfig(DOOR1_SW,0,3000,0)
 end
 
 function ALL_OFF()
@@ -96,15 +97,11 @@ main = function ()
 	local FlashCounter  	= Counter:new(0,20,0,true)
 	local GearCounter   	= Counter:new(0,2,1,false)
 	local WaterKeyDelay 	= Delay:new( 800, false)
-	local DoorLDelay 		= Delay:new( 3000, false)
-	local DoorRDelay 		= Delay:new( 3000, false)
 	local BeamCounter   	= Counter:new(1,3,1,true) 
 	local FlashTimer    	= Delay:new( 50,  true )
 	local FlashToCanTimer   = Delay:new( 200,  true )
-	local OilFanTimer		= Delay:new(3000, false)
 	local LEFT				= false
 	local LEFT_DOOR_EN		= false
-	
 	local RIGHT_DOOR_EN		= false
 	local RIGTH   			= false
 	local ALARM				= false	
@@ -118,14 +115,13 @@ main = function ()
 	local dash_start 		= false
 	local oil_fan_enable 	= false
 	local parking_on		= false
-	
-local t_c = 0
+    local t_c = 0
 
 	KeyBoard:setBackLigthBrigth(  3 )
 	--рабочий цикл
 	while true do		
 	    	   --процесс отправки данных о каналах в даш
-	    if (( getBat() > 16 ) or (getBat()<7) ) then
+	    if (( getBat() > 16 ) or (getBat()<7) ) or getDIN(ING_IN) then
 			ALL_OFF()
 		else
 			setOut(KL30, true )
@@ -133,7 +129,7 @@ local t_c = 0
 			KeyBoard:process() --процесс работы с клавиатурой
 			DASH:process()	   --процесс отправки данных о каналах в даш
 			dash_start 		= (CanIn:process()==1) --процесс получение данных с входа Can. Переменная становится единицей, как только что-то получили от приборки
-			local start 	= getDIN(ING_IN) 	
+			
 			local temp     	= ( dash_start ) and ( CanIn:getByte(5) ) or 0   -- получаем первый байт из фрейма, температура охлаждающей жидкости
 			local OilTemp  	= ( dash_start ) and ( CanIn:getByte(6)  ) or 40 --  CanOilTempIn:getByte(1)  -- получаем первый байт из фрейма, температура масла
 			local RPM 	  	= ( dash_start ) and CanIn:getWordLSB(1) or 0
@@ -141,25 +137,18 @@ local t_c = 0
 				
 			--GOD = GOD_TIMER	(KeyBoard:getKey(2) and KeyBoard:getKey(6), not (start or  KeyBoard:getKey(2) or KeyBoard:getKey(6)))
 				
-			KeyBoard:setBackLigthBrigth( start and 15 or 3 )	-- подсветка клавиатуры
+			KeyBoard:setBackLigthBrigth(  15  )	-- подсветка клавиатуры
 			--как только приходит сигнал зажигания
-			setOut(CUT_VALVE, start )		
-			setOut(FUEL_PUMP_CH, start)
-			local START_ENABLE = KeyBoard:getKey(1) and start --and (RPM < 700)
+			setOut(CUT_VALVE, true )		
+			setOut(FUEL_PUMP_CH, true)
+			local START_ENABLE = KeyBoard:getKey(1)  --and (RPM < 700)
 			local stop_signal = getDIN(STOP_SW) 
 			 
 			setOut( STARTER_CH, START_ENABLE and stop_signal )
 			KeyBoard:setLedGreen( 1, START_ENABLE  )		
-			
-			--задержка на срабатывания концевиков
-			DoorLDelay:process_delay( getDIN(DOOR2_SW))
-			DoorRDelay:process_delay( getDIN(DOOR1_SW))
-			
-		
-			local DOOR_BREAK =  DoorLDelay:get() or DoorRDelay:get()
-			--включение концевиков
-			parking_on =  getDIN(PARKING_SW) or DOOR_BREAK
-			setOut(STOP_VALVE, not parking_on )
+				
+			parking_on =  getDIN(PARKING_SW) or getDIN(DOOR1_SW) or getDIN(DOOR2_SW)
+			setOut(STOP_VALVE, (not parking_on )  )
 			
 			--блок управления вентилятром охлаждения масла
 			if  ( ( OilTemp >= (50+ TEMP_OFFSET)) or ( OilTemp == 0) ) then
@@ -168,14 +157,12 @@ local t_c = 0
 			if  ( ( OilTemp < (40+ TEMP_OFFSET)) ) then
 				oil_fan_enable = false
 			end
-			local oilfan_start = oil_fan_enable and (not START_ENABLE) and start 
-			OilFanTimer:process( oilfan_start )
-			setOut(OIL_FAN_CH, OilFanTimer:get() )
+			setOut(OIL_FAN_CH, --[[oil_fan_enable and]] (not START_ENABLE)  )
 			--конец блока управления вентилятром охлаждения масла
 	
 			-- блок переключением передач и заденего хода
 			local gear_enable =  stop_signal --and (speed == 0) --and ( RPM < 1000 )
-			GearCounter:process(KeyBoard:getKey(4) and gear_enable,KeyBoard:getKey(8) and gear_enable,  (not start) or parking_on  )
+			GearCounter:process(KeyBoard:getKey(4) and gear_enable,KeyBoard:getKey(8) and gear_enable,   parking_on  )
 			local UP_MOVE	 = (GearCounter:get() == 2)	
 			KeyBoard:setLedGreen(4, UP_MOVE)		
 			setOut(UP_GEAR ,  UP_MOVE )
@@ -187,16 +174,16 @@ local t_c = 0
 			--конец блока переключения передач
 			
 			--блок управления горном
-			local HORN = KeyBoard:getKey(7) and start
+			local HORN = KeyBoard:getKey(7) 
 			setOut(HORN_CH, HORN )
 			KeyBoard:setLedGreen(7,HORN )
 			--конец блока упрвления горонм
 					
 			--Блок управления дальним и билжним светом и стоп сигналом
-			BeamCounter:process( KeyBoard:getKey(2), false, not start)  -- cчетчик process( инкримент, дикремент, сборс)
+			BeamCounter:process( KeyBoard:getKey(2), false, false)  -- cчетчик process( инкримент, дикремент, сборс)
 			local Ligth_Enable = ( BeamCounter:get() ~= 1 ) and (not START_ENABLE) -- если счетчик не равен 1  то true
 			setOut( LOW_BEAM_CH, Ligth_Enable  )  -- ближний свет
-			setOut( STOP_CH,  Ligth_Enable or (stop_signal and start))  --ближний свет и стоп сигнал
+			setOut( STOP_CH,  Ligth_Enable or stop_signal)  --ближний свет и стоп сигнал
 			OutSetPWM(STOP_CH, stop_signal and 99 or 20)
 			local HIGH_BEAM = ( BeamCounter:get() == 3 )
 			local LOW_BEAM =  ( BeamCounter:get() == 2 ) 
@@ -232,8 +219,8 @@ local t_c = 0
 			if wipers_on then
 				location = true
 			end
-			wipers_on = wipers_on and start
-			water = water and start
+			wipers_on = wipers_on 
+			water = water 
 			setOut(WIPERS_CH, wipers_on or location )
 			setOut(WATER_CH , water )
 			-- конец блока дворников
@@ -246,8 +233,8 @@ local t_c = 0
 			else
 				RIGTH = KeyBoard:getToggle(6)
 				LEFT =  KeyBoard:getToggle(5)
-				KeyBoard:resetToggle(5,KeyBoard:getKey(6) or (not start) )
-				KeyBoard:resetToggle(6,KeyBoard:getKey(5) or (not start) )
+				KeyBoard:resetToggle(5,KeyBoard:getKey(6)  )
+				KeyBoard:resetToggle(6,KeyBoard:getKey(5)  )
 				ALARM = KeyBoard:getKey(5) and KeyBoard:getKey(6)
 			end
 			Turns:process( true, LEFT, RIGTH, ALARM)
@@ -257,18 +244,18 @@ local t_c = 0
 			KeyBoard:setLedRed(5,  Turns:getAlarm() )
 			KeyBoard:setLedRed(6,  Turns:getAlarm() )
 			--Блок управление вспышками на повортниках
-			local FlashEnabel =   (not (RIGTH or LEFT)) and (not ALARM) and start--Ligth_Enable--start
+			local FlashEnabel =   (not (RIGTH or LEFT)) and (not ALARM) --Ligth_Enable--start
 			FlashTimer:process( true,  not FlashEnabel  )
 			FlashCounter:process(FlashTimer:get(),false, not FlashEnabel )
 			local right_flash = ( FlashCounter:get() == 1 ) or ( FlashCounter:get() == 4 )
 			local left_flash  = ( FlashCounter:get() == 7 ) or ( FlashCounter:get() == 11 )
 			local RIGTH_ENABLE = ( Turns:getAlarm() or Turns:getRight() ) and (not START_ENABLE) 
 			local LEFT_ENABLE  = ( Turns:getAlarm() or Turns:getLeft() ) and (not START_ENABLE)  
-			setOut(RIGTH_TURN_CH, (right_flash or RIGTH_ENABLE) and start )
-			setOut(LEFT_TURN_CH,  (left_flash  or LEFT_ENABLE) and start )
+			setOut(RIGTH_TURN_CH, (right_flash or RIGTH_ENABLE) )
+			setOut(LEFT_TURN_CH,  (left_flash  or LEFT_ENABLE)  )
 			
 			--блока предпрогрева.
-			if start then
+			
 				if START_ENABLE then
 					PreheatTimer = 11000
 					PREHEAT 	 = false
@@ -289,10 +276,8 @@ local t_c = 0
 						PREHEAT = false
 					end
 				end
-			else
-				PreheatTimer = 0					--сбрасываем таймер, если зажигание выключено
-			end
-			PREHEAT = PREHEAT and start
+		
+			PREHEAT = PREHEAT 
 			setOut(GLOW_PLUG_1_2, PREHEAT )
 			setOut(GLOW_PLUG_3_4, PREHEAT )
 			KeyBoard:setLedRed( 1,  PREHEAT  )	

@@ -17,7 +17,7 @@ function Dashboard:process()
 		CanSend( self.ADDR +2   ,getCurLSB10(9),getCurMSB10(9),getCurLSB10(10),getCurMSB10(10),getCurLSB10(11),getCurMSB10(11),getCurLSB10(12),getCurMSB10(12))
 		CanSend( self.ADDR +3   ,getCurLSB10(13),getCurMSB10(13),getCurLSB10(14),getCurMSB10(14),getCurLSB10(15),getCurMSB10(15),getCurLSB10(16),getCurMSB10(16))
 	    CanSend( self.ADDR +4   ,getCurLSB10(17),getCurMSB10(17),getCurLSB10(18),getCurMSB10(18),getCurLSB10(19),getCurMSB10(19),getCurLSB10(20),getCurMSB10(20))
-		CanSend( self.ADDR +5   ,getBatLSB10(),getBatMSB10(),30,0,0,0,0,0)
+		CanSend( self.ADDR +5   ,getBatLSB10(),getBatMSB10(),getTemp(),0,0,0,0,0)
 		CanSend( self.ADDR +6  ,
 								getOutStatus(1)  | (getOutStatus(2)<<3) | ((getOutStatus(3) & 0x03)<<6) ,
 							    (getOutStatus(3)>>2) | (getOutStatus(4)<<1) | (getOutStatus(5)<<4) | ((getOutStatus(6) & 0x01)<<7),

@@ -19,88 +19,84 @@
 -- не пришел ли новый пакет. Но не вижу смысла грузить can канал, оптимально всю обработку делать в методе process(). 
 
 
-KeyPad8 = {}
-KeyPad8.__index = KeyPad8
-function KeyPad8:new( addr)
-      local obj = {key = 0x00, ADDR = addr, new = true, alive =false, tog= 0x00, old =0x00, ledRed=0x00,ledGreen=0x00, ledBlue =0x00, temp={[1]=0}, backligth = 0, led_brigth = 0, color = 0}	  
+KeyPad15 = {}
+KeyPad15.__index = KeyPad15
+function KeyPad15:new( addr)
+      local obj = {key = 0x00, ADDR = addr, new = true, alive =false, tog= 0x00, old =0x00, ledRed=0x00,ledGreen=0x00, ledBlue =0x00, temp={[1]=0,[2]=0}, backligth = 0, led_brigth = 0, back_color = 0x07}	  
       setmetatable (obj, self)
 	  
       setCanFilter(0x180 +addr)
 	  setCanFilter(0x700 +addr)
       return obj
 end
-function KeyPad8:process()
+function KeyPad15:process()
 	if (GetCanToTable(0x180 + self.ADDR,self.temp) ==1 ) then
-		self.tog = (~ self.key & self.temp[1]) ~ self.tog
-		self.key =self.temp[1]
+	    local t =  self.temp[2]<<8 | self.temp[1]
+		self.tog = (~ self.key & t) ~ self.tog
+		self.key = t
 	end
 	if (GetCanToTable(0x700 +self.ADDR,self.temp ) == 1 ) then
+	   if ( self.temp[0]~= 0x05 ) then
+	    CanSend( 0x00, 0x01, self.ADDR,0,0,0,0,0,0)
+	   end
 	   self.new = true
 	end
 	if self.new == true then
 		self.new = false		
-		CanSend(0x600 + self.ADDR,0x2F,0x03,0x20,0x02,self.backligth,0,0,0)
-		CanSend(0x200 + self.ADDR,self.ledRed,self.ledGreen,self.ledBlue,0,0,0,0,0)
+		CanSend(0x500 + self.ADDR,self.backligth,self.back_color,0,0,0,0,0,0)
+		CanSend(0x200 + self.ADDR,self.ledRed & 0xFF, self.ledRed>>8, self.ledGreen & 0xFF,self.ledGreen>>8,self.ledBlue & 0xFF ,self.ledBlue >>8,0,0)
 	end
 end
-function KeyPad8:getKey( n )
+function KeyPad15:getKey( n )
 	  return  (self.key & ( 0x01 << ( n - 1 ) ) ) ~= 0
 end
-function KeyPad8:getToggle( n )
+function KeyPad15:getToggle( n )
+
          return  (self.tog & ( 0x01 << ( n - 1 ) ) ) ~= 0
 end
-function KeyPad8:resetToggle( n , state)
+function KeyPad15:resetToggle( n , state)
 	 if state == true then
 		 self.tog =  (~(0x01<< ( n-1 ) )) & self.tog
 	 end
 end
-function KeyPad8:setToggle( n )	 
+function KeyPad15:setToggle( n )	 
 		 self.tog =  (0x01<< ( n-1 ) ) | self.tog	 
 end
-function KeyPad8:setLedRed( n , state)
+function KeyPad15:setLedRed( n , state)
 	self.old = (state ) and  self.ledRed | (0x01<<(n-1)) or self.ledRed & (~(0x01<<( n-1 )))
 	if ( self.old ~= self.ledRed ) then
 		self.ledRed = self.old
 		self.new = true
 	end
 end
-function KeyPad8:setLedGreen( n, state)
+function KeyPad15:setLedGreen( n, state)
 	self.old = (state ) and self.ledGreen | (0x01<<(n-1)) or self.ledGreen & (~(0x01<<( n-1 )))
 	if ( self.old ~= self.ledGreen ) then
 		self.ledGreen = self.old
 		self.new = true
 	end
 end
-function KeyPad8:setLedBlue( n , state)
+function KeyPad15:setLedBlue( n , state)
 	self.old = (state ) and  self.ledBlue | (0x01<<(n-1)) or self.ledBlue & (~(0x01<<( n-1 )))
 	if ( self.old ~= self.ledBlue ) then
 		self.ledBlue = self.old
 		self.new = true
 	end
 end
-function KeyPad8:setLedWhite( n , state)
+function KeyPad15:setLedWhite( n , state)
 	self:setLedBlue(n, state)
 	self:setLedGreen(n, state)
 	self:setLedRed(n, state)
 end
-function KeyPad8:setLedBrigth( brigth )
+function KeyPad15:setLedBrigth( brigth )
 	if (self.ledbrigth ~= brigth) then
 		self.ledbrigth = brigth
-		CanSend(0x600 + self.ADDR,0x2F,0x03,0x20,0x01,brigth,0,0,0)
-	end
+		CanSend(0x400 + self.ADDR,brigth,0,0,0,0,0,0,0)
+	end 
 end
-
-function KeyPad8:setBackLigthColor( color )
-	self.old = color
-	if (self.old ~= self.color) then
-		self.color=self.old
-		CanSend(0x600 + self.ADDR,0x2F,0x03,0x20,0x03,self.color,0,0,0)
-	end
-end
-
-function KeyPad8:setBackLigthBrigth( brigth )
+function KeyPad15:setBackLigthBrigth( brigth )
 	self.old = brigth
-	if (self.old ~= self.backligth) then
+	if (self.old ~= self.backlight) then
 		self.backligth =self.old
 		self.new = true
 		--CanSend(0x600 + self.ADDR,0x2F,0x03,0x20,0x02,self.backligth,0,0,0)

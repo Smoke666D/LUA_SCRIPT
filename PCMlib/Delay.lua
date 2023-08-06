@@ -26,10 +26,24 @@ function Delay:process ( start, disable )
 	else
 	   self.launched = false
 	end
-	self.launched =self.launched and (not disable)
+	self.launched = self.launched and (not disable)
 	self.output = self.state and start and (not disable)
 	return self.output
+end
+function Delay:process_delay( start )
+	if start then
+	    self.counter = self.counter + getDelay()
+		if self.counter > self.delay then		 			
+		  self.output = true		  
+		else
+		 self.output = false
+		end				
+    else
+	  self.counter = 0
+	  self.output = false
+	end
 end
 function Delay:get ()
 	return self.output
 end
+

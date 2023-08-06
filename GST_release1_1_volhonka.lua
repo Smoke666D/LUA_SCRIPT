@@ -29,7 +29,7 @@ WIPER_IN		= 8
 TEMP_OFFSET		= 40
  --функция иницализации
 function init()
-    ConfigCan(1,500);	 								   
+    ConfigCan(1,1000);	 								   
 	setOutConfig(GLOW_PLUG_1_2,30,1,5000,40) -- на пуске свечи жрут 32-35А. Поскольку в ядре номинальный ток ограничен 30а, ставлю задержку на 5с
 	setOutConfig(GLOW_PLUG_3_4,30,1,5000,40)
 	setOutConfig(STARTER_CH,15,1,100,40)
@@ -98,10 +98,11 @@ main = function ()
 	local WaterKeyDelay 	= Delay:new( 800, false)
 	local DoorLDelay 		= Delay:new( 3000, false)
 	local DoorRDelay 		= Delay:new( 3000, false)
+	local StartDelay		= Delay:new( 5000, false)
 	local BeamCounter   	= Counter:new(1,3,1,true) 
 	local FlashTimer    	= Delay:new( 50,  true )
 	local FlashToCanTimer   = Delay:new( 200,  true )
-	local OilFanTimer		= Delay:new(3000, false)
+	
 	local LEFT				= false
 	local LEFT_DOOR_EN		= false
 	
@@ -145,10 +146,11 @@ local t_c = 0
 			--как только приходит сигнал зажигания
 			setOut(CUT_VALVE, start )		
 			setOut(FUEL_PUMP_CH, start)
-			local START_ENABLE = KeyBoard:getKey(1) and start --and (RPM < 700)
+			--StartDelay:process_delay((RPM > 300))
+			local START_ENABLE = KeyBoard:getKey(1) and start --and ( not StartDelay:get())
 			local stop_signal = getDIN(STOP_SW) 
 			 
-			setOut( STARTER_CH, START_ENABLE and stop_signal )
+			setOut( STARTER_CH, START_ENABLE --[[and stop_signal]] )
 			KeyBoard:setLedGreen( 1, START_ENABLE  )		
 			
 			--задержка на срабатывания концевиков
@@ -168,13 +170,11 @@ local t_c = 0
 			if  ( ( OilTemp < (40+ TEMP_OFFSET)) ) then
 				oil_fan_enable = false
 			end
-			local oilfan_start = oil_fan_enable and (not START_ENABLE) and start 
-			OilFanTimer:process( oilfan_start )
-			setOut(OIL_FAN_CH, OilFanTimer:get() )
+			setOut(OIL_FAN_CH, oil_fan_enable and (not START_ENABLE) and start  )
 			--конец блока управления вентилятром охлаждения масла
 	
 			-- блок переключением передач и заденего хода
-			local gear_enable =  stop_signal --and (speed == 0) --and ( RPM < 1000 )
+			local gear_enable = true -- stop_signal 
 			GearCounter:process(KeyBoard:getKey(4) and gear_enable,KeyBoard:getKey(8) and gear_enable,  (not start) or parking_on  )
 			local UP_MOVE	 = (GearCounter:get() == 2)	
 			KeyBoard:setLedGreen(4, UP_MOVE)		

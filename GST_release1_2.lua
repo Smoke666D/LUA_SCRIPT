@@ -29,7 +29,7 @@ WIPER_IN		= 8
 TEMP_OFFSET		= 40
  --функция иницализации
 function init()
-    ConfigCan(1,500);	 								   
+    ConfigCan(1,1000);	 								   
 	setOutConfig(GLOW_PLUG_1_2,30,1,5000,40) -- на пуске свечи жрут 32-35А. Поскольку в ядре номинальный ток ограничен 30а, ставлю задержку на 5с
 	setOutConfig(GLOW_PLUG_3_4,30,1,5000,40)
 	setOutConfig(STARTER_CH,15,1,100,40)
@@ -40,6 +40,7 @@ function init()
 	setOutConfig(RIGTH_TURN_CH,4,1,0,4,0)
 	OutResetConfig(RIGTH_TURN_CH,1,0)
 	setOutConfig(OIL_FAN_CH,20,1,3000,50)
+	
 	setOutConfig(HIGH_BEAM_CH,11)
 	setOutConfig(STOP_CH,5,1,0,5,0)
 	setOutConfig(FUEL_PUMP_CH,15)	

@@ -29,7 +29,7 @@ WIPER_IN		= 8
 TEMP_OFFSET		= 40
  --функция иницализации
 function init()
-    ConfigCan(1,500);	 								   
+    ConfigCan(1,1000);	 								   
 	setOutConfig(GLOW_PLUG_1_2,30,1,5000,40) -- на пуске свечи жрут 32-35А. Поскольку в ядре номинальный ток ограничен 30а, ставлю задержку на 5с
 	setOutConfig(GLOW_PLUG_3_4,30,1,5000,40)
 	setOutConfig(STARTER_CH,15,1,100,40)
@@ -101,7 +101,7 @@ main = function ()
 	local BeamCounter   	= Counter:new(1,3,1,true) 
 	local FlashTimer    	= Delay:new( 50,  true )
 	local FlashToCanTimer   = Delay:new( 200,  true )
-	local OilFanTimer		= Delay:new(3000, false)
+	
 	local LEFT				= false
 	local LEFT_DOOR_EN		= false
 	
@@ -168,9 +168,7 @@ local t_c = 0
 			if  ( ( OilTemp < (40+ TEMP_OFFSET)) ) then
 				oil_fan_enable = false
 			end
-			local oilfan_start = oil_fan_enable and (not START_ENABLE) and start 
-			OilFanTimer:process( oilfan_start )
-			setOut(OIL_FAN_CH, OilFanTimer:get() )
+			setOut(OIL_FAN_CH, oil_fan_enable and (not START_ENABLE) and start  )
 			--конец блока управления вентилятром охлаждения масла
 	
 			-- блок переключением передач и заденего хода
@@ -264,8 +262,8 @@ local t_c = 0
 			local left_flash  = ( FlashCounter:get() == 7 ) or ( FlashCounter:get() == 11 )
 			local RIGTH_ENABLE = ( Turns:getAlarm() or Turns:getRight() ) and (not START_ENABLE) 
 			local LEFT_ENABLE  = ( Turns:getAlarm() or Turns:getLeft() ) and (not START_ENABLE)  
-			setOut(RIGTH_TURN_CH, (right_flash or RIGTH_ENABLE) and start )
-			setOut(LEFT_TURN_CH,  (left_flash  or LEFT_ENABLE) and start )
+			setOut(RIGTH_TURN_CH, true )--(right_flash or RIGTH_ENABLE) and start )
+			setOut(LEFT_TURN_CH,  true )--(left_flash  or LEFT_ENABLE) and start )
 			
 			--блока предпрогрева.
 			if start then
