@@ -158,9 +158,11 @@ local t_c = 0
 			--блок управления вентилятром охлаждения масла
 			if  ( ( OilTemp >= (50+ TEMP_OFFSET)) or ( OilTemp == 0) ) then
 				oil_fan_enable = true
-			end
-			if  ( ( OilTemp < (40+ TEMP_OFFSET)) ) then
+		
+			else
+				if  ( ( OilTemp < (40+ TEMP_OFFSET)) ) then
 				oil_fan_enable = false
+				end
 			end
 			local oilfan_start = oil_fan_enable and (not START_ENABLE) and start 
 			OilFanTimer:process( oilfan_start )
