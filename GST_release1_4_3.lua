@@ -44,8 +44,8 @@ function init()
 	setOutConfig(HIGH_BEAM_CH,11)
 	setOutConfig(STOP_CH,5,1,0,5,0)
 	setOutConfig(FUEL_PUMP_CH,15)	
-	setOutConfig(WIPERS_CH,10,0,100,30)
-	setOutConfig(WATER_CH,8,0,100,30)
+	setOutConfig(WIPERS_CH,8,0,100,30)
+	setOutConfig(WATER_CH,8,0,500,30)
 	setOutConfig(UP_GEAR, 8)
 	setOutConfig(DOWN_GEAR_CH,8)
 	setOutConfig(STEERING_WEEL_VALVE_CH,8)
@@ -97,14 +97,12 @@ main = function ()
 	local FlashCounter  	= Counter:new(0,20,0,true)
 	local GearCounter   	= Counter:new(0,2,1,false)
 	local WaterKeyDelay 	= Delay:new( 800, false)
-
 	local BeamCounter   	= Counter:new(1,3,1,true) 
 	local FlashTimer    	= Delay:new( 50,  true )
 	local FlashToCanTimer   = Delay:new( 200,  true )
 	local OilFanTimer		= Delay:new(5000, false)
 	local LEFT				= false
-	local LEFT_DOOR_EN		= false
-	
+	local LEFT_DOOR_EN		= false	
 	local RIGHT_DOOR_EN		= false
 	local RIGTH   			= false
 	local ALARM				= false	
@@ -118,8 +116,8 @@ main = function ()
 	local dash_start 		= false
 	local oil_fan_enable 	= false
 	local parking_on		= false
-	
-local t_c = 0
+	local POWER_OFF_ALARM   = false
+    local t_c = 0
 
 	KeyBoard:setBackLigthBrigth(  3 )
 	--рабочий цикл
@@ -204,7 +202,7 @@ local t_c = 0
 			--Блок управления дврониками и омывателем		
 			KeyBoard:setLedGreen(3, wipers_on and (not water)  )
 			KeyBoard:setLedBlue(3, water)
-			if (KeyBoard:getKey(3) and (wipers_on == false)) then		-- если все выключено, запускаем алгоримт
+			if (KeyBoard:getKey(3) and (wipers_on == false) and start) then		-- если все выключено, запускаем алгоримт
 				wipers_on  = true
 				work_state = false
 				wait_flag  = true
@@ -235,16 +233,28 @@ local t_c = 0
 			-- конец блока дворников
 			
 			--аогоритм управления с 2-х клавиш повортниками и если 2 вместе, то аварийка
-			if  ALARM then
-				ALARM = (not ( KeyBoard:getToggle(5) or KeyBoard:getToggle(6)))
-				KeyBoard:resetToggle(5,not ALARM )
-				KeyBoard:resetToggle(6,not ALARM )
+			if not start then
+				ALARM = true
+				POWER_OFF_ALARM = true
 			else
-				RIGTH = KeyBoard:getToggle(6)
-				LEFT =  KeyBoard:getToggle(5)
-				KeyBoard:resetToggle(5,KeyBoard:getKey(6) or (not start) )
-				KeyBoard:resetToggle(6,KeyBoard:getKey(5) or (not start) )
-				ALARM = KeyBoard:getKey(5) and KeyBoard:getKey(6)
+			     if POWER_OFF_ALARM then
+				    POWER_OFF_ALARM = false
+					KeyBoard:resetToggle(5, true )
+					KeyBoard:resetToggle(6, true )
+					ALARM = false
+				 end
+				if  ALARM then
+					ALARM = (not ( KeyBoard:getToggle(5) or KeyBoard:getToggle(6) ) ) 
+					KeyBoard:resetToggle(5,not ALARM )
+					KeyBoard:resetToggle(6,not ALARM )
+				else
+					RIGTH = KeyBoard:getToggle(6)
+					LEFT =  KeyBoard:getToggle(5)
+					KeyBoard:resetToggle(5,KeyBoard:getKey(6) or (not start) )
+					KeyBoard:resetToggle(6,KeyBoard:getKey(5) or (not start) )
+					ALARM = KeyBoard:getKey(5) and KeyBoard:getKey(6)
+					ALARM = ALARM or not start
+				end
 			end
 			Turns:process( true, LEFT, RIGTH, ALARM)
 			--упавление светодиодами 5 и 6-й конопо и выходами повортников
@@ -260,8 +270,8 @@ local t_c = 0
 			local left_flash  = ( FlashCounter:get() == 7 ) or ( FlashCounter:get() == 11 )
 			local RIGTH_ENABLE = ( Turns:getAlarm() or Turns:getRight() ) and (not START_ENABLE) 
 			local LEFT_ENABLE  = ( Turns:getAlarm() or Turns:getLeft() ) and (not START_ENABLE)  
-			setOut(RIGTH_TURN_CH, (right_flash or RIGTH_ENABLE) and start )
-			setOut(LEFT_TURN_CH,  (left_flash  or LEFT_ENABLE) and start )
+			setOut(RIGTH_TURN_CH, (right_flash or RIGTH_ENABLE)  )
+			setOut(LEFT_TURN_CH,  (left_flash  or LEFT_ENABLE)  )
 			
 			--блока предпрогрева.
 			if start then
@@ -293,6 +303,8 @@ local t_c = 0
 			setOut(GLOW_PLUG_3_4, PREHEAT )
 			KeyBoard:setLedRed( 1,  PREHEAT  )	
 			--конец блока предпрогрева
+			
+			--блок передачи данных в CAN
 			CanToDash:setBit(3, 3, getDIN(DOOR1_SW) )
 			CanToDash:setBit(3, 2, getDIN(DOOR2_SW) )
 			CanToDash:setBit(3, 1, HIGH_BEAM )
@@ -306,6 +318,7 @@ local t_c = 0
 			CanToDash:setBit(2, 1, not ( REAR_MOVE or UP_MOVE or parking_on ) )
 			CanToDash:setBit(1, 4, parking_on )
 			CanToDash:process()
+			--конец
 			
 			--блок для передачи сигналов поворотников в дашборд, что бы было видно их работу в сервисном режиме
 			FlashToCanTimer:process(true, not FlashEnabel)
