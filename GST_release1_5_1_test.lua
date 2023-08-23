@@ -12,13 +12,13 @@ DOWN_GEAR_CH   	= 11
 KL30			= 12
 HORN_CH 		= 13
 UP_GEAR     	= 14
-STEERING_WEEL_VALVE_CH   	= 15
+WATER_FAN_CH   	= 15
 WIPERS_CH   	= 16
 LEFT_TURN_CH 	= 18
 RIGTH_TURN_CH 	= 17
 STOP_CH	    	= 19
 LOW_BEAM_CH 	= 20
-PRESSURE_IN 	= 1
+TYPE_SELECT 	= 1
 STARTER_IN		= 2
 DOOR2_SW		= 3
 STOP_SW			= 4
@@ -54,7 +54,7 @@ function init()
 	setOutConfig(HORN_CH,7,1,1000,15)
 	setOutConfig(LOW_BEAM_CH,3)
 	setPWMGroupeFreq(5, 100)
-    setDINConfig(PRESSURE_IN,0)
+    
 	setDINConfig(ING_IN,0)
 	setDINConfig(STOP_SW,0)
     setDINConfig(WIPER_IN,1)
@@ -88,6 +88,17 @@ function ALL_OFF()
 end
 --главная функция
 main = function ()
+    
+	
+	setDINConfig(TYPE_SELECT,0)
+    Yield()
+	if getDIN(TYPE_SELECT) then
+		FUEL_PUMP_CH    = 8
+		WATER_FAN_CH    = 15
+	else
+		FUEL_PUMP_CH    = 15
+		WATER_FAN_CH    = 8
+	end
     init()	
     local KeyBoard			= KeyPad8:new(0x15)--создание объекта клавиатура c адресом 0x15
 	local DASH				= Dashboard:new(0x30,200)
@@ -101,6 +112,7 @@ main = function ()
 	local FlashTimer    	= Delay:new( 50,  true )
 	local FlashToCanTimer   = Delay:new( 200,  true )
 	local OilFanTimer		= Delay:new(5000, false)
+	local WaterFanTimer		= Delay:new(5000, false)
 	local LEFT				= false
 	local LEFT_DOOR_EN		= false	
 	local RIGHT_DOOR_EN		= false
@@ -115,6 +127,7 @@ main = function ()
     local PreheatTimer 		= 0
 	local dash_start 		= false
 	local oil_fan_enable 	= false
+	local water_fan_enable 	= false
 	local parking_on		= false
 	local POWER_OFF_ALARM   = false
     local t_c = 0
@@ -122,10 +135,11 @@ main = function ()
 	KeyBoard:setBackLigthBrigth(  3 )
 	--рабочий цикл
 	while true do		
-	    	   --процесс отправки данных о каналах в даш
+	    --если высокое или низкое напряжние питание, то выключаем нагрузку
 	    if (( getBat() > 16 ) or (getBat()<7) ) then
 			ALL_OFF()
 		else
+		--основной рабочий цикл
 			setOut(KL30, true )
 			KeyBoard:process() --процесс работы с клавиатурой
 			DASH:process()	   --процесс отправки данных о каналах в даш
@@ -135,6 +149,8 @@ main = function ()
 			local OilTemp  	= ( dash_start ) and ( CanIn:getByte(6)  ) or 40 --  CanOilTempIn:getByte(1)  -- получаем первый байт из фрейма, температура масла
 			local RPM 	  	= ( dash_start ) and CanIn:getWordLSB(1) or 0
 			local speed     = ( dash_start ) and CanIn:getWordLSB(3) or 0		
+				
+			--GOD = GOD_TIMER	(KeyBoard:getKey(2) and KeyBoard:getKey(6), not (start or  KeyBoard:getKey(2) or KeyBoard:getKey(6)))
 				
 			KeyBoard:setBackLigthBrigth( start and 15 or 3 )	-- подсветка клавиатуры
 			--как только приходит сигнал зажигания
@@ -146,12 +162,16 @@ main = function ()
 			setOut( STARTER_CH, START_ENABLE and stop_signal )
 			KeyBoard:setLedGreen( 1, START_ENABLE  )		
 			
+		
 			--включение концевиков
 			parking_on =  getDIN(PARKING_SW) or getDIN(DOOR1_SW) or getDIN(DOOR2_SW)
 			setOut(STOP_VALVE, (not parking_on )  and start )
+			
+			
 			--блок управления вентилятром охлаждения масла
 			if  ( ( OilTemp >= (50+ TEMP_OFFSET)) or ( OilTemp == 0) ) then
 				oil_fan_enable = true
+		
 			else
 				if  ( ( OilTemp < (40+ TEMP_OFFSET)) ) then
 				oil_fan_enable = false
@@ -162,6 +182,20 @@ main = function ()
 			setOut(OIL_FAN_CH, OilFanTimer:get())
 			--конец блока управления вентилятром охлаждения масла
 	
+			--блок управления вентеляторм охлаждения двигаетля
+			if  ( ( temp  >= (80+ TEMP_OFFSET)) or ( temp  == 0) ) then
+				water_fan_enable = true
+			else
+				if  ( ( temp  < (70+ TEMP_OFFSET)) ) then
+				water_fan_enable = false
+				end
+			end
+			local waterfan_start = water_fan_enable and (not START_ENABLE) and start 
+			WaterFanTimer:process( oilfan_start )
+			setOut(WATER_FAN_CH, WaterFanTimer:get())
+			--конец блока управления вентеляторм охлаждения двигаетля
+			
+			
 			-- блок переключением передач и заденего хода
 			local gear_enable =  stop_signal --and (speed == 0) --and ( RPM < 1000 )
 			GearCounter:process(KeyBoard:getKey(4) and gear_enable,KeyBoard:getKey(8) and gear_enable,  (not start) or parking_on  )
