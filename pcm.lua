@@ -30,22 +30,11 @@ function Pillow:process( mode, control_type )
      self.SH10 = SH*0,1
   end
   self.state = 0
-  local DATA = 0
-  local EDATA = 0
-  local D10 = 0
-  local D5 = 0
-  if control_type == 0 then
-     DATA  = self.air
-	 EDATA = self.SA
-	 D10   = self.SA10
-	 D5    =  self.SA5
-  else
-     DATA  = self.height
-	 EDATA = self.SH
-	 D10   = self.SH10
-	 D5    = self.SH5
-  end
-  if ( DATA <= EDATA ) then
+  local DATA  = ( control_type == 0 ) and self.air  or self.height
+  local EDATA = ( control_type == 0 ) and self.SA   or self.HA
+  local D10   = ( control_type == 0 ) and self.SA10 or self.SH10
+  local D5    = ( control_type == 0 ) and self.SA5  or srlf.SA5
+  if ( DATA < EDATA ) then
 	local delta = EDATA -DATA
 	if  delta > D10 then
 		self.state = 4
@@ -64,40 +53,22 @@ function Pillow:process( mode, control_type )
 	  end
 	end
   end
-  local UP =false
+  local UP   = false
   local DOWN = false
   --импульсно спускаем
-  if self.state == 1  then
+  if ( (self.state == 1) or (self.state == 2) )then
 	  self.timer = self.timer + getDealy()
 	  if self.timer > 500 then
 		if self.timer < 700 then
-			DOWN = true
+		    UP   =  (self.state == 2 ) and true or false
+			DOWN = ( self.state == 1 ) and true or false
 		else
 			self.timer = 0
 	    end 
 	  end
-  else
-  --импульсно надуваем
-	if self.state == 2 then
-		self.timer = self.timer + getDealy()
-		if self.timer > 500 then
-			if self.timer < 700 then
-				UP =true
-			else
-				self.timer = 0
-			end 
-		end  
-	else
-	-- яростно спускаем
-		if self.state == 3 then
-			DOWN = true	 
-		else
-		 --ярсотно надуваем
-			if self.state == 4 then			
-			  UP = true
-			end
-		end
-	 end
+   else
+	  DOWN = (self.state == 3) and true or false  --спускаем
+	  UP   = (self.state == 4) and true or false  --надуваем
    end
    setOut(self.OO, UP  )
    setOut(self.OD, DOWN )
@@ -108,7 +79,7 @@ function init() --функция иницализации
 	 setOutConfig(1,2)	
 	 setOutConfig(2,2)	
      setOutConfig(3,2)	
-     setOutConfig(4,2)	 
+	 setOutConfig(4,2)
      setOutConfig(5,2)	
 	 setOutConfig(6,2)	
 	 setOutConfig(7,2)	
@@ -126,7 +97,23 @@ function init() --функция иницализации
      setOutConfig(19,2)	 
      setOutConfig(20,2)
 	 CanSend(0x615,0x2F,0x12,0x20,00,00,0x01,00,00,00)
-CanSend(0x615,0x2F,0x14,0x20,00,00,0x00,00,00,00)
+     CanSend(0x615,0x2F,0x14,0x20,00,00,0x00,00,00,00)
+	 setAINCalTable(1,			
+					10,0,	     
+					184,10,	    
+				    )
+     setAINCalTable(2,			
+					10,0,	     
+					184,10,	    
+				    )
+     setAINCalTable(3,			
+					10,0,	     
+					184,10,	    
+				    )
+     setAINCalTable(4,			
+					10,0,	     
+					184,10,	    
+				    )					
 --	 CanSend(0,0x80,0x15)
 end
 ----
@@ -136,8 +123,9 @@ main = function ()
   
     init()
 	local KeyBoard		= KeyPad15:new(0x15)
-	local MODCOUNTER   =  Counter:new(1,2,1,true)
-    local CanIn         	= CanInput:new(0x28)
+	local MODCOUNTER    =  Counter:new(1,2,1,true)
+    local CanIn         = CanInput:new(0x28)
+	local CanToDash		= CanOut:new(0x29, 100)
 	local Pillow1   = Pillow:new( 0 ,4 , 1,2)
 	local Pillow2   = Pillow:new( 1 ,4 ,3,4)
 	local Pillow3   = Pillow:new( 2 ,4,5,6)
@@ -151,7 +139,6 @@ main = function ()
 	local P2mode = false
     local P3mode = false
     local P4mode = false
-    local init_auto_mode = false
 	local data_mode = 0
 	local highmode  = 1
 	while true do	
@@ -160,20 +147,17 @@ main = function ()
 		local p2H = CanIn:getByte(2)
 		local p3H = CanIn:getByte(3)
 		local p4H = CanIn:getByte(4)
-		
 		Pillow1:setData(getAin(1),p1H)
 		Pillow2:setData(getAin(2),p2H)
 		Pillow3:setData(getAin(3),p3H)
-		Pillow4:setData(getAin(4),p4H)
-		
+		Pillow4:setData(getAin(4),p4H)	
 		KeyBoard:process()
 		MODCOUNTER:process(KeyBoard:getKey(1),false,false)
 		-- Ручной режим работы
 		if MODCOUNTER:get() ==1  then
-		   init_auto_mode = false
 		  -- блок ручного управления клапанаами
 		   KeyBoard:setLedGreen( 1,  true)
-		   KeyBoard:setLedRed( 1,  false)
+		   KeyBoard:setLedRed( 1,    false)
 		   local p1air_on =  KeyBoard:getKey(2) 
 		   setOut(1, p1air_on )	
 		   KeyBoard:setLedGreen( 2,  p1air_on)
@@ -211,27 +195,31 @@ main = function ()
 				Pillow3:Calibrate( offset)
 				Pillow4:Calibrate( offset)		
 			end	
-			KeyBoard:SetToggle(12,true)
+			KeyBoard:SetToggle(12, true )
 			-- конец блока калиборвки
 		else
 		   -- блок выбора режима работы
-		   KeyBoard:setLedGreen(9, highmode == 0)
+		   KeyBoard:setLedGreen(12,KeyBoard:getToggle(12))
+		   KeyBoard:setLedBlue(12,not KeyBoard:getToggle(12))
+		   KeyBoard:setLedGreen(9, highmode  == 0)
 		   KeyBoard:setLedGreen(10, highmode == 1)
 		   KeyBoard:setLedGreen(11, highmode == 2)
 		   Pillow1:process( highmode, KeyBoard:getToggle(12))
 		   Pillow2:process( highmode, KeyBoard:getToggle(12))
 		   Pillow3:process( highmode, KeyBoard:getToggle(12))
 		   Pillow4:process( highmode, KeyBoard:getToggle(12))
-		   if  KeyBoard:getKey(9) then highmode = 0 end
+		   if  KeyBoard:getKey(9)  then highmode = 0 end
            if  KeyBoard:getKey(10) then highmode = 1 end
 	       if  KeyBoard:getKey(11) then highmode = 2 end
+		   
 		   KeyBoard:setLedGreen( 1, false )
-		   KeyBoard:setLedRed( 1,  true)
-		   
-		   
+		   KeyBoard:setLedRed(   1, true)
 		end
-		
-				
+		CanToDash:setWord(1, (getAin(1)*100)//1 )
+		CanToDash:setWord(1, (getAin(2)*100)//1 )
+		CanToDash:setWord(1, (getAin(3)*100)//1 )
+		CanToDash:setWord(1, (getAin(4)*100)//1 )
+		CanToDash:process()
 	   Yield() 
 	end
 end

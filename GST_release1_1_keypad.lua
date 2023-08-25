@@ -29,7 +29,7 @@ WIPER_IN		= 8
 TEMP_OFFSET		= 40
  --функция иницализации
 function init()
-    ConfigCan(1,1000);	 								   
+    ConfigCan(1,500);	 								   
 	setOutConfig(GLOW_PLUG_1_2,5) -- на пуске свечи жрут 32-35А. Поскольку в ядре номинальный ток ограничен 30а, ставлю задержку на 5с
 	setOutConfig(GLOW_PLUG_3_4,5)
 	setOutConfig(STARTER_CH,5)
@@ -133,17 +133,7 @@ local counter = 0
 	--KeyBoard:setBackLigthBrigth(  3 )
 	--рабочий цикл
 	while true do	
-	    delay = delay + 1
 	    
-		 if delay >1000 then
-			SetEEPROMReg(1,getBat())
-			SetEEPROMReg(2)
-			counter = counter + 1
-			SetEEPROMReg(3,counter)
-			SetEEPROMReg(4,GetEEPROMReg(1))
-			AddReccord( GetEEPROMReg(3),GetEEPROMReg(1))
-			delay  = 0
-         end
 
 if (( getBat() > 16 ) or (getBat()<7) ) then
 			ALL_OFF()
