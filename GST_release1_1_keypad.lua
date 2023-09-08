@@ -65,7 +65,7 @@ function init()
 	setDINConfig(10,0)
 	setDINConfig(11,0)
     setDINConfig(12,0)
-
+    ConfigStorage(0,35,0x00,0x01,0x03,0x03)	
 end
 
 function ALL_ON()
@@ -126,19 +126,32 @@ init()
 	local Key7Counter   = Counter:new(0,3,0,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)
 	local Key8Counter   = Counter:new(0,3,0,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)
 
-    	
+    	local v_flag = false
  local delay = 0
 local counter = 0
-
+local ccc = 1
 	--KeyBoard:setBackLigthBrigth(  3 )
 	--рабочий цикл
-	while true do	
+	
 	    
+	while true do
+        
+	    if getBat() < 8 then
+		  if v_flag == true then
+		    AddReccord(counter,getBat(),ccc)
+		 -- SetEEPROMReg(1,getBat())
+		 -- SetEEPROMReg(0,ccc)
+		    ccc = ccc + getDelay()
+		    counter = counter +1
+		   end
+		 else
+		 v_flag = true
+		end
 
-if (( getBat() > 16 ) or (getBat()<7) ) then
+--if (( getBat() > 16 ) or (getBat()<7) ) then
 			ALL_OFF()
-		else
-	  		ALL_ON()
+	--	else
+	  	--	ALL_ON()
 	    KeyBoard:process() --процесс работы с клавиатурой
 		
 		KeyBoard:setBackLigthBrigth( 15  )
@@ -196,7 +209,7 @@ if (( getBat() > 16 ) or (getBat()<7) ) then
 		KeyBoard:setLedRed( 8,  Key8Counter:get() ==1 )
 		KeyBoard:setLedGreen( 8,  Key8Counter:get() ==2 )
 		KeyBoard:setLedBlue( 8,  Key8Counter:get() ==3 )
-		end
+		--end
 	   Yield()
 	end
 end
