@@ -26,6 +26,7 @@ DOOR1_SW		= 5
 ING_IN			= 6
 PARKING_SW		= 7
 WIPER_IN		= 8
+RPM_IN			= 9
 TEMP_OFFSET		= 40
  --функция иницализации
 function init()
@@ -64,6 +65,7 @@ function init()
 	setDINConfig(PARKING_SW,1)
     setDINConfig(DOOR2_SW,0,3000,0)
 	setDINConfig(DOOR1_SW,0,3000,0)
+	--setDINConfig(RPM_IN,2)
 	setAINCalTable(1,	
 					4.89,-40,
 					4.81,-30,
@@ -184,7 +186,7 @@ main = function ()
 	--рабочий цикл
 	while true do		
 	    	   --процесс отправки данных о каналах в даш
-	    if (( getBat() > 16 ) or (getBat()<7) ) then
+	    if (( getBat() > 16 ) or (getBat()<6) ) then
 			ALL_OFF()
 		else
 			setOut(KL30, true )
@@ -223,10 +225,10 @@ main = function ()
 			setOut(OIL_FAN_CH, OilFanTimer:get())
 			--конец блока управления вентилятром охлаждения масла
 			--блок управления вентелятором охдаждения
-			if  ( ( temp >= (90+ TEMP_OFFSET)) or ( temp == 0) ) then
+			if  ( ( temp >= (87+ TEMP_OFFSET)) or ( temp == 0) ) then
 				water_fan_enable = true
 			else
-				if  ( ( temp < (85+ TEMP_OFFSET)) ) then
+				if  ( ( temp < (83+ TEMP_OFFSET)) ) then
 				water_fan_enable = false
 				end
 			end
