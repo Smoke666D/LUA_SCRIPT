@@ -65,7 +65,8 @@ function init()
 	setDINConfig(PARKING_SW,1)
     setDINConfig(DOOR2_SW,0,3000,0)
 	setDINConfig(DOOR1_SW,0,3000,0)
-	--setDINConfig(RPM_IN,2)
+	setDINConfig(RPM_IN,2)
+	RPMConfig(RPM_IN,0.1123,1,0xFF)
 	setAINCalTable(1,	
 					4.89,-40,
 					4.81,-30,

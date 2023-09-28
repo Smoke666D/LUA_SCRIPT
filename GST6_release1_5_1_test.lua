@@ -56,7 +56,11 @@ function init()
 	setOutConfig(STOP_VALVE,8)
 	setOutConfig(HORN_CH,7,1,1000,15)
 	setOutConfig(LOW_BEAM_CH,3)
-	setPWMGroupeFreq(5, 100)
+	
+
+setPWMGroupeFreq(5, 700)
+
+
     setDINConfig(PRESSURE_IN,0)
 	setDINConfig(ING_IN,2)
 	setDINConfig(STOP_SW,0)
@@ -66,7 +70,7 @@ function init()
     setDINConfig(DOOR2_SW,0,3000,0)
 	setDINConfig(DOOR1_SW,0,3000,0)
 	setDINConfig(RPM_IN,2)
-	RPMConfig(RPM_IN,0.04,1,4)
+	RPMConfig(RPM_IN,0.04,0,4)
 	setAINCalTable(1,	
 					4.89,-40,
 					4.81,-30,
@@ -182,29 +186,32 @@ main = function ()
 	local parking_on		= false
 	local POWER_OFF_ALARM   = false
     local t_c = 0
-  local rrr =0
+    local rrr =0
    local set = 0.1
 	KeyBoard:setBackLigthBrigth(  3 )
+	setOut(KL30, true  )
 	--рабочий цикл
 	while true do		
 	    	   --процесс отправки данных о каналах в даш
 	    if (( getBat() > 16 ) or (getBat()<6) ) then
 			ALL_OFF()
 		else
-		    set = set + set
-			if set >= 1 then set = 0.1 end
-			t_c = t_c + getDelay()
-			if (t_c <(1.2+set)) then
+		   
+		   
+		    setOut( STOP_CH, true)  --ближний свет и стоп сигнал
+			OutSetPWM(STOP_CH, 50)
+			--[[t_c = t_c + getDelay()
+			if (t_c <1.2) then
 			    setOut(KL30, false  )
 			end
-		    if ((t_c  >(1.2 +set )) and ( t_c < 2.2 )) then
+		    if ((t_c  >(1.2 )) and ( t_c < 2.2 )) then
 			   setOut(KL30, true  )
 		    end
 				
 			if (t_c  > 2.2) then
 			    setOut(KL30, false  )
 				t_c = 0
-			end	
+			end	]]
 	   end
 	   Yield()
 	end
