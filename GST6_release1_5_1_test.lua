@@ -58,7 +58,7 @@ function init()
 	setOutConfig(LOW_BEAM_CH,3)
 	
 
-setPWMGroupeFreq(5, 700)
+setPWMGroupeFreq(5, 300)
 
 
     setDINConfig(PRESSURE_IN,0)
@@ -199,7 +199,7 @@ main = function ()
 		   
 		   
 		    setOut( STOP_CH, true)  --ближний свет и стоп сигнал
-			OutSetPWM(STOP_CH, 50)
+			OutSetPWM(STOP_CH,20)
 			--[[t_c = t_c + getDelay()
 			if (t_c <1.2) then
 			    setOut(KL30, false  )
