@@ -135,7 +135,7 @@ local counter = 0
 	while true do	
 	    delay = delay + 1
 	    
-		 if delay >1000 then
+		--[[ if delay >1000 then
 			SetEEPROMReg(1,getBat())
 			SetEEPROMReg(2)
 			counter = counter + 1
@@ -143,7 +143,7 @@ local counter = 0
 			SetEEPROMReg(4,GetEEPROMReg(1))
 			AddReccord( GetEEPROMReg(3),GetEEPROMReg(1))
 			delay  = 0
-         end
+         end]]
 
 if (( getBat() > 16 ) or (getBat()<7) ) then
 			ALL_OFF()
