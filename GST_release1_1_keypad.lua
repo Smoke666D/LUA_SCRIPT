@@ -65,6 +65,51 @@ function init()
 	setDINConfig(10,0)
 	setDINConfig(11,0)
     setDINConfig(12,0)
+	setAINCalTable(1,			
+					10,0,	     
+					184,10	    
+				    )
+    setAINCalTable(2,			
+					10,0,	     
+					184,10    
+				    )
+    setAINCalTable(3,			
+					10,0,	     
+					184,10	    
+				    )
+    setAINCalTable(4,			
+					10,0,	     
+					184,10	    
+				    )
+	setAINCalTable(5,			
+					10,0,	     
+					184,10	    
+				    )
+    setAINCalTable(6,			
+					10,0,	     
+					184,10    
+				    )
+    setAINCalTable(7,			
+					10,0,	     
+					184,10	    
+				    )
+    setAINCalTable(8,			
+					10,0,	     
+					184,10	    
+				    )
+	setAINCalTable(9,			
+					10,0,	     
+					184,10    
+				    )
+     setAINCalTable(10,			
+					10,0,	     
+					184,10	    
+				    )
+     setAINCalTable(11,			
+					10,0,	     
+					184,10	    
+				    )	
+   ConfigStorage(0,30,0x00,0x01,0x03,0x03)					
 
 end
 
