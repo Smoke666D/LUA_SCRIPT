@@ -11,11 +11,9 @@ function Pillow:setData( AirData, HData)
 	self.height = HData
 end
 function Pillow:manualControl( On , Off )
-{
    setOut(self.OO, On  )
    setOut(self.OF, Off )  
-}
-
+end
 function Pillow:Calibrate( mode )
 	SetEEPROMReg(1 + 2 * self.number + self.total * 2 * mode ,self.height)
 	SetEEPROMReg(2 + 2 * self.number + self.total * 2 * mode, self.air)

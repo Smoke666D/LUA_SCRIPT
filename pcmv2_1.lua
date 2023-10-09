@@ -124,8 +124,8 @@ end
 main = function ()
   
     init()
-	local KeyBoard		= KeyPad15:new(0x15)
-    local CanIn         = CanInput:new(0x28)
+	local KeyBoard		= KeyPad8:new(0x15)
+  --[[  local CanIn         = CanInput:new(0x28)
 	local CanToDash  	= CanOut:new(0x29, 100)
 	local CanToDash1	= CanOut:new(0x30, 100)
 	local CanToDash2	= CanOut:new(0x31, 100)
@@ -139,10 +139,10 @@ main = function ()
     local FlashTimer    = Delay:new( 500, true )
   	local FlashCounter  = Counter:new(0,1,0,true)
   
-	local v_flag = false
-	local WORK_MODE = 0
+	local v_flag = false]]
+	local WORK_MODE = 2
 	while true do	
-	    if getBat() < 8 then
+	   --[[ if getBat() < 8 then
 		  if v_flag == true then
 		  SetEEPROMReg(1,getBat())
 		   end
@@ -198,11 +198,11 @@ main = function ()
 		Pillow2:setData(getAin(2),p2H)
 		Pillow3:setData(getAin(3),p3H)
 		Pillow4:setData(getAin(4),p4H)
-		KeyBoard:process()
+		KeyBoard:process()]]
 		
-		KeyBoard15:setLedGreen( 1, ( WORK_MODE == 2) )
+		KeyBoard:setLedGreen( 1, true )
 		
-		if ((WORK_MODE  == 0) or (Alarm == true)) then
+		--[[if ((WORK_MODE  == 0) or (Alarm == true)) then
 			AlarmState()
 			if  (getAin(MainIn) > 8) then
 				WORK_MODE = not Alarm and 1 or 0
@@ -299,7 +299,7 @@ main = function ()
 		CanToDash:setWord(3, (getAin(2)*100)//1 )
 		CanToDash:setWord(5, (getAin(3)*100)//1 )
 		CanToDash:setWord(7, (getAin(4)*100)//1 )
-		CanToDash:process()
+		CanToDash:process()]]
 		
 		
 		
