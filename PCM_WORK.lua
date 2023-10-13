@@ -88,7 +88,9 @@ function init()
 					184,10	    
 				    )	
    ConfigStorage(0,62,0x00,0x01,0x03,0x03)					
-
+  
+   CanSend(0x00,0x01,0x15,0x00,0x00,0x00,0x00,0x00,0x00)
+  
 end
 
 --главная функция
@@ -132,15 +134,17 @@ init()
 	local calmode = 4
 
 	local MODE = 1
-	local CAL_SET = false
+	local CAL_SET = fals
+	 CanSend(0x00,0x80,0x15,0x00,0x00,0x00,0x00,0x00,0x00)
 	--рабочий цикл
 	while true do	
-	   
+	 --   CanSend(0x615,0x2F,0x12,0x20,00,00,0x01,00,00,00)
+     --   CanSend(0x615,0x2F,0x14,0x20,00,00,0x00,00,00,00)
 	    CanIn:process()
-		local LMFH = CanIn:getByte(1)
-		local RMFH = CanIn:getByte(2)
-		local LMBH = CanIn:getByte(3)
-		local RMBH = CanIn:getByte(4)
+		local LMFH = CanIn:getWordMSB(1)
+		local RMFH = CanIn:getWordMSB(3)
+		local LMBH = CanIn:getWordMSB(5)
+		local RMBH = CanIn:getWordMSB(7)
 		CanToDash:setWord(1, (getAin(LSFAir)*100)//1 )
 		CanToDash:setWord(3, (getAin(RSFAir)*100)//1 )
 		CanToDash:setWord(5, (getAin(LSBAir)*100)//1 )
@@ -191,7 +195,7 @@ init()
 			  KeyBoard:resetToggle(1,true)
 			  MODE = 2
 			end
-			
+			DFDFD
 			AUTO = (MODE~=1) and true or false
 			
 			if KeyBoard:getToggle(2)==true then
