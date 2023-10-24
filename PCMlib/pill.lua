@@ -2,7 +2,7 @@ Pillow = {}
 Pillow.__index = Pillow
 function Pillow:new ( N , all_N, outOn, outOFF)
 	local obj = {  air = 0.0, height = 0.0, number = N, total = all_N , timer = 0, mode = 3, OO =outOn, OF = outOFF,
-	state = 1, SA = 0.0, SH = 0.0 , SA10 = 0.0, SH10 = 0.0,  SA5=0.0, SH10 = 0.0} 
+	state = 1, SA = 0.0, SH = 0.0 , SA10 = 0.0, SH10 = 0.0,  SA5=0.0, SH10 = 0.0, SetAir = 0} 
 	setmetatable( obj, self )
 	return obj
 end
@@ -74,5 +74,54 @@ function Pillow:process( mode, control_type )
    setOut(self.OO, UP  )
    setOut(self.OF, DOWN )
 end
-
+function Pillow:process_set_air( air  )
+  if self.SetAir ~= air then
+   self.SA5  = self.air*0,05
+   self.SA10 = self.air*0,1
+   self.SetAir = air
+  end 
+  self.state = 1
+  local DATA  =  self.air
+  local EDATA =  air
+  local D10   = self.SA10 
+  local D5    = self.SA5  
+  if ( DATA < EDATA ) then
+	local delta = EDATA -DATA
+	if  delta > D10 then
+		self.state = 4
+	else
+	    if delta > D5 then
+		   self.state = 2
+		end
+	end
+  else
+	local delta = DATA - EDATA
+	if  delta > D10 then
+	   self.state = 3
+	else
+	  if delta > D5 then
+	   self.state = 1
+	  end
+	end
+  end
+  local UP   = false
+  local DOWN = false
+  --импульсно спускаем
+  if ( (self.state == 1) or (self.state == 2) )then
+	  self.timer = self.timer + getDelay()
+	  if self.timer > 500 then
+		if self.timer < 700 then
+		    UP   =  (self.state == 2 ) and true or false
+			DOWN = ( self.state == 1 ) and true or false
+		else
+			self.timer = 0
+	    end 
+	  end
+   else
+	  DOWN = (self.state == 3) and true or false  --спускаем
+	  UP   = (self.state == 4) and true or false  --надуваем
+   end
+   setOut(self.OO, UP  )
+   setOut(self.OF, DOWN )
+end
 
