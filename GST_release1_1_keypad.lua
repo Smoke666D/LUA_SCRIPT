@@ -109,7 +109,7 @@ function init()
 					10,0,	     
 					184,10	    
 				    )	
-   ConfigStorage(0,30,0x00,0x01,0x03,0x03)					
+  -- ConfigStorage(0,30,0x00,0x01,0x03,0x03)					
 
 end
 
@@ -161,7 +161,7 @@ end
 main = function ()
 
 init()
-    local KeyBoard		= KeyPad15:new(0x15)--создание объекта клавиатура c адресом 0x15
+    local KeyBoard		= KeyPad8:new(0x15)--создание объекта клавиатура c адресом 0x15
 	local Key1Counter   = Counter:new(0,3,0,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)
 	local Key2Counter   = Counter:new(0,3,0,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)
 	local Key3Counter   = Counter:new(0,3,0,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)
