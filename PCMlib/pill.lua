@@ -30,98 +30,98 @@ function Pillow:process( mode, control_type )
 	 self.SA10 = self.SA*0,1
      self.SH10 = self.SH*0,1
   end
-  self.state = 1
+  self.state = 0
   local DATA  = ( control_type ) and self.air  or self.height
   local EDATA = ( control_type ) and self.SA   or self.SH
   local D10   = ( control_type ) and self.SA10 or self.SH10
-  local D5    = ( control_type ) and self.SA5  or self.SA5
-  if ( DATA < EDATA ) then
-	local delta = EDATA -DATA
-	if  delta > D10 then
-		self.state = 4
-	else
-	    if delta > D5 then
-		   self.state = 2
-		end
-	end
-  else
-	local delta = DATA - EDATA
-	if  delta > D10 then
-	   self.state = 3
-	else
-	  if delta > D5 then
-	   self.state = 1
-	  end
-	end
-  end
+  local D5    = ( control_type ) and self.SA5  or self.SH5
+  local res = 0
   local UP   = false
   local DOWN = false
-  --импульсно спускаем
-  if ( (self.state == 1) or (self.state == 2) )then
+  local dir = 0
+  local delta = DATA - EDATA
+  local absdelta = math.abs( delta )
+  if (delta < 0 ) then
+	dir = 1
+  end
+  if (absdelta > D10)  then  
+	self.state = ( dir == 1 ) and 4 or 3
+  else
+	if ( absdelta > D5 ) then 
+		self.state = ( dir == 1) and 2 or 1 
+	end
+  end
+  if self.state == 0 then 
+	res = 1
+  else
+	if ( (self.state == 1) or (self.state == 2) )then
 	  self.timer = self.timer + getDelay()
 	  if self.timer > 500 then
 		if self.timer < 700 then
 		    UP   =  (self.state == 2 ) and true or false
-			DOWN = ( self.state == 1 ) and true or false
+			DOWN =  ( self.state == 1 ) and true or false
 		else
 			self.timer = 0
 	    end 
 	  end
-   else
+	else
 	  DOWN = (self.state == 3) and true or false  --спускаем
 	  UP   = (self.state == 4) and true or false  --надуваем
+	end
    end
    setOut(self.OO, UP  )
    setOut(self.OF, DOWN )
+   return res
 end
+function Pillow:getEEPROMAir( mode )
+	return GetEEPROMReg(2+ 2 * self.number + self.total * 2 * mode )
+
+end
+
 function Pillow:process_set_air( air  )
   if self.SetAir ~= air then
    self.SA5  = self.air*0,05
    self.SA10 = self.air*0,1
    self.SetAir = air
+   self.timer = 0
   end 
-  self.state = 1
-  local DATA  =  self.air
-  local EDATA =  air
-  local D10   = self.SA10 
-  local D5    = self.SA5  
-  if ( DATA < EDATA ) then
-	local delta = EDATA -DATA
-	if  delta > D10 then
-		self.state = 4
-	else
-	    if delta > D5 then
-		   self.state = 2
-		end
-	end
-  else
-	local delta = DATA - EDATA
-	if  delta > D10 then
-	   self.state = 3
-	else
-	  if delta > D5 then
-	   self.state = 1
-	  end
-	end
-  end
+  self.state = 0
   local UP   = false
   local DOWN = false
-  --импульсно спускаем
-  if ( (self.state == 1) or (self.state == 2) )then
-	  self.timer = self.timer + getDelay()
-	  if self.timer > 500 then
-		if self.timer < 700 then
-		    UP   =  (self.state == 2 ) and true or false
-			DOWN = ( self.state == 1 ) and true or false
-		else
-			self.timer = 0
-	    end 
-	  end
-   else
+  local res = 0
+  local dir = 0
+  local delta = self.air - air
+  local absdelta = math.abs(delta)
+  if delta < 0 then
+	dir = 1
+  end
+  if (absdelta > self.SA10)  then  
+	self.state = ( dir == 1 ) and 4 or 3
+  else
+	if ( absdelta > self.SA5 ) then 
+		self.state = ( dir == 1) and 2 or 1 
+	end
+  end
+  if self.state == 0 then 
+	res = 1
+  else
+	if ( (self.state == 1) or (self.state == 2) )then
+		self.timer = self.timer + getDelay()
+		if self.timer > 500 then
+			if self.timer < 700 then
+				UP   =  (self.state == 2 ) and true or false
+				DOWN = ( self.state == 1 ) and true or false
+			else
+				self.timer = 0
+			end 
+		end
+	else
 	  DOWN = (self.state == 3) and true or false  --спускаем
 	  UP   = (self.state == 4) and true or false  --надуваем
+	end
    end
    setOut(self.OO, UP  )
    setOut(self.OF, DOWN )
+   return res
 end
 

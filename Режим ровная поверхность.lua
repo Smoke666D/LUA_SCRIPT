@@ -430,161 +430,18 @@ main = function ()
 		RPull:setData( getAin(RPullAir), 10)
 		
 		KeyBoard:setBackLigthBrigth( 15  )
-		if MODE == 0 then
-			if KeyBoard:getToggle(2)==true then  
-			  KeyBoard:resetToggle(2,true)
-			  SetEEPROMReg(0,getROLL())    --КРЕН
-			  SetEEPROMReg(1,getPITCH())   --TАНГАЖ
-			  CAL_SET = true
-			end
-			if KeyBoard:getToggle(13)==true then
-				KeyBoard:resetToggle(13,true)
-				LOWMODECAL = true
-				calmode = 0
-			end
-			if KeyBoard:getToggle(14)==true then
-				KeyBoard:resetToggle(14,true)
-				MIDMODECAL = true
-				calmode = 1
-			end
-			if KeyBoard:getToggle(15)==true then
-				KeyBoard:resetToggle(15,true)
-				HIGHMODECAL = true
-				calmode = 2
-			end 
-			if calmode ~=4 then
-			  LSF:Calibrate(calmode)
-			  RSF:Calibrate(calmode)
-			  LSB:Calibrate(calmode)
-			  RSB:Calibrate(calmode)
-			  LMF:Calibrate(calmode)
-			  RMF:Calibrate(calmode)
-			  LMB:Calibrate(calmode)
-			  RMB:Calibrate(calmode)
-			  LPull:Calibrate(calmode)
-			  RPull:Calibrate(calmode)
-			  calmode = 4
-			end
-			LOWMODECAL =  LOWMODECAL  and not AUTO
-			MIDMODECAL =  MIDMODECAL  and not AUTO
-			HIGHMODECAL = HIGHMODECAL and not AUTO
-			KeyBoard:setLedGreen( 13, LOWMODECAL )
-			KeyBoard:setLedGreen( 14, MIDMODECAL )
-			KeyBoard:setLedGreen( 15, HIGHMODECAL )			
-			CAL_SET = CAL_SET and not AUTO
-			KeyBoard:setLedGreen( 2, CAL_SET )
-		end
-		--блок управления клапанами в ручном и калибровочном режиме
-		if ((MODE == 1) or ( MODE==0 ) ) then
 		
+		--блок управления клапанами в ручном и калибровочном режиме
+		if (MODE == 1)  then
+
 			if (KeyBoard:getToggle(1) == true) then -- при нажатии клавиши 1 переходим в автомат если 
 			  KeyBoard:resetToggle(1,true)        -- в ручном и в ручной если в калибровочном
-			  MODE =  (MODE == 0 ) and 2 or 1
+			  MODE =   2 
 			end
-			AUTO = ((MODE~=1) and (MODE~=0) and (HIGHMODE~=5)) and true or false -- тригер для выключенмя всех клапанов и светодиодов
-			LSFCounter:process(KeyBoard:getKey(4),false,AUTO) -- счетчик состония канал управления подушкой LSF
-			local UP = (LSFCounter:get() ==3) 				  -- если счетчик 3, то включаем накачку
-			local DOWN =(LSFCounter:get() ==1)				  -- если счетчик 1, то вылкючаем клапан сброса
-			KeyBoard:setLedRed( 4, DOWN)					  -- светодиды в соотвесвии со значением переменной
-			KeyBoard:setLedGreen( 4,  UP or DOWN )			 
-			LSF:manualControl( UP, DOWN)					  --непосредственно переаем состояния выходных каналов управления клапанами
-			RSFCounter:process(KeyBoard:getKey(3),false,AUTO)
-			UP = (RSFCounter:get() ==3) 
-			DOWN =(RSFCounter:get() ==1) 
-			KeyBoard:setLedRed( 3, DOWN)
-			KeyBoard:setLedGreen( 3,  UP or DOWN )
-			RSF:manualControl( UP, DOWN)
-			LSBCounter:process(KeyBoard:getKey(5),false,AUTO)
-			UP = (LSBCounter:get() ==3) 
-			DOWN =(LSBCounter:get() ==1) 	
-			KeyBoard:setLedRed( 5, DOWN)
-			KeyBoard:setLedGreen( 5,  UP or DOWN )
-			LSB:manualControl( UP, DOWN)
-			RSBCounter:process(KeyBoard:getKey(6),false,AUTO)
-			UP = (RSBCounter:get() ==3) 
-			DOWN =(RSBCounter:get() ==1) 	
-			KeyBoard:setLedRed( 6, DOWN)
-			KeyBoard:setLedGreen( 6,  UP or DOWN )
-			RSB:manualControl( UP, DOWN)
-			RMFCounter:process(KeyBoard:getKey(7),false,AUTO)
-			UP = (RMFCounter:get() ==3) and not AUTO
-			DOWN =(RMFCounter:get() ==1) and not AUTO	
-			KeyBoard:setLedRed( 7, DOWN)
-			KeyBoard:setLedGreen( 7,  UP or DOWN )
-			RMF:manualControl( UP, DOWN)
-			LMFCounter:process(KeyBoard:getKey(8),false,AUTO)
-			UP = (LMFCounter:get() ==3) 
-			DOWN =(LMFCounter:get() ==1) 	
-			KeyBoard:setLedRed( 8, DOWN)
-			KeyBoard:setLedGreen( 8,  UP or DOWN )
-			LMF:manualControl( UP, DOWN)
-			LMBCounter:process(KeyBoard:getKey(9),false,AUTO)
-			UP = (LMBCounter:get() ==3)
-			DOWN =(LMBCounter:get() ==1)
-			KeyBoard:setLedRed( 9, DOWN)
-			KeyBoard:setLedGreen( 9,  UP or DOWN )
-			LMB:manualControl( UP, DOWN)
-			RMBCounter:process(KeyBoard:getKey(10),false,AUTO)
-			UP = (RMBCounter:get() ==3)
-			DOWN =(RMBCounter:get() ==1)
-			KeyBoard:setLedRed( 10, DOWN)
-			KeyBoard:setLedGreen( 10,  UP or DOWN )
-			RMB:manualControl( UP, DOWN)
-			LPullCounter:process(KeyBoard:getKey(11),false,AUTO)
-			UP = (LPullCounter:get() ==3)
-			DOWN =(LPullCounter:get() ==1)
-			KeyBoard:setLedRed( 11, DOWN)
-			KeyBoard:setLedGreen( 11,  UP or DOWN )
-			LPull:manualControl( UP, DOWN)
-			RPullCounter:process(KeyBoard:getKey(12),false,AUTO)
-			UP = (RPullCounter:get() ==3) 
-			DOWN =(RPullCounter:get() ==1) 
-			KeyBoard:setLedRed( 12, DOWN)
-			KeyBoard:setLedGreen( 12,  UP or DOWN )
-			RPull:manualControl( UP, DOWN)
-		end	
-		-- режим автомтического выставления высоты подески в ручном режиме работы
-		if (MODE == 1) then
-			if ( ( not TRANSITION ) and ( HIGHMODE~=4 ) ) then  -- если не в переходном режиме
-				if KeyBoard:getKey(1) and KeyBoard:getKey(2) then
-					MODE = 0
-				else 
-					if KeyBoard:getToggle(13)==true then     -- перехоимд в режим низкого клиренса
-						KeyBoard:resetToggle(13,true)
-						HIGHMODE = HIGHMODE ~= 1 and 1 or 4  
-						TRANSITION = true
-					end
-					if KeyBoard:getToggle(14)==true then    -- перехоимд в режим средненго клиренса
-						KeyBoard:resetToggle(14,true)
-						HIGHMODE = HIGHMODE ~= 2 and 2 or 4
-						TRANSITION = true
-					end
-					if KeyBoard:getToggle(15)==true then     -- перехоимд в режим высокго клиренса
-						KeyBoard:resetToggle(15,true)
-						HIGHMODE = HIGHMODE ~= 3 and 3 or 4
-						TRANSITION = true
-					end
-				end
-				if TRANSITION then --если изменился режим
-				 BeginLeftSide()
-				 BeginRightSide()
-				end
-			end 
-			KeyBoard:setLedGreen( 13, (HIGHMODE == 1) )
-			KeyBoard:setLedGreen( 14, (HIGHMODE == 2) )
-			KeyBoard:setLedGreen( 15, (HIGHMODE == 3) )
 			if (HIGHMODE == 4) then  -- если выключили автоматический клиренс
-					ValveOff()
-					HIGHMODE = 5
-					TRANSITION = false
-			else  
-				if TRANSITION then  -- если переходный режим
-					TRANSITION = ( RightSide(HIGHMODE-1,HIGHMODE-1,false )== 1) and ( LeftSide(HIGHMODE-1,HIGHMODE-1,false )== 1)
-					--выйдем из переходного режима, как только завершаться процессы в правой и левой гусенице
-				else  -- иначе подерживаем заданую высоту в подушках
-					LeftSideIDLE(HIGHMODE-1,HIGHMODE-1,false)
-					RigthSideIDLE(HIGHMODE-1,HIGHMODE-1,false)
-				end
+				ValveOff()
+				HIGHMODE = 5
+				TRANSITION = false
 			end
 		end
 		if (MODE == 2) then  -- режим подъема в горку 
@@ -595,106 +452,12 @@ main = function ()
 				AUTOMODE =0					--обнкляем переменную режима
 			elseif AUTOMODE == 0 then
 				ValveOff()
-				speed_low = true
-				if KeyBoard:getToggle(2)==true then     -- переходим в режим подъема
-					KeyBoard:resetToggle(2,true)
-					AUTOMODE = 1  
-				elseif KeyBoard:getToggle(3)==true then     -- перехоимд в режим спуска
-					KeyBoard:resetToggle(3,true)
-					AUTOMODE = 2  
-				elseif KeyBoard:getToggle(4)==true then     -- перехоимд в режим высоты подвески по скорости
+				
+				if  KeyBoard:getToggle(4)==true then     -- перехоимд в режим высоты подвески по скорости
 					KeyBoard:resetToggle(4,true)
 					AUTOMODE = 3  
-				elseif KeyBoard:getToggle(5)==true then     -- перехоимд в режим отработки неровностей
-					KeyBoard:resetToggle(5,true)
-					AUTOMODE = 4  
 				end					
-			elseif AUTOMODE == 1 then   --режим работы на подъем
-			    SPEED20Dealy( (SPEED >10) , (SPEED <=10)  )  -- конртолируем привышение скорости боле 10 км/ч в течении 5 сек
-				if not TRANSITION then	--если не в переходном состоянии
-					if not ROLLOVER10WARNING and (not SPEED20Dealy:get()) then   -- проверяем крен 10 крадусов и скорость меньше 10
-						if KeyBoard:getToggle(2)==true then  --если кнопка выхода перехоимд в автомат с выключенными клапанами
-							KeyBoard:resetToggle(2,true)
-							AUTOMODE =  0  
-							UPSTATE = 0
-						else
-							if ( (PITCH <= 20 ) and ( UPSTATE ~= 1 ) ) then  -- если крен меньше 20, то средний клиренс
-								LEFT_SIDE_REAR = 1
-								LEFT_SIDE_FRONT = 1
-								RIGTH_SIDE_REAR = 1
-								RIGTH_SIDE_FRONT =1
-								UPSTATE = 1
-								TRANSITION =true
-							end
-							if ( ( PITCH > 20 ) and ( UPSTATE ~= 2 ) ) then -- если крен больше 20, то зал вверх, перед вниз
-								LEFT_SIDE_REAR = 2
-								LEFT_SIDE_FRONT = 0
-								RIGTH_SIDE_REAR = 2
-								RIGTH_SIDE_FRONT = 0
-								UPSTATE = 2
-								TRANSITION =true
-							end
-							if (not TRANSITION)  then  -- если не в перехоном состоянии
-								-- и не переходим в ручной режим, то подерживаем подвеску в заданном состоянии
-								LeftSideIDLE(LEFT_SIDE_FRONT,LEFT_SIDE_REAR,false)
-								RigthSideIDLE(RIGTH_SIDE_FRONT,RIGTH_SIDE_REAR,false)
-							end
-						end
-					else
-						AUTOMODE =0  -- переходим в ручной режим с выключенными клапанами
-						MODE = 1
-						HIGHMODE = 4
-						UPSTATE = 0
-					end
-				else
-					-- переменная станет false и мы выйдем из переходного состояния токо когда обе гусеницы закочат переход 
-					-- в новое состояние подвески
-					TRANSITION = not ( ( RightSide(RIGTH_SIDE_FRONT,RIGTH_SIDE_REAR,false )== 1)
-						and ( LeftSide(LEFT_SIDE_FRONT,LEFT_SIDE_REAR,false )== 1))
-				end
-			elseif AUTOMODE == 2 then -- режим работы на спуск
-			    SPEED20Dealy( (SPEED >10) , (SPEED <=10)  )  -- конртолируем привышение скорости боле 10 км/ч в течении 5 сек
-			    if not TRANSITION then --если не в переходном состоянии
-				    if (not ROLLOVER10WARNING) and (not SPEED20Dealy:get()) then -- проверяем крен 10 градусов скорость меньше 10
-						if ( KeyBoard:getToggle(3) == true ) then  --если кнопка выхода перехоимд в автомат с выключенными клапанами
-							KeyBoard:resetToggle(3,true)
-							AUTOMODE =  0
-						    UPSTATE = 0							
-						else
-							if ((PITCH <= -20) and (UPSTATE ~= 1)) then -- если крен меньше -20, то средний клиренс
-								LEFT_SIDE_REAR = 1
-								LEFT_SIDE_FRONT = 1
-								RIGTH_SIDE_REAR = 1
-								RIGTH_SIDE_FRONT =1
-								UPSTATE = 1
-								TRANSITION =true
-							end
-							if ((PITCH > -20) and (UPSTATE ~= 2 )) then -- если крен больше -20, то зад вниз, перед вверх
-								LEFT_SIDE_REAR = 0
-								LEFT_SIDE_FRONT = 2
-								RIGTH_SIDE_REAR = 0
-								RIGTH_SIDE_FRONT = 2
-								UPSTATE = 2
-								TRANSITION =true
-							end
-							if (not TRANSITION)  then  -- если не в перехоном состоянии
-								-- и не переходим в ручной режим, то подерживаем подвеску в заданном состоянии
-								LeftSideIDLE(LEFT_SIDE_FRONT,LEFT_SIDE_REAR,false)
-								RigthSideIDLE(RIGTH_SIDE_FRONT,RIGTH_SIDE_REAR,false)
-							end
-						end
-					else
-						AUTOMODE =0 -- переходим в ручной режим с выключенными клапанами
-						MODE = 1
-						HIGHMODE = 4
-						UPSTATE = 0
-					end
-				else
-					-- переменная станет false и мы выйдем из переходного состояния токо когда обе гусеницы закочат переход 
-					-- в новое состояние подвески
-					TRANSITION = not ( ( RightSide(RIGTH_SIDE_FRONT,RIGTH_SIDE_REAR,false )== 1)
-						and ( LeftSide(LEFT_SIDE_FRONT,LEFT_SIDE_REAR,false )== 1))
-				end
+			
 			elseif AUTOMODE == 3 then --режим высоты подвески по скорости
 				if not TRANSITION then --если не в переходном состоянии
 				   if (not ROLLOVER10WARNING)  and (not PITCHOVER20WARNING)  then
@@ -757,122 +520,14 @@ main = function ()
 						and ( LeftSide(LEFT_SIDE_FRONT,LEFT_SIDE_REAR,false )== 1))
 				end
 
-			elseif AUTOMODE == 4 then  -- режим работы по неровной вовернхости
-				SPEED20Dealy( (SPEED >10) , (SPEED <=10)  )  -- конртолируем привышение скорости боле 10 км/ч в течении 5 сек
-				if ( not TRANSITION ) then   -- если не в переходном процессе 
-				   if  (not SPEED20Dealy:get()) and (not PITCHOVER25WARNING)  and (not ROLLOVER20WARNING)  then
-						-- проеверяем что скорость меньше 10 км/ч дифферент не выше 25 и крен не больше 20 
-						-- в ручной режим
-						if (KeyBoard:getToggle(5)==true) then  --если кнопка выхода перехоимд в автомат с выключенными клапанами
-							KeyBoard:resetToggle(5,true)
-							AUTOMODE =  0
-						    UPSTATE = 0	
-						else
-							if UPSATE == 0 then   --инициализационное состояние
-								LEFT_SIDE_REAR =  1  -- все подушки в середниие
-								LEFT_SIDE_FRONT = 1
-								RIGTH_SIDE_REAR = 1
-								RIGTH_SIDE_FRONT =1
-								TRANSITION = true   -- запускаем переходный процес 
-								UPSATE = 1 			--после него пойдем в базовое состояние среднего клиренса 
-							elseif UPSATE == 1 then  -- если мы тут завешился пеходный процесс и мы в среднем клиренсе
-								if (ROLL > 10 ) then   -- если крен больше 10 переходим в состояние левая сторана вниз паравая вверх
-									TRANSITION = true
-									UPSTATE = 5
-									LEFT_SIDE_REAR = 0
-									LEFT_SIDE_FRONT = 0
-									RIGTH_SIDE_REAR = 2
-									RIGTH_SIDE_FRONT = 2
-								elseif ROLL > -10 then -- если крен больше -10 переходим в состояние левая сторана вверх паравая вниз
-									TRANSITION = true
-									UPSTATE = 4
-									LEFT_SIDE_REAR = 2
-									LEFT_SIDE_FRONT = 2
-									RIGTH_SIDE_REAR = 0
-									RIGTH_SIDE_FRONT = 0
-								elseif PITCH > 10 then -- если диффирент больше 10 переходим в состояние зад вверх перед вниз
-									TRANSITION = true
-									UPSTATE = 3
-									LEFT_SIDE_REAR = 0
-									LEFT_SIDE_FRONT = 2
-									RIGTH_SIDE_REAR = 0
-									RIGTH_SIDE_FRONT = 2
-								elseif PITCH > -10 then -- если диффирент больше 10 переходим в состояние зад вниз перед вверх
-									TRANSITION = true
-									UPSTATE = 2
-									LEFT_SIDE_REAR = 2
-									LEFT_SIDE_FRONT = 0
-									RIGTH_SIDE_REAR = 2
-									RIGTH_SIDE_FRONT = 0
-								end				
-							elseif (UPSTATE == 2) or  (UPSTATE == 3) then--  состояние обработки дифферента
-								if (ROLLOVER10WARNING)  then
-								-- если крен больше 10  то переходим в ручной режим, с выключением клапанов
-									AUTOMODE =0
-									MODE = 1
-									HIGHMODE = 4
-									UPSTATE = 0
-								else
-									if ( not PITCHOVER10WARNING)  then 
-									-- иначе смотрим что дифферент все еще больше 10, если меньше, то выходим в базовое состояние
-										TRANSITION = true
-										UPSTATE = 1
-										LEFT_SIDE_REAR = 1
-										LEFT_SIDE_FRONT = 1
-										RIGTH_SIDE_REAR = 1
-										RIGTH_SIDE_FRONT =1
-									end
-								end
-							elseif (UPSTATE == 4) or (UPSATE == 5) then -- состояние обработки крена
-								if (PITCHOVER10WARNING)  then 
-								-- если диффернт больше 10  то в ручной режим, с выключением клапанов 
-									AUTOMODE =0
-									MODE = 1
-									HIGHMODE = 4
-									UPSTATE = 0
-								else
-								-- иначе смотрим что крен все еще больше 10, если меньше, то выходим в базовое состояние  
-									if ( not ROLLOVER10WARNING) then
-									TRANSITION = true
-									UPSTATE = 1
-									LEFT_SIDE_REAR = 1
-									LEFT_SIDE_FRONT = 1
-									RIGTH_SIDE_REAR = 1
-									RIGTH_SIDE_FRONT =1
-								end						 
-							end
-							if (not TRANSITION) and (AUTOMODE~=0) then  -- если не в перехоном состоянии
-								-- и не переходим в ручной режим, то подерживаем подвеску в заданном состоянии
-								LeftSideIDLE(LEFT_SIDE_FRONT,LEFT_SIDE_REAR,false)
-								RigthSideIDLE(RIGTH_SIDE_FRONT,RIGTH_SIDE_REAR,false)
-							end
-						 end
-						end
-				   else  -- сюдя вываливаемся елси
-				     --  скорость более 10 км/ч или дифферент  выше 25 или крен нбольше 20 или нажата кнопка выхода 
-						-- в ручной режим
-					 AUTOMODE =0
-					 MODE = 1
-					 HIGHMODE = 4
-					 UPSTATE = 0
-				   end
-				  
-				else
-				    -- переменная станет false и мы выйдем из переходного состояния токо когда обе гусеницы закочат переход 
-					-- в новое состояние подвески
-					TRANSITION = not ( ( RightSide (RIGTH_SIDE_FRONT,RIGTH_SIDE_REAR,false ) == 1)
-						and ( LeftSide(LEFT_SIDE_FRONT,LEFT_SIDE_REAR,false ) == 1) )
-				end				
+			
 			end
 					
 		end
-		KeyBoard:setLedBlue( 2,  (AUTOMODE == 1) )
-		KeyBoard:setLedBlue( 3,  (AUTOMODE == 2) )
+		
 		KeyBoard:setLedBlue( 4,  (AUTOMODE == 3) )
-		KeyBoard:setLedBlue( 5,  (AUTOMODE == 4) )
 		KeyBoard:setLedBlue( 1,  (MODE == 2) )
 		KeyBoard:setLedGreen( 1, (MODE == 1) )
-		KeyBoard:setLedRed( 1,  (MODE == 0) )
 	   Yield()
 	end
 end

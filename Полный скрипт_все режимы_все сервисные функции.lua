@@ -1,3 +1,578 @@
+--Библиотека CAN
+EXT_CAN_ID = 0x80000000
+-- Объекты СanIput. Cозадется с помощью метода :new( id пакета, время обновления данных , битовая маска, указывающая какие байты из фрема забирать, )
+--
+CanInput = {}
+CanInput.__index = CanInput
+function CanInput:new ( addr )
+	local obj = { ADDR = addr, eneb = 0,
+		     data={[1]=0,[2]=0,[3]=0,[4]=0,[5]=0,[6]=0,[7]=0,[8]=0},		    
+		    }
+	setmetatable( obj, self )
+    setCanFilter(addr)
+	return obj
+end
+function CanInput:process()
+	if ( GetCanToTable( self.ADDR,self.data) == 1 ) then
+		self.eneb = 1
+	end
+    return  self.eneb
+end
+function CanInput:getBit( nb, nbit)
+	return ((self.data[nb] & (0x01<<(nbit-1))) >0 ) and true or false
+end
+function CanInput:getByte( nb )
+	return self.data[nb]
+end
+function CanInput:getWordLSB( nb )
+	return (nb < 7) and ( self.data[nb] | self.data[nb+1]<<8) or 0
+end
+function CanInput:getWordMSB( nb )
+	return (nb < 7) and ( self.data[nb]<<8 | self.data[nb+1]) or 0
+end
+CanOut = {}
+CanOut.__index = CanOut
+function CanOut:new ( addr , time , size, d1, d2, d3, d4, d5, d6, d7, d8)
+	local obj = { ADDR = addr,
+		      data = { [1]= (d1 ~= nil) and d1 or 0,
+			       [2]= (d2 ~= nil) and d2 or 0,
+			       [3]= (d3 ~= nil) and d3 or 0,
+			       [4]= (d4 ~= nil) and d4 or 0,
+			       [5]= (d5 ~= nil) and d5 or 0,
+			       [6]= (d6 ~= nil) and d6 or 0,
+			       [7]= (d7 ~= nil) and d7 or 0,
+			       [8]= (d8 ~= nil) and d8 or 0,
+			},
+			delay = ( time ~= nil ) and time or 100,
+			timer = 0,
+			sz = ( size ~= nil) and size or 8
+			}
+	setmetatable( obj, self )
+	return obj
+end
+function CanOut:process()
+    self.timer = self.timer + getDelay()
+    if self.timer >=  self.delay then
+	  CanTable(self.ADDR,self.sz,self.data)
+          self.timer	= 0
+    end
+end
+function CanOut:setFrame(...)
+	local arg =  table.pack(...)
+	if (arg.n < 9) then
+		for i=1, arg.n do
+			self.data[i] = arg[i]
+		end
+		self.sz = arg.n
+	end
+end
+function CanOut:setBit( nb, nbit, state)
+	if state == true then
+		self.data[nb] = self.data[nb] | (0x01 << (nbit-1))
+	else
+		self.data[nb] = self.data[nb] & ~(0x01 << (nbit-1))
+	end
+end
+function CanOut:setByte( nb ,state )
+	self.data[nb] = state  & 0xFF
+end
+function CanOut:setWord( nb ,state)
+	self.data[nb] = (state <<8) & 0xFF
+        self.data[nb+1] = state & 0xFF
+end
+CanRequest = {}
+CanRequest.__index = CanRequest
+function CanRequest:new()
+	local obj = { del = 0, timeout =0, data = {[1]=0,[2]=0,[3]=0,[4]=0,[5]=0,[6]=0,[7]=0,[8]=0}}
+	setmetatable( obj, self )
+	return obj
+end
+function CanRequest:waitCAN( add, getadd, timeout, d1,d2,d3,d4,d5,d6,d7,d8)
+	self.del = 0
+        sendCandRequest(add,getadd,d1,d2,d3,d4,d5,d6,d7,d8)
+	while true do
+		Yield()
+		if CheckAnswer() == 1 then
+			self.data[1],self.data[2],self.data[3],self.data[4],self.data[5],self.data[6],self.data[7],self.data[8] = GetRequest()
+			return true
+		end
+		self.del = self.del + delayms
+		if (self.timeout > 0) then
+			if (self.del > timeout) then
+				return false
+			end
+		end
+	end
+end
+function CanRequest:getData()
+	return self.data[1],self.data[2],self.data[3],self.data[4],self.data[5],self.data[6],self.data[7],self.data[8]
+end
+Counter = {}
+Counter.__index = Counter
+function Counter:new ( inMin, inMax, inDefault, inReload )
+	local obj = { 		counter =  inDefault,
+						min = inMin,
+						max = inMax,
+						reload =  inReload,
+						def = inDefault,
+						old = false
+		   }
+	setmetatable( obj, self )
+	return obj
+end
+function Counter:process ( inc, dec, rst )
+	if (type(inc) == "boolean") and (type(dec) == "boolean") and (type(rst) == "boolean") then
+		if ( inc == true ) then
+			if (  self.old  == false )  then
+				if ( self.counter < self.max ) then
+					self.counter = self.counter + 1
+				elseif ( self.reload == true ) then
+					self.counter = self.min
+				end
+			end
+		end
+		if ( dec == true ) then
+			if (  self.old  == false )  then
+				if ( self.counter > self.min ) then
+					self.counter = self.counter - 1
+				elseif ( self.reload == true ) then
+					self.counter = self.max
+				end
+			end
+		end
+		if ( rst == true ) then
+			if (  self.old  == false )  then
+				self.counter = self.def
+			end
+		end
+		self.old =   (rst or inc or dec ) and true or false
+	end
+	return
+end
+function Counter:get ()
+	return self.counter
+end
+Dashboard = {}
+Dashboard.__index = Dashboard
+function Dashboard:new( addr, time)
+      local obj = { ADDR = addr, repeat_time= time, counter = 0}
+      setmetatable (obj, self)
+      return obj
+end
+
+function Dashboard:process()
+	self.counter = self.counter + getDelay()
+	if self.counter > self.repeat_time then
+		self.counter = 0
+		
+		
+	    CanSend( self.ADDR      ,getCurLSB10(1),getCurMSB10(1),getCurLSB10(2),getCurMSB10(2),getCurLSB10(3),getCurMSB10(3),getCurLSB10(4),getCurMSB10(4))
+		CanSend( self.ADDR +1   ,getCurLSB10(5),getCurMSB10(5),getCurLSB10(6),getCurMSB10(6),getCurLSB10(7),getCurMSB10(7),getCurLSB10(8),getCurMSB10(8))
+		CanSend( self.ADDR +2   ,getCurLSB10(9),getCurMSB10(9),getCurLSB10(10),getCurMSB10(10),getCurLSB10(11),getCurMSB10(11),getCurLSB10(12),getCurMSB10(12))
+		CanSend( self.ADDR +3   ,getCurLSB10(13),getCurMSB10(13),getCurLSB10(14),getCurMSB10(14),getCurLSB10(15),getCurMSB10(15),getCurLSB10(16),getCurMSB10(16))
+	    CanSend( self.ADDR +4   ,getCurLSB10(17),getCurMSB10(17),getCurLSB10(18),getCurMSB10(18),getCurLSB10(19),getCurMSB10(19),getCurLSB10(20),getCurMSB10(20))
+		CanSend( self.ADDR +5   ,getBatLSB10(),getBatMSB10(),getTemp(),0,0,0,0,0)
+		CanSend( self.ADDR +6  ,
+								getOutStatus(1)  | (getOutStatus(2)<<3) | ((getOutStatus(3) & 0x03)<<6) ,
+							    (getOutStatus(3)>>2) | (getOutStatus(4)<<1) | (getOutStatus(5)<<4) | ((getOutStatus(6) & 0x01)<<7),
+							   ((getOutStatus(6)>>1) & 0x03) | (getOutStatus(7)<<2) | (getOutStatus(8)<<5) ,
+								 getOutStatus(9)  | (getOutStatus(10)<<3)   |  ((getOutStatus(11) & 0x03)<<6) ,
+								 
+								 
+								 getOutStatus(12)  | (getOutStatus(13)<<3)   |  ((getOutStatus(14) & 0x03)<<6) ,
+							    (getOutStatus(14)>>2) | (getOutStatus(15)<<1) | (getOutStatus(16)<<4) | ((RIGHT_TO_CAN & 0x01)<<7),
+							 ((RIGHT_TO_CAN >>1) & 0x03) | (LEFT_TO_CAN <<2) | (getOutStatus(19)<<5) ,
+								 getOutStatus(20)  | ((getOutStatus(11)>>2)<<3)
+										)
+										
+		
+	end
+end
+
+
+
+Delay = {}
+Delay.__index = Delay
+function Delay:new ( inDelay , pulse)
+	local obj  = { counter = 0, launched = false, output = false, delay = inDelay ,  mode = pulse, satate = false}
+	setmetatable( obj, self )
+	return obj
+end
+function Delay:process ( start, disable )
+    
+	if start then
+	  if self.launched == false then
+		self.launched = true
+		self.counter = 0
+	  end
+	  if self.launched == true then
+	    self.counter = self.counter + getDelay()
+		if self.counter > self.delay then		 			
+		  self.state = true
+		  if self.mode == true then
+		   self.counter = 0
+		  end		  
+		else
+		 self.state = false
+		end				
+	  end		
+	else
+	   self.launched = false
+	end
+	self.launched = self.launched and (not disable)
+	self.output = self.state and start and (not disable)
+	return self.output
+end
+function Delay:process_delay( start )
+	if start then
+	    self.counter = self.counter + getDelay()
+		if self.counter > self.delay then		 			
+		  self.output = true		  
+		else
+		 self.output = false
+		end				
+    else
+	  self.counter = 0
+	  self.output = false
+	end
+end
+function Delay:get ()
+	return self.output
+end
+
+KeyPad15 = {}
+KeyPad15.__index = KeyPad15
+function KeyPad15:new( addr)
+      local obj = {key = 0x00, ADDR = addr, new = true, alive =false, tog= 0x00, old =0x00, ledRed=0x00,ledGreen=0x00, ledBlue =0x00, temp={[1]=0,[2]=0}, backligth = 0, led_brigth = 0, back_color = 0x07}	  
+      setmetatable (obj, self)
+	  
+      setCanFilter(0x180 +addr)
+	  setCanFilter(0x700 +addr)
+      return obj
+end
+function KeyPad15:process()
+	if (GetCanToTable(0x180 + self.ADDR,self.temp) ==1 ) then
+	    local t =  self.temp[2]<<8 | self.temp[1]
+		self.tog = (~ self.key & t) ~ self.tog
+		self.key = t
+	end
+	if (GetCanToTable(0x700 +self.ADDR,self.temp ) == 1 ) then
+	   if ( self.temp[0]~= 0x05 ) then
+	    CanSend( 0x00, 0x01, self.ADDR,0,0,0,0,0,0)
+	   end
+	   self.new = true
+	end
+	if self.new == true then
+		self.new = false		
+		CanSend(0x500 + self.ADDR,self.backligth,self.back_color,0,0,0,0,0,0)
+		CanSend(0x200 + self.ADDR,self.ledRed & 0xFF, self.ledRed>>8, self.ledGreen & 0xFF,self.ledGreen>>8,self.ledBlue & 0xFF ,self.ledBlue >>8,0,0)
+	end
+end
+function KeyPad15:getKey( n )
+	  return  (self.key & ( 0x01 << ( n - 1 ) ) ) ~= 0
+end
+function KeyPad15:getToggle( n )
+
+         return  (self.tog & ( 0x01 << ( n - 1 ) ) ) ~= 0
+end
+function KeyPad15:resetToggle( n , state)
+	 if state == true then
+		 self.tog =  (~(0x01<< ( n-1 ) )) & self.tog
+	 end
+end
+function KeyPad15:setToggle( n )	 
+		 self.tog =  (0x01<< ( n-1 ) ) | self.tog	 
+end
+function KeyPad15:setLedRed( n , state)
+	self.old = (state ) and  self.ledRed | (0x01<<(n-1)) or self.ledRed & (~(0x01<<( n-1 )))
+	if ( self.old ~= self.ledRed ) then
+		self.ledRed = self.old
+		self.new = true
+	end
+end
+function KeyPad15:setLedGreen( n, state)
+	self.old = (state ) and self.ledGreen | (0x01<<(n-1)) or self.ledGreen & (~(0x01<<( n-1 )))
+	if ( self.old ~= self.ledGreen ) then
+		self.ledGreen = self.old
+		self.new = true
+	end
+end
+function KeyPad15:setLedBlue( n , state)
+	self.old = (state ) and  self.ledBlue | (0x01<<(n-1)) or self.ledBlue & (~(0x01<<( n-1 )))
+	if ( self.old ~= self.ledBlue ) then
+		self.ledBlue = self.old
+		self.new = true
+	end
+end
+function KeyPad15:setLedWhite( n , state)
+	self:setLedBlue(n, state)
+	self:setLedGreen(n, state)
+	self:setLedRed(n, state)
+end
+function KeyPad15:setLedBrigth( brigth )
+	if (self.ledbrigth ~= brigth) then
+		self.ledbrigth = brigth
+		CanSend(0x400 + self.ADDR,brigth,0,0,0,0,0,0,0)
+	end 
+end
+function KeyPad15:setBackLigthBrigth( brigth )
+	self.old = brigth
+	if (self.old ~= self.backlight) then
+		self.backligth =self.old
+		self.new = true
+		--CanSend(0x600 + self.ADDR,0x2F,0x03,0x20,0x02,self.backligth,0,0,0)
+	end
+end
+
+
+delayms = 0
+ROLL = 0
+PITCH = 0
+YAW = 0
+TEMP_SENSOR = 0
+DOut =  { [1] = false,[2] = false,[3] = false,[4] = false,[5] = false,[6] = false,[7] =false,[8] =false,[9] =false,[10] =false,[11] = false,[12] =false,[13]=false,[14] =false,[15] =false,[16]=false,[17]=false,[18]= false,[19]=false,[20]=false}
+DInput = { [1]=false,[2]=false,[3]=false,[4]=false,[5]=false,[6]=false,[7]=false,[8]=false,[9]=false,[10]=false,[11]=false}
+DOUTSTATUS = { [1]=0,[2]=0}
+LEFT_TO_CAN = 0
+RIGHT_TO_CAN = 0
+DIN = 0
+RPM = { [1] = 0,[2] =0 }
+Cur = {[1]= 0, [2]=0, [3]=0,[4]= 0,[5]= 0, [6]=0, [7]=0, [8]=0, [9]=0, [10]=0, [11]=0,[12]= 0,[13]= 0, [14]=0, [15]=0, [16]=0,[17]= 0,[18]= 0, [19]=0,[20]= 0 }
+AIN = {[1]= 0, [2]=0, [3]=0, [4] =0,[5] =0, [6] = 0,[7] =0, [8]= 0, [9] = 0, [10] = 0, [11] = 0, [12] = 0, [13] = 0}
+function Yield ()
+
+	delayms,DOUTSTATUS[1],DOUTSTATUS[2],DIN ,Cur[1],Cur[2],Cur[3],Cur[4],Cur[5],Cur[6],Cur[7],Cur[8],
+Cur[9],Cur[10],Cur[11],Cur[12],Cur[13],Cur[14],Cur[15],Cur[16],Cur[17],Cur[18],Cur[19],Cur[20],RPM[1],RPM[2], AIN[1], AIN[2],AIN[3],AIN[4],
+AIN[5],AIN[6],AIN[7],AIN[8],AIN[9],AIN[10],AIN[11],AIN[12],
+ ROLL, PITCH, YAW, TEMP_SENSOR = coroutine.yield(DOut[20],DOut[19],DOut[18],DOut[17],DOut[16],
+DOut[15],DOut[14],DOut[13],DOut[12],DOut[11],DOut[10],DOut[9],DOut[8],DOut[7],DOut[6],DOut[5],DOut[4],DOut[3],DOut[2],DOut[1])
+delayms = delayms/100
+end
+function getROLL()
+ return ROLL
+end
+function getPITCH()
+ return PITCH
+end
+function getYAW()
+ return YAW
+end
+function getBat()
+ return AIN[12]
+end
+function getAin(ch)
+ return ( ch<12 ) and AIN[ch] or 0
+end
+function getRPM( ch)
+  return (ch==1) and RPM[1] or RPM[2]
+end
+
+function getTemp()
+ return (TEMP_SENSOR//1)
+end
+
+
+function getOutStatus( ch )
+   if ch <11 then
+	return (DOUTSTATUS[1] >> (ch-1)*3) & 0x07
+   elseif ch <=20 then
+	return (DOUTSTATUS[2] >> (ch-11)*3) & 0x07
+   end
+--     return DOut[ch] == true and 0x01 or 0x00
+end
+function boltoint( data)
+   return (data) and 1 or 0
+end
+function getDelay()
+	return delayms
+end
+function getDIN( ch )
+	if (ch <= 11 ) then
+	   return ( ( ( DIN >> (ch-1) ) & 0x01) == 1 ) or true and false
+	else
+	  return false
+	end
+--	return (ch<11) and DInput[ch] or false
+end
+function igetDIN( ch)
+	if ch <= 11 then
+	   return ((DIN >> (ch-1)) & 0x1)
+	else
+	  return 0
+	end
+--	return (ch<11) and boltoint(DInput[ch]) or 0
+end
+function getCurrent( ch )
+	return Cur[ch]
+end
+function getCurFB( ch )
+	return (Cur[ch]//1)
+end
+function getCurSB( ch )
+  return (Cur[ch]*100)%100//1
+end
+function getCurLSB10( ch )
+	return (((Cur[ch]*10)//1) & 0xFF )
+end
+function getCurMSB10( ch )
+	return  (( Cur[ch]*10//1 ) >>8 )
+end
+function getBatLSB10(  )
+	return (((AIN[12]*10)//1) & 0xFF )
+end
+function getBatMSB10(  )
+	return  (( AIN[12]*10//1 ) >>8 )
+end
+function setOut( ch, data)
+	if ch <=20 then
+		DOut[ch] = data;
+	end
+end
+function getOut( ch )
+	return DOut[ch]
+end
+function waitDIN( ch, data, timeout)
+	local del = 0
+	while true do
+		Yield()
+		if getDIN(ch) == data then
+			return true
+		end
+		del = del + delayms
+		if (timeout > 0) then
+			if (del > timeout) then
+				return false
+			end
+		end
+	end
+end
+Pillow = {}
+Pillow.__index = Pillow
+function Pillow:new ( N , all_N, outOn, outOFF)
+	local obj = {  air = 0.0, height = 0.0, number = N, total = all_N , timer = 0, mode = 3, OO =outOn, OF = outOFF,
+	state = 1, SA = 0.0, SH = 0.0 , SA10 = 0.0, SH10 = 0.0,  SA5=0.0, SH10 = 0.0, SetAir = 0} 
+	setmetatable( obj, self )
+	return obj
+end
+function Pillow:setData( AirData, HData)
+	self.air = AirData
+	self.height = HData
+end
+function Pillow:manualControl( On , Off )
+   setOut(self.OO, On  )
+   setOut(self.OF, Off )  
+end
+function Pillow:Calibrate( mode )
+	SetEEPROMReg(1 + 2 * self.number + self.total * 2 * mode ,self.height)
+	SetEEPROMReg(2 + 2 * self.number + self.total * 2 * mode, self.air)
+   --slef.mode = 3
+end
+function Pillow:process( mode, control_type )
+  if self.mode ~= mode then
+     self.mode = mode
+	 self.timer = 0
+	 self.SH =  GetEEPROMReg(1+ 2 * self.number + self.total * 2 * mode )
+	 self.SA =  GetEEPROMReg(2+ 2 * self.number + self.total * 2 * mode )
+	 self.SA5  = self.SA*0,05
+	 self.SH5  = self.SH*0,05
+	 self.SA10 = self.SA*0,1
+     self.SH10 = self.SH*0,1
+  end
+  self.state = 0
+  local DATA  = ( control_type ) and self.air  or self.height
+  local EDATA = ( control_type ) and self.SA   or self.SH
+  local D10   = ( control_type ) and self.SA10 or self.SH10
+  local D5    = ( control_type ) and self.SA5  or self.SH5
+  local res = 0
+  local UP   = false
+  local DOWN = false
+  local dir = 0
+  local delta = DATA - EDATA
+  local absdelta = math.abs( delta )
+  if (delta < 0 ) then
+	dir = 1
+  end
+  if (absdelta > D10)  then  
+	self.state = ( dir == 1 ) and 4 or 3
+  else
+	if ( absdelta > D5 ) then 
+		self.state = ( dir == 1) and 2 or 1 
+	end
+  end
+  if self.state == 0 then 
+	res = 1
+  else
+	if ( (self.state == 1) or (self.state == 2) )then
+	  self.timer = self.timer + getDelay()
+	  if self.timer > 500 then
+		if self.timer < 700 then
+		    UP   =  (self.state == 2 ) and true or false
+			DOWN =  ( self.state == 1 ) and true or false
+		else
+			self.timer = 0
+	    end 
+	  end
+	else
+	  DOWN = (self.state == 3) and true or false  --спускаем
+	  UP   = (self.state == 4) and true or false  --надуваем
+	end
+   end
+   setOut(self.OO, UP  )
+   setOut(self.OF, DOWN )
+   return res
+end
+function Pillow:getEEPROMAir( mode )
+	return GetEEPROMReg(2+ 2 * self.number + self.total * 2 * mode )
+
+end
+
+function Pillow:process_set_air( air  )
+  if self.SetAir ~= air then
+   self.SA5  = self.air*0,05
+   self.SA10 = self.air*0,1
+   self.SetAir = air
+   self.timer = 0
+  end 
+  self.state = 0
+  local UP   = false
+  local DOWN = false
+  local res = 0
+  local dir = 0
+  local delta = self.air - air
+  local absdelta = math.abs(delta)
+  if delta < 0 then
+	dir = 1
+  end
+  if (absdelta > self.SA10)  then  
+	self.state = ( dir == 1 ) and 4 or 3
+  else
+	if ( absdelta > self.SA5 ) then 
+		self.state = ( dir == 1) and 2 or 1 
+	end
+  end
+  if self.state == 0 then 
+	res = 1
+  else
+	if ( (self.state == 1) or (self.state == 2) )then
+		self.timer = self.timer + getDelay()
+		if self.timer > 500 then
+			if self.timer < 700 then
+				UP   =  (self.state == 2 ) and true or false
+				DOWN = ( self.state == 1 ) and true or false
+			else
+				self.timer = 0
+			end 
+		end
+	else
+	  DOWN = (self.state == 3) and true or false  --спускаем
+	  UP   = (self.state == 4) and true or false  --надуваем
+	end
+   end
+   setOut(self.OO, UP  )
+   setOut(self.OF, DOWN )
+   return res
+end
+
 LSFAir = 1
 RSFAir = 2
 LSBAir = 3
@@ -587,7 +1162,7 @@ main = function ()
 				end
 			end
 		end
-		if (MODE == 2) then  -- режим подъема в горку 
+		if (MODE == 2) then  -- автоматический режим
 			if (ROLL_WARNING or PITCH_WARNING) and (not TRANSITION) then -- не в перхеодном состонии и критические углы
 				MODE = 1				-- в ручной режим
 				HIGHMODE = 4			-- флаг выключения клапанов в ручном режиме
