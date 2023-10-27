@@ -2,7 +2,7 @@ Pillow = {}
 Pillow.__index = Pillow
 function Pillow:new ( N , all_N, outOn, outOFF)
 	local obj = {  air = 0.0, height = 0.0, number = N, total = all_N , timer = 0, mode = 3, OO =outOn, OF = outOFF,
-	state = 1, SA = 0.0, SH = 0.0 , SA10 = 0.0, SH10 = 0.0,  SA5=0.0, SH10 = 0.0, SetAir = 0} 
+	state = 1, SA = 0.0, SH = 0.0 , SA10 = 0.0, SH10 = 0.0,  SA5=0.0, SH5 =0.0, SetAir = 0} 
 	setmetatable( obj, self )
 	return obj
 end
@@ -25,10 +25,10 @@ function Pillow:process( mode, control_type )
 	 self.timer = 0
 	 self.SH =  GetEEPROMReg(1+ 2 * self.number + self.total * 2 * mode )
 	 self.SA =  GetEEPROMReg(2+ 2 * self.number + self.total * 2 * mode )
-	 self.SA5  = self.SA*0,05
-	 self.SH5  = self.SH*0,05
-	 self.SA10 = self.SA*0,1
-     self.SH10 = self.SH*0,1
+	 self.SA5  = self.SA*0.05
+	 self.SH5  = self.SH*0.05
+	 self.SA10 = self.SA*0.1
+     self.SH10 = self.SH*0.1
   end
   self.state = 0
   local DATA  = ( control_type ) and self.air  or self.height
@@ -80,11 +80,11 @@ end
 
 function Pillow:process_set_air( air  )
   if self.SetAir ~= air then
-   self.SA5  = self.air*0,05
-   self.SA10 = self.air*0,1
+   self.SA5  = self.air*0.05
+   self.SA10 = self.air*0.1
    self.SetAir = air
    self.timer = 0
-  end 
+  end
   self.state = 0
   local UP   = false
   local DOWN = false
@@ -95,14 +95,14 @@ function Pillow:process_set_air( air  )
   if delta < 0 then
 	dir = 1
   end
-  if (absdelta > self.SA10)  then  
+  if (absdelta > self.SA10)  then
 	self.state = ( dir == 1 ) and 4 or 3
   else
-	if ( absdelta > self.SA5 ) then 
-		self.state = ( dir == 1) and 2 or 1 
+	if ( absdelta > self.SA5 ) then
+		self.state = ( dir == 1) and 2 or 1
 	end
   end
-  if self.state == 0 then 
+  if self.state == 0 then
 	res = 1
   else
 	if ( (self.state == 1) or (self.state == 2) )then
@@ -113,7 +113,7 @@ function Pillow:process_set_air( air  )
 				DOWN = ( self.state == 1 ) and true or false
 			else
 				self.timer = 0
-			end 
+			end
 		end
 	else
 	  DOWN = (self.state == 3) and true or false  --спускаем
