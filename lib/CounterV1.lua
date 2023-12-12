@@ -6,7 +6,8 @@ function Counter:new ( inMin, inMax, inDefault, inReload )
 						max = inMax,
 						reload =  inReload,
 						def = inDefault,
-						old = false
+						old = false,
+						oldrst =false
 		   }
 	setmetatable( obj, self )
 	return obj
@@ -32,14 +33,16 @@ function Counter:process ( inc, dec, rst )
 			end
 		end
 		if ( rst == true ) then
-			if (  self.old  == false )  then
+			if (  self.oldrst  == false )  then
 				self.counter = self.def
 			end
 		end
-		self.old =   (rst or inc or dec ) and true or false
+		self.old =   ( inc or dec ) and true or false
+		self.oldrst =   rst and true or false
 	end
 	return
 end
+
 function Counter:get ()
 	return self.counter
 end

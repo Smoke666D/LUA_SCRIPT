@@ -74,7 +74,7 @@ function CanOut:setBit( nb, nbit, state)
 	if state == true then
 		self.data[nb] = self.data[nb] | (0x01 << (nbit-1))
 	else
-		self.data[nb] = self.data[nb] & ~(0x01 << (nbit-1))
+		self.data[nb] = self.data[nb] & (~(0x01 << (nbit-1)))
 	end
 end
 function CanOut:setByte( nb ,state )
