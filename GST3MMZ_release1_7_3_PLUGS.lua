@@ -172,6 +172,7 @@ main = function ()
 	local WaterFanTimer		= Delay:new(9000, false)
 	local GeneratorTimer	= Delay:new(1000, false)
 	local StopSignalErrorTimer	= Delay:new(100, false)
+	local wipers_on_delay   = Delay:new(500,false)
 	local LEFT				= false
 	local LEFT_DOOR_EN		= false	
 	local RIGHT_DOOR_EN		= false
@@ -213,7 +214,7 @@ main = function ()
 	local RIGTH_TURN_ERROR	 = false
 	local LEFT_TURN_ERROR    = false
 	local HORN_ERROR		 = false
-
+    local wip_en = false
 	local GLOW_PLUG_ERROR    = false
 	local GENERATOR_ERROR	 = false
 	KeyBoard:setBackLigthBrigth(  3 )
@@ -373,14 +374,14 @@ main = function ()
 						wipers_on = not ( ( not work_state ) and (  not KeyBoard:getKey(3) ) )  	-- выклчюаем, если было нажатие на конопку меньше 1200 мс
 					end
 				end
-				location = location and getDIN(WIPER_IN)
-				if wipers_on then
-					location = true
-				end
+				
+				location  = wipers_on or  ( location and getDIN( WIPER_IN ) )
+	
 				wipers_on = wipers_on and start
-				water = water and start
-				setOut(WIPERS_CH, wipers_on or location )
-				setOut(WATER_CH , water )
+			--	wip_en = wipers_on_delay:process( wipers_on  or location )		
+		
+				setOut(WIPERS_CH, wipers_on_delay:process( wipers_on  or location ))
+				setOut(WATER_CH , water and start )
 				-- конец блока дворников
 			
 				--аогоритм управления с 2-х клавиш повортниками и если 2 вместе, то аварийка
