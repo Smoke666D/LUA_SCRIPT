@@ -5,14 +5,14 @@ OIL_FAN_CH		= 4
 CUT_VALVE		= 5
 HIGH_BEAM_CH   	= 6
 REAR_LIGTH_CH   = 7
-FUEL_PUMP_CH    = 8
+FUEL_PUMP_CH    = 15
 STOP_VALVE		= 9
 WATER_CH    	= 10
 DOWN_GEAR_CH   	= 11
 KL30			= 12
 HORN_CH 		= 13
 UP_GEAR     	= 14
-WATER_FAN_CH  	= 15
+WATER_FAN_CH  	= 8
 WIPERS_CH   	= 16
 LEFT_TURN_CH 	= 18
 RIGTH_TURN_CH 	= 17
@@ -46,8 +46,7 @@ function init()
 	OutResetConfig(WATER_FAN_CH,0,3000)
 	setOutConfig(HIGH_BEAM_CH,11)
 	setOutConfig(STOP_CH,5,1,0,5,0)
-	setOutConfig(FUEL_PUMP_CH,7)	
-	--setOutConfig(FUEL_PUMP_CH,7,1,1000,15)
+	setOutConfig(FUEL_PUMP_CH,7,1,1000,15)
     setOutConfig(WIPERS_CH,8,0,100,30)
 	setOutConfig(WATER_CH,8,0,500,30)
 	setOutConfig(UP_GEAR, 8)
