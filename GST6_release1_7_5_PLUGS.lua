@@ -48,7 +48,6 @@ function init()
 	setOutConfig(STOP_CH,5,1,0,5,0)
 	setOutConfig(FUEL_PUMP_CH,7,1,1000,15)
     setOutConfig(WIPERS_CH,8,0,100,30)
-	
 	setOutConfig(WATER_CH,8,1,500,30)
 	setOutConfig(UP_GEAR, 8)
 	setOutConfig(DOWN_GEAR_CH,8)
