@@ -42,7 +42,7 @@ function init()
 	OutResetConfig(RIGTH_TURN_CH,1,0)
 	setOutConfig(OIL_FAN_CH,20,1,3000,70)
 	OutResetConfig(OIL_FAN_CH,0,3000)
-    setOutConfig(WATER_FAN_CH,20,1,3000,50)
+    setOutConfig(WATER_FAN_CH,20,1,3000,70)
 	OutResetConfig(WATER_FAN_CH,0,3000)
 	setOutConfig(HIGH_BEAM_CH,11)
 	setOutConfig(STOP_CH,5,1,0,5,0)
@@ -428,22 +428,22 @@ main = function ()
 					--блока предпрогрева.
 				if start then
 					if START_ENABLE then
-						PreheatTimer = 11000
+						PreheatTimer = 16000
 						PREHEAT 	 = false
 						cold_start   = temp < (40 +TEMP_OFFSET)
 					else
 						if cold_start then
-							if PreheatTimer < (180000+11000) then
+							if PreheatTimer < (180000+16000) then
 								PreheatTimer = PreheatTimer + getDelay()
 								PREHEAT = true
 							else
 								PREHEAT = false
 							end	
 						else
-						if PreheatTimer < 11000 then	
+						if PreheatTimer < 16000 then	
 							PreheatTimer = PreheatTimer + getDelay()
 							if temp < (40 +TEMP_OFFSET) then
-								PREHEAT = (PreheatTimer < 10000 )	
+								PREHEAT = (PreheatTimer < 15000 )	
 							elseif temp < (50+TEMP_OFFSET) then
 								PREHEAT = (PreheatTimer < 4000 )
 							elseif temp < (60+TEMP_OFFSET) then
