@@ -42,7 +42,7 @@ function init()
 	OutResetConfig(RIGTH_TURN_CH,1,0)
 	setOutConfig(OIL_FAN_CH,20,1,3000,70)
 	OutResetConfig(OIL_FAN_CH,0,3000)
-    setOutConfig(WATER_FAN_CH,20,1,3000,70)
+    setOutConfig(WATER_FAN_CH,25,1,5000,100)
 	OutResetConfig(WATER_FAN_CH,0,3000)
 	setOutConfig(HIGH_BEAM_CH,11)
 	setOutConfig(STOP_CH,5,1,0,5,0)
@@ -297,6 +297,7 @@ main = function ()
 				local water_fan_start = water_fan_enable and (not START_ENABLE) and start 
 				WaterFanTimer:process( water_fan_start )
 				setOut(WATER_FAN_CH, WaterFanTimer:get())
+				--setOut(WATER_FAN_CH, true)
 				--конец блока управления вентелятором охдаждения
 				-- блок переключением передач и заденего хода
 				local gear_enable =  stop_signal and not parking_on --and (speed == 0) --and ( RPM < 1000 )

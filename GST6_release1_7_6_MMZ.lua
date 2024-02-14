@@ -5,14 +5,14 @@ OIL_FAN_CH		= 4
 CUT_VALVE		= 5
 HIGH_BEAM_CH   	= 6
 REAR_LIGTH_CH   = 7
-FUEL_PUMP_CH    = 8
+FUEL_PUMP_CH    = 15
 STOP_VALVE		= 9
 WATER_CH    	= 10
 DOWN_GEAR_CH   	= 11
 KL30			= 12
 HORN_CH 		= 13
 UP_GEAR     	= 14
-WATER_FAN_CH  	= 15
+WATER_FAN_CH  	= 8
 WIPERS_CH   	= 16
 LEFT_TURN_CH 	= 18
 RIGTH_TURN_CH 	= 17
@@ -33,7 +33,7 @@ function init()
     ConfigCan(1,500);	 								   
 	setOutConfig(GLOW_PLUG_1_2,30,1,5000,40) -- на пуске свечи жрут 32-35А. Поскольку в ядре номинальный ток ограничен 30а, ставлю задержку на 5с
 	setOutConfig(GLOW_PLUG_3_4,30,1,5000,40)
-	setOutConfig(STARTER_CH,15,1,100,40)
+	setOutConfig(STARTER_CH,20,1,5000,40)
 	setOutConfig(CUT_VALVE,4,1,4500,60)
 	setOutConfig(KL30,8,1,3000,20)
 	setOutConfig(LEFT_TURN_CH,4,1,0,4,0) -- для повортников влючен режим ухода в ошибку до перезапуска. Если так не сделать, при кз будет постоянно сбрасываться ошибка
@@ -42,11 +42,11 @@ function init()
 	OutResetConfig(RIGTH_TURN_CH,1,0)
 	setOutConfig(OIL_FAN_CH,20,1,3000,70)
 	OutResetConfig(OIL_FAN_CH,0,3000)
-    setOutConfig(WATER_FAN_CH,20,1,3000,70)
+    setOutConfig(WATER_FAN_CH,25,1,5000,100)
 	OutResetConfig(WATER_FAN_CH,0,3000)
 	setOutConfig(HIGH_BEAM_CH,11)
 	setOutConfig(STOP_CH,5,1,0,5,0)
-	setOutConfig(FUEL_PUMP_CH,7,1,5000,15)
+	setOutConfig(FUEL_PUMP_CH,7,1,1000,15)
     setOutConfig(WIPERS_CH,8,0,100,30)
 	setOutConfig(WATER_CH,8,1,500,30)
 	setOutConfig(UP_GEAR, 8)
@@ -287,16 +287,17 @@ main = function ()
 				setOut(OIL_FAN_CH, OilFanTimer:get())
 				--конец блока управления вентилятром охлаждения масла
 				--блок управления вентелятором охдаждения
-				if  ( ( temp >= (87+ TEMP_OFFSET)) or ( temp == 0) ) then
+				if  ( ( temp >= (83+ TEMP_OFFSET)) or ( temp == 0) ) then
 					water_fan_enable = true
 				else
-					if  ( ( temp < (83+ TEMP_OFFSET)) ) then
+					if  ( ( temp < (80+ TEMP_OFFSET)) ) then
 					water_fan_enable = false
 					end
 				end
 				local water_fan_start = water_fan_enable and (not START_ENABLE) and start 
 				WaterFanTimer:process( water_fan_start )
 				setOut(WATER_FAN_CH, WaterFanTimer:get())
+				--setOut(WATER_FAN_CH, true)
 				--конец блока управления вентелятором охдаждения
 				-- блок переключением передач и заденего хода
 				local gear_enable =  stop_signal and not parking_on --and (speed == 0) --and ( RPM < 1000 )
