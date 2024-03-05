@@ -30,29 +30,30 @@ TEMP_OFFSET		= 40
  --функция иницализации
 function init()
     ConfigCan(1,500);	 								   
-	setOutConfig(GLOW_PLUG_1_2,8) -- на пуске свечи жрут 32-35А. Поскольку в ядре номинальный ток ограничен 30а, ставлю задержку на 5с
-	setOutConfig(GLOW_PLUG_3_4,8)
-	setOutConfig(STARTER_CH,8)
-	setOutConfig(CUT_VALVE,8)
-	setOutConfig(KL30,8)
-	setOutConfig(LEFT_TURN_CH,8) -- для повортников влючен режим ухода в ошибку до перезапуска. Если так не сделать, при кз будет постоянно сбрасываться ошибка
+	setOutConfig(1,20) -- на пуске свечи жрут 32-35А. Поскольку в ядре номинальный ток ограничен 30а, ставлю задержку на 5с
+	setOutConfig(2,20)
+	setOutConfig(3,20)
+	setOutConfig(4,20)
+	setOutConfig(5,20)
+	setOutConfig(6,20)
+	setOutConfig(7,20)
+	setOutConfig(8,20)
 	
-	setOutConfig(RIGTH_TURN_CH,8)
+	setOutConfig(9,15)
+	setOutConfig(10,15)
+	setOutConfig(11,15)
+	setOutConfig(12,15)
+	setOutConfig(13,15)
+	setOutConfig(14,15)
 	
-	setOutConfig(OIL_FAN_CH,8)
-	setOutConfig(HIGH_BEAM_CH,8)
-	setOutConfig(STOP_CH,8)
-	setOutConfig(FUEL_PUMP_CH,8)	
-	setOutConfig(WIPERS_CH,8)
-	setOutConfig(WATER_CH,8)
-	setOutConfig(UP_GEAR,8)
-	setOutConfig(DOWN_GEAR_CH,8)
-	setOutConfig(STEERING_WEEL_VALVE_CH,8)
-	setOutConfig(REAR_LIGTH_CH,20)
-	setOutConfig(STOP_VALVE,8)
-	setOutConfig(HORN_CH,7)
-	setOutConfig(LOW_BEAM_CH,8)
-	--setPWMGroupeFreq(5, 100)
+	
+	setOutConfig(15,15)
+	setOutConfig(16,15)
+	setOutConfig(17,15)
+	setOutConfig(18,15)
+	setOutConfig(19,15)
+	setOutConfig(20,15)
+	
     setDINConfig(1,0)
 	setDINConfig(2,0)
 	setDINConfig(3,0)
@@ -115,7 +116,7 @@ end
 --главная функция
 main = function ()
 
-init()
+    init()
     local KeyBoard		= KeyPad8:new(0x15)--создание объекта клавиатура c адресом 0x15
 	local Key1Counter   = Counter:new(0,3,0,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)
 	local Key2Counter   = Counter:new(0,3,0,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)
@@ -125,88 +126,212 @@ init()
 	local Key6Counter   = Counter:new(0,3,0,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)	
 	local Key7Counter   = Counter:new(0,3,0,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)
 	local Key8Counter   = Counter:new(0,3,0,true) -- счетчи, :new( минмальное значение, максимальное значение, по умолчанию, перегруза)
-
-    	
- local delay = 0
-local counter = 0
-
+    local start = false
+	local FSM = 0
+    local bright = 0
+   local delay = 0
+   local counter = 0
+   local del = 0
+   local err = 0
+ 
 	--KeyBoard:setBackLigthBrigth(  3 )
 	--рабочий цикл
 	while true do	
-	    delay = delay + 1
-	    
-		 if delay >1000 then
-			SetEEPROMReg(1,getBat())
-			SetEEPROMReg(2)
-			counter = counter + 1
-			SetEEPROMReg(3,counter)
-			SetEEPROMReg(4,GetEEPROMReg(1))
-			AddReccord( GetEEPROMReg(3),GetEEPROMReg(1))
-			delay  = 0
-         end
+	   
+	 
 
-if (( getBat() > 16 ) or (getBat()<7) ) then
+        if (( getBat() > 16 ) or (getBat()<7) ) then
 			ALL_OFF()
 		else
-	  		ALL_ON()
-	    KeyBoard:process() --процесс работы с клавиатурой
+			KeyBoard:process() --процесс работы с клавиатурой
+			KeyBoard:setBackLigthBrigth( 15 )	
+			Key1Counter:process(KeyBoard:getKey(1),false,false);
+			start = (Key1Counter:get() ==1)
+	
 		
-		KeyBoard:setBackLigthBrigth( 15  )
+			if start then
+				if counter == 0  then
+				   if (getDIN(1) == true ) and (getDIN(3) == true ) and (getDIN(5) == true ) and (getDIN(7) == true ) 
+				   
+				   and (getDIN(9) == true ) and (getDIN(11) == true ) then
+				     counter = 1
+				     setOut(1, true )
+					 setOut(11, true )					-- setOut(14, true )
+				   else
+				     err = 1
+				   end
+			    end 
+				if ((counter == 2) and (del>280)) then
+				    if (getCurrent(1) > 5) and (getCurrent(11) > 5)  then  --and (getCurrent(14) > 5) then
+					   setOut(20, true )					   counter = 3
+					   setOut(1, false )
+					   setOut(11, false )
+					   setOut(12, true )
+					--   setOut(14, false )
+					else
+					  err = 2
+					end
+				end
+				if ((counter == 4) and (del>280)) then
+					 if (getDIN(2) == true ) and (getCurrent(12) > 5)  then
+					   setOut(2, true )
+					   setOut(12, false )
+					   counter = 5
+					else
+				       err = 3
+					end
+				end
+				if ((counter == 6) and (del>280)) then
 				
-		Key1Counter:process(KeyBoard:getKey(1),false,false);
-		KeyBoard:setLedRed( 1,  Key1Counter:get() ==1 )
-		KeyBoard:setLedGreen( 1,  Key1Counter:get() ==2 )
-		KeyBoard:setLedBlue( 1,  Key1Counter:get() ==3 )
-		
+				   if (getCurrent(2) > 5) and (getAin(1)>3.0) and (getAin(1)<4.0) and (getAin(2)>1.8) and (getAin(2)<2.6) and (getAin(3)>0.8) and (getAin(3)<1.8) then
+					   setOut(2, false )
+					   setOut(20, false )
+					   setOut(13,  true )
+					   setOut(3,  true )
+					   counter = 7
+					else
+					  err = 4
+					end
+				end
+				if ((counter == 8) and (del>280)) then
+				
+			        if (getDIN(3) == true ) and  (getCurrent(3) > 5) and   (getCurrent(13) > 5)  then
+					   setOut(3,  false )
+					   setOut(13,  false )
+					   
+					   setOut(19, true )
+					   counter = 9
+					else
+					  err = 5
+					end
+				end
+				if ((counter == 10) and (del>280)) then
+				
+			        if (getDIN(4) == true ) then
+					   setOut(4,  true )
+					   counter = 11
+					else
+					  err = 6
+					end
+				end
+				if ((counter == 12) and (del>280)) then
+			        if (getCurrent(4) > 5)  then
+					   setOut(4,  false )
+					   setOut(19, false )
+					   setOut(6,  true )
+					   counter = 13
+					else
+					  err = 7
+					end
+				end
+			    if ((counter == 14) and (del>280)) then
+			        if (getCurrent(6) > 5)  then
+					   setOut(6,  false )
+					   setOut(18,  true )
+					 --  setOut(19,  true )
+					  -- setOut(14,  true )
+					   counter = 15
+					else
+					  err = 8
+					end
+				end
+				
+				if ((counter == 16) and (del>280)) then
+			        if (getDIN(6) == true ) then --and (getCurrent(14) > 5) then
+					 
+					   setOut(5,  true )
+					 --  setOut(19,  false )
+					--   setOut(14,  false)
+					   counter = 17
+					else
+					  err = 9
+					end
+				end
+				if ((counter == 18) and (del>280)) then
+			         if (getCurrent(5) > 5)  then
+					   setOut(18,  false )
+					   setOut(5,  false)
+					   setOut(7,  true)
+					   counter = 19
+					else
+					  err = 10
+					end
+				end
+				 if ((counter == 20) and (del>280)) then
+			        if (getCurrent(7) > 5)  then
+					   setOut(7,  false )
+					   setOut(17,  true )
+					   counter = 21
+					else
+					  err = 11
+					end
+				end
+					 if ((counter == 22) and (del>280)) then
+			        if (getDIN(8) == true ) then
+					   setOut(8,true )
+					   counter = 23
+					else
+					  err = 12
+					end
+				end if ((counter == 24) and (del>280)) then
+			        if (getCurrent(8) > 5)  then
+					   setOut(8,  false )
+					   setOut(10,  true )
+					   setOut(17,  false )
+					   setOut(16,  true )
+					   counter = 25
+					else
+					  err = 13
+					end
+				end  if ((counter == 26) and (del>280)) then
+			        if (getDIN(10) == true ) and (getCurrent(10) > 5) then
+					   setOut(16,  false )
+					   setOut(15,  true )
+					   setOut(9,  true )
+					   setOut(10,  false )
+					  setOut(14,  true)
+					   counter = 27
+					else
+					  err = 14
+					end
+				end
+					if ((counter == 28) and (del>280)) then
+			        if (getDIN(11) == false ) and (getCurrent(9) > 5) and (getCurrent(14) > 5) then
+					   setOut(9,  false )
+					   setOut(15,  false )
+					  setOut(14,  false )
+					   counter = 29
+					else
+					  err = 15
+					end
+				end
+				
+			    del = del + 1
+			    if del == 300 then
+			       del =0
+				   if (err == 0) then
+		              counter = counter + 1
 
+		          end
+				end
+			else
+			err = 0
+			 counter = 0
+			 ALL_OFF()
+		    end
 		
-		Key2Counter:process(KeyBoard:getKey(2),false,false);
-		KeyBoard:setLedRed( 2,  Key2Counter:get() ==1 )
-		KeyBoard:setLedGreen( 2,  Key2Counter:get() ==2 )
-		KeyBoard:setLedBlue( 2,  Key2Counter:get() ==3 )
-		
-
-		 
-		Key3Counter:process(KeyBoard:getKey(3),false,false);
-		KeyBoard:setLedRed( 3,  Key3Counter:get() ==1 )
-		KeyBoard:setLedGreen( 3,  Key3Counter:get() ==2 )
-		KeyBoard:setLedBlue( 3,  Key3Counter:get() ==3 )
-		
-		
-		
-		Key4Counter:process(KeyBoard:getKey(4),false,false);
-		KeyBoard:setLedRed( 4,  Key4Counter:get() ==1 )
-		KeyBoard:setLedGreen( 4,  Key4Counter:get() ==2 )
-		KeyBoard:setLedBlue( 4,  Key4Counter:get() ==3 )
-		
-	
-		
-		Key5Counter:process(KeyBoard:getKey(5),false,false);
-		KeyBoard:setLedRed( 5,  Key5Counter:get() ==1 )
-		KeyBoard:setLedGreen( 5,  Key5Counter:get() ==2 )
-		KeyBoard:setLedBlue( 5,  Key5Counter:get() ==3 )
-		
-	
-		
-		Key6Counter:process(KeyBoard:getKey(6),false,false);
-		KeyBoard:setLedRed( 6,  Key6Counter:get() ==1 )
-		KeyBoard:setLedGreen( 6,  Key6Counter:get() ==2 )
-		KeyBoard:setLedBlue( 6,  Key6Counter:get() ==3 )
-		
-
-		
-		Key7Counter:process(KeyBoard:getKey(7),false,false);
-		KeyBoard:setLedRed( 7,  Key7Counter:get() ==1 )
-		KeyBoard:setLedGreen( 7,  Key7Counter:get() ==2 )
-		KeyBoard:setLedBlue( 7,  Key7Counter:get() ==3 )
-		
-	
-		
-		Key8Counter:process(KeyBoard:getKey(8),false,false);
-		KeyBoard:setLedRed( 8,  Key8Counter:get() ==1 )
-		KeyBoard:setLedGreen( 8,  Key8Counter:get() ==2 )
-		KeyBoard:setLedBlue( 8,  Key8Counter:get() ==3 )
 		end
+		KeyBoard:setLedGreen( 1,   start  )
+		KeyBoard:setLedRed( 5,   (err & 0x01)== 0x01 )
+		KeyBoard:setLedRed( 6,   (err & 0x02)== 0x02 )
+		KeyBoard:setLedRed( 7,   (err & 0x04)== 0x04 )
+		KeyBoard:setLedRed( 8,   (err & 0x08)== 0x08 )
+		
+		
+		KeyBoard:setLedGreen( 5,   counter >29)
+		KeyBoard:setLedGreen( 6,   counter >29  )
+		KeyBoard:setLedGreen( 7,   counter >29 )
+		KeyBoard:setLedGreen( 8,   counter >29 )
 	   Yield()
 	end
 end

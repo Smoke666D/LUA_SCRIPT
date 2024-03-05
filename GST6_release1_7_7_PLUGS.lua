@@ -28,6 +28,10 @@ PARKING_SW		= 7
 WIPER_IN		= 8
 RPM_IN			= 9
 TEMP_OFFSET		= 40
+CARS            = 1
+V1				= 1
+V2				= 7
+V3				= 7
  --функция иницализации
 function init()
     ConfigCan(1,500);	 								   
@@ -42,7 +46,7 @@ function init()
 	OutResetConfig(RIGTH_TURN_CH,1,0)
 	setOutConfig(OIL_FAN_CH,20,1,3000,70)
 	OutResetConfig(OIL_FAN_CH,0,3000)
-    setOutConfig(WATER_FAN_CH,20,1,3000,70)
+    setOutConfig(WATER_FAN_CH,25,1,5000,100)
 	OutResetConfig(WATER_FAN_CH,0,3000)
 	setOutConfig(HIGH_BEAM_CH,11)
 	setOutConfig(STOP_CH,5,1,0,5,0)
@@ -160,6 +164,7 @@ main = function ()
 	local CanIn         	= CanInput:new(0x28) -- <адрес can>, < таймаут>	
 	local CanToDash			= CanOut:new(0x29, 100,8)
 	local CanERROR			= CanOut:new(0x27, 100,8)
+	local CanVersion		= CanOut:new(0x26, 1000,8)
 	local Turns	        	= TurnSygnals:new(800)
 	local FlashCounter  	= Counter:new(0,20,0,true)
 	local GearCounter   	= Counter:new(0,2,1,false)
@@ -261,7 +266,7 @@ main = function ()
 				local RPM 	  	= ( dash_start ) and CanIn:getWordLSB(1) or 0
 				local speed     = ( dash_start ) and CanIn:getWordLSB(3) or 0		
 				
-				KeyBoard:setBackLigthBrigth( start and 70 or 3 )	-- подсветка клавиатуры
+				KeyBoard:setBackLigthBrigth( start and 15 or 3 )	-- подсветка клавиатуры
 				--как только приходит сигнал зажигания
 				setOut(CUT_VALVE, start )		
 				setOut(FUEL_PUMP_CH, start)
@@ -297,6 +302,7 @@ main = function ()
 				local water_fan_start = water_fan_enable and (not START_ENABLE) and start 
 				WaterFanTimer:process( water_fan_start )
 				setOut(WATER_FAN_CH, WaterFanTimer:get())
+				--setOut(WATER_FAN_CH, true)
 				--конец блока управления вентелятором охдаждения
 				-- блок переключением передач и заденего хода
 				local gear_enable =  stop_signal and not parking_on --and (speed == 0) --and ( RPM < 1000 )
@@ -525,6 +531,11 @@ main = function ()
 				CanToDash:setBit(1, 4, parking_on )
 				CanToDash:process()
 				--конец
+			   CanVersion:setByte(1,CARS)
+			   CanVersion:setByte(2,V1)
+			   CanVersion:setByte(3,V2)
+			   CanVersion:setByte(4,V3)
+			   CanVersion:process()
 			
 				--блок для передачи сигналов поворотников в дашборд, что бы было видно их работу в сервисном режиме
 				FlashToCanTimer:process(true, not FlashEnabel)

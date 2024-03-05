@@ -5,9 +5,9 @@ EXT_CAN_ID = 0x80000000
 -- Объекты СanIput. Cозадется с помощью метода :new( id пакета, время обновления данных , битовая маска, указывающая какие байты из фрема забирать, )
 --
 
-CanInput = {}
-CanInput.__index = CanInput
-function CanInput:new ( addr )
+CanInputV1 = {}
+CanInputV1.__index = CanInputV1
+function CanInputV1:new ( addr )
 	local obj = { ADDR = addr, eneb = 0,
 		     data={[1]=0,[2]=0,[3]=0,[4]=0,[5]=0,[6]=0,[7]=0,[8]=0},		    
 		    }
@@ -15,22 +15,26 @@ function CanInput:new ( addr )
     setCanFilter(addr)
 	return obj
 end
-function CanInput:process()
+function CanInputV1:Reset()
+   self.eneb = 0
+end
+
+function CanInputV1:process()
 	if ( GetCanToTable( self.ADDR,self.data) == 1 ) then
 		self.eneb = 1
 	end
     return  self.eneb
 end
-function CanInput:getBit( nb, nbit)
+function CanInputV1:getBit( nb, nbit)
 	return ((self.data[nb] & (0x01<<(nbit-1))) >0 ) and true or false
 end
-function CanInput:getByte( nb )
+function CanInputV1:getByte( nb )
 	return self.data[nb]
 end
-function CanInput:getWordLSB( nb )
+function CanInputV1:getWordLSB( nb )
 	return (nb < 7) and ( self.data[nb] | self.data[nb+1]<<8) or 0
 end
-function CanInput:getWordMSB( nb )
+function CanInputV1:getWordMSB( nb )
 	return (nb < 7) and ( self.data[nb]<<8 | self.data[nb+1]) or 0
 end
 

@@ -28,27 +28,31 @@ PARKING_SW		= 7
 WIPER_IN		= 8
 RPM_IN			= 9
 TEMP_OFFSET		= 40
+CARS            = 1
+V1				= 1
+V2				= 7
+V3				= 7
  --функция иницализации
 function init()
     ConfigCan(1,500);	 								   
 	setOutConfig(GLOW_PLUG_1_2,30,1,5000,40) -- на пуске свечи жрут 32-35А. Поскольку в ядре номинальный ток ограничен 30а, ставлю задержку на 5с
 	setOutConfig(GLOW_PLUG_3_4,30,1,5000,40)
 	setOutConfig(STARTER_CH,20,1,5000,40)
-	setOutConfig(CUT_VALVE,4,1,4500,60)
+	setOutConfig(CUT_VALVE,4,1,5000,60)
 	setOutConfig(KL30,8,1,3000,20)
 	setOutConfig(LEFT_TURN_CH,4,1,0,4,0) -- для повортников влючен режим ухода в ошибку до перезапуска. Если так не сделать, при кз будет постоянно сбрасываться ошибка
 	OutResetConfig(LEFT_TURN_CH,1,0)
 	setOutConfig(RIGTH_TURN_CH,4,1,0,4,0)
 	OutResetConfig(RIGTH_TURN_CH,1,0)
-	setOutConfig(OIL_FAN_CH,20,1,3000,70)
+	setOutConfig(OIL_FAN_CH,20,1,20000,70)
 	OutResetConfig(OIL_FAN_CH,0,3000)
-    setOutConfig(WATER_FAN_CH,20,1,3000,70)
+    setOutConfig(WATER_FAN_CH,40,1,20000,120)
 	OutResetConfig(WATER_FAN_CH,0,3000)
 	setOutConfig(HIGH_BEAM_CH,11)
 	setOutConfig(STOP_CH,5,1,0,5,0)
-	setOutConfig(FUEL_PUMP_CH,7,1,1000,15)
-    setOutConfig(WIPERS_CH,8,0,100,30)
-	setOutConfig(WATER_CH,8,1,500,30)
+	setOutConfig(FUEL_PUMP_CH,13,1,60000,20)
+    setOutConfig(WIPERS_CH,8,1,10000,30)
+	setOutConfig(WATER_CH,8,1,10000,30)
 	setOutConfig(UP_GEAR, 8)
 	setOutConfig(DOWN_GEAR_CH,8)
 	setOutConfig(REAR_LIGTH_CH,20)
@@ -159,7 +163,7 @@ main = function ()
 	local DASH				= Dashboard:new(0x30,200)
 	local CanIn         	= CanInput:new(0x28) -- <адрес can>, < таймаут>	
 	local CanToDash			= CanOut:new(0x29, 100,8)
-	local CanERROR			= CanOut:new(0x27, 100,8)
+	local CanVersion		= CanOut:new(0x700, 1000,8)
 	local Turns	        	= TurnSygnals:new(800)
 	local FlashCounter  	= Counter:new(0,20,0,true)
 	local GearCounter   	= Counter:new(0,2,1,false)
@@ -169,7 +173,7 @@ main = function ()
 	local FlashTimer    	= Delay:new( 50,  true )
 	local FlashToCanTimer   = Delay:new( 200,  true )
 	local OilFanTimer		= Delay:new(9000, false)
-	local WaterFanTimer		= Delay:new(9000, false)
+	local WaterFanTimer		= Delay:new(17000, false)
 	local GeneratorTimer	= Delay:new(1000, false)
 	local StopSignalErrorTimer	= Delay:new(100, false)
 	local wipers_on_delay   = Delay:new(500,false)
@@ -191,7 +195,6 @@ main = function ()
 	local parking_on		= false
 	local POWER_OFF_ALARM   = false
     local t_c = 0
-    local cold_start 		= false
 	local light_on  		= false
 	local light_off			= false
 	local light_work 		= false
@@ -217,16 +220,26 @@ main = function ()
     local wip_en = false
 	local GLOW_PLUG_ERROR    = false
 	local GENERATOR_ERROR	 = false
+	local oil_level          = false
 	KeyBoard:setBackLigthBrigth(  3 )
 	
+	
+	CanVersion:setByte(1,CARS)
+    CanVersion:setByte(2,V1)
+    CanVersion:setByte(3,V2)
+    CanVersion:setByte(4,V3)
 	--рабочий цикл
 	while true do		
 	    	   --процесс отправки данных о каналах в даш
 	    if (( getBat() > 16 ) or (getBat()<6) ) then
 			ALL_OFF()
+			
 			PreheatTimer = 0
 		else
-
+            if not start then
+			 --  CanInput:Restart()
+			   oil_level = false
+			end
 			setOut(KL30, true )
 			KeyBoard:process() --процесс работы с клавиатурой
 			DASH:process()	   --процесс отправки данных о каналах в даш
@@ -240,7 +253,7 @@ main = function ()
 				self_check = false
 				scFSM = 0
 			end
-       			
+				
 		    if ( (self_check  ) and ( scFSM <=20 ) ) then
 				scFSM = scFSM + 1
 				if scFSM == 1 then
@@ -256,12 +269,12 @@ main = function ()
 				   STOP_SIGNAL_ERROR  = ChannelCheck( STOP_CH, 0.7)
 				end
 			else
-				local temp     	= ( dash_start ) and ( CanIn:getByte(5) ) or 0   -- получаем первый байт из фрейма, температура охлаждающей жидкости
-				local OilTemp  	= ( dash_start ) and ( CanIn:getByte(6)  ) or 0 --  CanOilTempIn:getByte(1)  -- получаем первый байт из фрейма, температура масла
-				local RPM 	  	= ( dash_start ) and CanIn:getWordLSB(1) or 0
-				local speed     = ( dash_start ) and CanIn:getWordLSB(3) or 0		
-				
-				KeyBoard:setBackLigthBrigth( start and 70 or 3 )	-- подсветка клавиатуры
+				local temp     	  = ( dash_start ) and ( CanIn:getByte(5) ) or 0   -- получаем первый байт из фрейма, температура охлаждающей жидкости
+				local OilTemp     = ( dash_start ) and ( CanIn:getByte(6)  ) or 0 --  CanOilTempIn:getByte(1)  -- получаем первый байт из фрейма, температура масла
+				local RPM 	  	  = ( dash_start ) and CanIn:getWordLSB(1) or 0
+				local speed       = ( dash_start ) and CanIn:getWordLSB(3) or 0		
+				local oil_signal  = ( dash_start ) and CanIn:getBit(7,7) or false
+				KeyBoard:setBackLigthBrigth( start and 15 or 3 )	-- подсветка клавиатуры
 				--как только приходит сигнал зажигания
 				setOut(CUT_VALVE, start )		
 				setOut(FUEL_PUMP_CH, start)
@@ -297,6 +310,7 @@ main = function ()
 				local water_fan_start = water_fan_enable and (not START_ENABLE) and start 
 				WaterFanTimer:process( water_fan_start )
 				setOut(WATER_FAN_CH, WaterFanTimer:get())
+				--setOut(WATER_FAN_CH, true)
 				--конец блока управления вентелятором охдаждения
 				-- блок переключением передач и заденего хода
 				local gear_enable =  stop_signal and not parking_on --and (speed == 0) --and ( RPM < 1000 )
@@ -432,85 +446,37 @@ main = function ()
 						PREHEAT 	 = false
 						cold_start   = temp < (40 +TEMP_OFFSET)
 					else
-						if cold_start then
-							if PreheatTimer < (180000+16000) then
-								PreheatTimer = PreheatTimer + getDelay()
-								PREHEAT = true
-							else
-								PREHEAT = false
-							end	
-						else
+						
 						if PreheatTimer < 16000 then	
 							PreheatTimer = PreheatTimer + getDelay()
 							if temp < (40 +TEMP_OFFSET) then
 								PREHEAT = (PreheatTimer < 15000 )	
-							elseif temp < (50+TEMP_OFFSET) then
-								PREHEAT = (PreheatTimer < 4000 )
-							elseif temp < (60+TEMP_OFFSET) then
-								PREHEAT = (PreheatTimer < 3000 )
-							elseif temp < (70+TEMP_OFFSET) then
-								PREHEAT = (PreheatTimer < 2000 )
-							elseif temp < (100+TEMP_OFFSET) then
-								PREHEAT = (PreheatTimer < 1000 )
-							elseif temp>= (100+TEMP_OFFSET) then
-								PREHEAT = false
+							else 								
+							    PREHEAT = (PreheatTimer < 5000 )
 							end
 						end
 					end
-				 end
-				else
+				 				else
 					PreheatTimer = 0					--сбрасываем таймер, если зажигание выключено
 				end
-				PREHEAT = PREHEAT and start
+
+				local oil_presure = oil_signal and not PREHEAT
+				
+				if  (oil_level == false ) then
+				  oil_level   = oil_signal and PREHEAT
+				end 
+                oil_level = oil_level and start
+				
+				PREHEAT = PREHEAT and start 
+				 
 				setOut(GLOW_PLUG_1_2, PREHEAT )
 				setOut(GLOW_PLUG_3_4, PREHEAT )
 				KeyBoard:setLedRed( 1, PREHEAT  )	
 				--конец блока предпрогрева
-			
-			    --првоерка ошибока
-				STOP_VALVE_ERROR   = getOut(STOP_VALVE)     and  ChannelCheck( STOP_VALVE,   1 )    	or STOP_VALVE_ERROR
-				REAR_VALVE_ERROR   = getOut(DOWN_GEAR_CH)   and  ChannelCheck( DOWN_GEAR_CH, 2 )    	or REAR_VALVE_ERROR
-				FORWAR_VALVE_ERROR = getOut( UP_GEAR )      and  ChannelCheck( UP_GEAR,      2 )    	or FORWAR_VALVE_ERROR
-				OIL_FAN_ERROR      = getOut( OIL_FAN_CH )   and ( getOutStatus(OIL_FAN_CH) > 1 )    	or OIL_FAN_ERROR
-				CUT_VALVE_ERROR    = getOut( CUT_VALVE )    and ( getOutStatus(CUT_VALVE)  > 1 )    	or CUT_VALVE_ERROR
-				LOW_BEAM_ERROR     = getOut( LOW_BEAM_CH)   and ( getOutStatus(LOW_BEAM_CH) > 1 )   	or LOW_BEAM_ERROR 
-				STOP_SIGNAL_ERROR  = getOut( STOP_CH)       and  StopSignalErrorTimer:process(true,( getOutStatus(STOP_CH) < 2 )) or STOP_SIGNAL_ERROR 
-				HIGH_BEAM_ERROR    = getOut( HIGH_BEAM_CH)  and ( getOutStatus(HIGH_BEAM_CH) > 1 )  	or HIGH_BEAM_ERROR 
-				REAR_LIGHT_ERROR   = getOut( REAR_LIGTH_CH) and ( getOutStatus(REAR_LIGTH_CH) > 1 ) 	or REAR_LIGHT_ERROR 
-				FUEL_PUMP_ERROR    = getOut( FUEL_PUMP_CH)  and ( getOutStatus(FUEL_PUMP_CH) > 1 )  	or FUEL_PUMP_ERROR
-				WATER_ERROR		   = getOut( WATER_CH)      and ( getOutStatus(WATER_CH) > 1 )      	or WATER_ERROR
-				WIPERS_ERROR       = getOut( WIPERS_CH)     and ( getOutStatus(WIPERS_CH) > 1 )     	or WIPERS_ERROR
-				STARTER_ERROR      = getOut( STARTER_CH)    and ( getOutStatus(STARTER_CH) > 1 )    	or STARTER_ERROR
-				RIGTH_TURN_ERROR   = getOut( RIGTH_TURN_CH) and ( getOutStatus(RIGTH_TURN_CH) == 0x04 ) or RIGTH_TURN_ERROR
-				LEFT_TURN_ERROR    = getOut( LEFT_TURN_CH)  and ( getOutStatus(LEFT_TURN_CH) == 0x04 )  or LEFT_TURN_ERROR
-				HORN_ERROR		   = getOut( HORN_CH)       and ( getOutStatus(HORN_CH) > 1 )    		or HORN_ERROR
-				GLOW_PLUG_ERROR    = ( getOut( GLOW_PLUG_1_2) or getOut( GLOW_PLUG_3_4) ) 
-									and ( getOutStatus(GLOW_PLUG_1_2) > 1 )  or   ( getOutStatus(GLOW_PLUG_3_4) > 1 )  or GLOW_PLUG_ERROR 
-				GENERATOR_ERROR   = GeneratorTimer:process(true, (RPM > 0 and RPM < 800) and ( getBat() <12 ) )
-
-				--блок передачи данных в CAN
-				
-				CanERROR:setBit(1, 1, STOP_VALVE_ERROR )
-				CanERROR:setBit(1, 2, FORWAR_VALVE_ERROR )
-				CanERROR:setBit(1, 3, REAR_VALVE_ERROR )
-				CanERROR:setBit(1, 4, OIL_FAN_ERROR  )
-				CanERROR:setBit(1, 5, CUT_VALVE_ERROR )
-				CanERROR:setBit(1, 6, LOW_BEAM_ERROR )
-				CanERROR:setBit(1, 7, STOP_SIGNAL_ERROR )
-				CanERROR:setBit(1, 8, HIGH_BEAM_ERROR )
-				CanERROR:setBit(2, 1, REAR_LIGHT_ERROR )
-				CanERROR:setBit(2, 2, FUEL_PUMP_ERROR )
-				CanERROR:setBit(2, 3, WATER_ERROR )
-				CanERROR:setBit(2, 4, WIPERS_ERROR )
-				CanERROR:setBit(2, 5, STARTER_ERROR )
-				CanERROR:setBit(2, 6, RIGTH_TURN_ERROR )
-				CanERROR:setBit(2, 7, LEFT_TURN_ERROR )
-				CanERROR:setBit(2, 8, HORN_ERROR )
-				CanERROR:setBit(3, 1, KL30_ERROR )
-				CanERROR:setBit(3, 2, GLOW_PLUG_ERROR )
-				CanERROR:setBit(3, 3, GENERATOR_ERROR )
-				CanERROR:process()
-				
+						
+						
+			    CanToDash:setBit(3, 5, oil_presure )
+				CanToDash:setBit(3, 4, oil_level )
 				CanToDash:setBit(3, 3, getDIN(DOOR1_SW) )
 				CanToDash:setBit(3, 2, getDIN(DOOR2_SW) )
 				CanToDash:setBit(3, 1, HIGH_BEAM )
@@ -518,13 +484,15 @@ main = function ()
 				CanToDash:setBit(2, 7, Turns:getAlarm())
 				CanToDash:setBit(2, 6, RIGTH_ENABLE )
 				CanToDash:setBit(2, 5, LEFT_ENABLE)
-				CanToDash:setBit(2, 4, (PreheatTimer < 11000) and PREHEAT or false)
+				CanToDash:setBit(2, 4,  PREHEAT )
 				CanToDash:setBit(2, 3, UP_MOVE)
 				CanToDash:setBit(2, 2, REAR_MOVE)
 				CanToDash:setBit(2, 1, not ( REAR_MOVE or UP_MOVE or parking_on ) )
 				CanToDash:setBit(1, 4, parking_on )
 				CanToDash:process()
 				--конец
+			 
+			   CanVersion:process()
 			
 				--блок для передачи сигналов поворотников в дашборд, что бы было видно их работу в сервисном режиме
 				FlashToCanTimer:process(true, not FlashEnabel)
