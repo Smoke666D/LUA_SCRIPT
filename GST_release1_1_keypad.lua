@@ -129,11 +129,11 @@ main = function ()
     local start = false
 	local FSM = 0
     local bright = 0
-   local delay = 0
-   local counter = 0
-   local del = 0
-   local err = 0
- 
+    local delay = 0
+    local counter = 0
+    local del = 0
+    local err = 0
+ ConfigStorage(0,62,0x00,0x01,0x03,0x03)
 	--KeyBoard:setBackLigthBrigth(  3 )
 	--рабочий цикл
 	while true do	
@@ -146,11 +146,18 @@ main = function ()
 			KeyBoard:process() --процесс работы с клавиатурой
 			KeyBoard:setBackLigthBrigth( 15 )	
 			Key1Counter:process(KeyBoard:getKey(1),false,false);
+			
+			if KeyBoard:getToggle(2) then
+			   KeyBoard:resetToggle(2,true) 
+			   counter = counter +1
+			end
 			start = (Key1Counter:get() ==1)
 	
 		
 			if start then
 				if counter == 0  then
+				   SetEEPROMReg(1 ,0x55)
+				   SetEEPROMReg(3 ,0x78)
 				   if (getDIN(1) == true ) and (getDIN(3) == true ) and (getDIN(5) == true ) and (getDIN(7) == true ) 
 				   
 				   and (getDIN(9) == true ) and (getDIN(11) == true ) then
@@ -163,17 +170,20 @@ main = function ()
 			    end 
 				if ((counter == 2) and (del>280)) then
 				    if (getCurrent(1) > 5) and (getCurrent(11) > 5)  then  --and (getCurrent(14) > 5) then
-					   setOut(20, true )					   counter = 3
+					   
+					   setOut(20, true )					   
+					   counter = 3
 					   setOut(1, false )
 					   setOut(11, false )
 					   setOut(12, true )
 					--   setOut(14, false )
 					else
-					  err = 2
+					  
+					 err = 2
 					end
 				end
 				if ((counter == 4) and (del>280)) then
-					 if (getDIN(2) == true ) and (getCurrent(12) > 5)  then
+					 if (getDIN(2) == true ) and (getCurrent(12) > 5) and (GetEEPROMReg(1) ==0x55) and (GetEEPROMReg(3)==0x78)  then
 					   setOut(2, true )
 					   setOut(12, false )
 					   counter = 5
@@ -307,7 +317,7 @@ main = function ()
 				end
 				
 			    del = del + 1
-			    if del == 300 then
+			    if del > 300 then
 			       del =0
 				   if (err == 0) then
 		              counter = counter + 1
