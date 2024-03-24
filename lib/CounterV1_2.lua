@@ -2,18 +2,17 @@ Counter = {}
 Counter.__index = Counter
 function Counter:new ( inMin, inMax, inDefault, inReload )
 	local obj = { 		counter =  inDefault,
-						min = inMin,
-						max = inMax,
-						reload =  inReload,
-						def = inDefault,
-						old = false,
-						oldrst =false
+						min     = inMin,
+						max     = inMax,
+						reload 	=  inReload,
+						def    	= inDefault,
+						old    	= false,
+						oldrst 	= false
 		   }
 	setmetatable( obj, self )
 	return obj
 end
 function Counter:process ( inc, dec, rst )
-	if (type(inc) == "boolean") and (type(dec) == "boolean") and (type(rst) == "boolean") then
 		if ( inc == true ) then
 			if (  self.old  == false )  then
 				if ( self.counter < self.max ) then
@@ -37,12 +36,16 @@ function Counter:process ( inc, dec, rst )
 				self.counter = self.def
 			end
 		end
-		self.old =   ( inc or dec ) and true or false
+		self.old    =  ( inc or dec ) and true or false
 		self.oldrst =   rst and true or false
-	end
+	
 	return
 end
-
+function Counter:set( state )
+	if ( state >=self.min ) and ( state <=self.max ) then
+		self.counter = state
+	end
+end
 function Counter:get ()
 	return self.counter
 end

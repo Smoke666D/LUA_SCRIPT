@@ -76,14 +76,9 @@ function init()
 	setDINConfig(EBU_PUMP,0)
 	setDINConfig(WIPER_HOME_SW,1)
     setDINConfig(ENGINE_ON_SW,0)
-	
 	Yield()
 end
 
-function ChannelCheck( number, nominal)
-
- return  (  (( getCurrent( number) < nominal ) and (getOutStatus(number)== 1)) or (getOutStatus(number) > 1 ) )
-end
 
 function ALL_OFF()
 	setOut(1, false)
@@ -113,14 +108,12 @@ main = function ()
 	init()	
     local KeyBoard			= KeyPad8:new(0x15)--создание объекта клавиатура c адресом 0x15
 	local IgnCounter     	= Counter:new(0,1,0,true)
-	local BeamCounter   	= Counter:new(2,3,3,true) 
 	local RainCounter   	= Counter:new(0,1,0,true)
 	local LigthCounter      = Counter:new(0,2,0,true)
 	local WiperCounter      = Counter:new(0,3,0,true)
 	local FlashCounter      = Counter:new(0,1,0,true)
-	local WiperPauseCounter = Counter:new(0,1,0,true)
 	local WHEELSCounter     = Counter:new(0,1,0,true)
-	local FlashOnCounter    = Counter:new(0,5,0,false)
+	local FlashOnCounter    = Counter:new(0,6,0,false)
 	local FuelPumpOnCounter    = Counter:new(0,1,0,false)
 	local wipers_on_delay_l  = Delay:new(500,false)
 	local wipers_on_delay_2  = Delay:new(500,false)
@@ -128,24 +121,14 @@ main = function ()
 	local flash_pause 	    = Delay:new(2000,true)
 	local start_delay       = Delay:new(200,false)
 	local WIPERS_PAUSE_ON    = false
-	local WIPER_LOW_SPEED	 = false
-	local IGNITION			 = false
-	local IGN				 = false
-	local RAIN               = false
-	local ENGINE_ON		 	 = false
-	local LOW_BEAM			 = false
-	local START				 = false
-	local WIPER_HIGH_SPEED   = false
 	local location           = false
+	local FLASH_ON			 = false
 	local state = 0
-	
-	
 	
 	KeyBoard:setBackLigthBrigth(  3 )
     OutSetPWM(WHEEL_PWM_CH,  80)
 	--рабочий цикл
-	while true do	
-        	
+	while true do
 	    --выключем все, если напряжение АКБ болье 16В и меньше 6
 	    if (( getBat() > 16 ) or (getBat()<6) ) or (not start_delay:process(true)) then
 			ALL_OFF()
@@ -155,53 +138,52 @@ main = function ()
 			setOut(KEYBOARD_CH, true )   -- включаем keypad
 			setOut(DASH_CH    , true )   -- включаем даш
 			setOut(STOP_CH	,  getDIN( STOP_SW ) )  -- реагируем концевик педали тормоза
-			
-			local START_ENABLE = KeyBoard:getKey(2) 
-		    setOut( STARTER_CH, START_ENABLE  )		
-			
+
+			local STARTER = KeyBoard:getKey(2)
+			local OUT_ENABLE = not STARTER
+			KeyBoard:setLedRed(2,STARTER)
+		    setOut( STARTER_CH, STARTER  )
+
 			-- блок реакции на кнопку RAIN
-			RainCounter:process(getDIN(RAIN_SW),false, START_ENABLE)
-			RAIN = ( RainCounter:get() == 1)				
-			setOut(LOW_BEAM_CH, (LOW_BEAM or RAIN) and not START_ENABLE) 
-			setOut(GLASS_FAN_CH ,  RAIN  ) 
-			setOut(GLASS_UP_CH  ,  true)
-			
-					
+			RainCounter:process(getDIN(RAIN_SW), false, false )
+			local RAIN = ( RainCounter:get() == 1)				
+			if RAIN then
+				LigthCounter = 1
+			end 
+			setOut(GLASS_FAN_CH ,  RAIN and OUT_ENABLE  ) 
+			setOut(GLASS_UP_CH  ,  true  )
+				
 			IgnCounter:process(KeyBoard:getKey(1), false,false)
-			IGNITION =  (IgnCounter:get() == 1) and true
+			local IGNITION =  (IgnCounter:get() == 1)
 			setOut(COIL_POWER_CH , IGNITION)   
 
-           FuelPumpOnCounter:process(getDIN(FUEL_PUMP_SW), false,false)
-			
-			
-			setOut( PUMP_044_CH, (  getDIN(EBU_PUMP) or  FuelPumpOnCounter:get()==1)   and IGNITION   )      
-			setOut(PUMPS_CH,     (getDIN(EBU_PUMP) or  FuelPumpOnCounter:get()==1)  and IGNITION )
-			setOut(POWER_888_CH,  IGNITION)        
+            FuelPumpOnCounter:process(getDIN(FUEL_PUMP_SW), false,false)
+						
+			setOut(PUMP_044_CH,   (  getDIN(EBU_PUMP) or  FuelPumpOnCounter:get()==1)   and IGNITION  )      
+			setOut(PUMPS_CH,      (  getDIN(EBU_PUMP) or  FuelPumpOnCounter:get()==1)   and IGNITION  )
+			setOut(POWER_888_CH,   IGNITION)        
 			setOut(JUDGE_POWER_CH, IGNITION)  
-			setOut(EBU_POWER_CH ,     IGNITION) 				
-		    KeyBoard:setBackLigthBrigth( IGNITION and 15 or 3 )	-- подсветка клавиатуры
+			setOut(EBU_POWER_CH ,  IGNITION) 				
+		    KeyBoard:setBackLigthBrigth( IGNITION and 16 or 5 )	-- подсветка клавиатуры
 		
-		    ENGINE_ON= getDIN(ENGINE_ON_SW)
+		    local ENGINE_ON = getDIN(ENGINE_ON_SW)
 			
-			setOut(REAR_LIGTH_CH,ENGINE_ON)
-			
-		 	WHEELSCounter:process(getDIN(WHEEL_ON_SW),false,false)
-			
-			setOut(WHEEL_POWER_CH,ENGINE_ON or ( WHEELSCounter == 1))
-			setOut(WHEEL_PWM_CH, ENGINE_ON  or ( WHEELSCounter == 1) )
+			setOut(REAR_LIGTH_CH, ENGINE_ON and OUT_ENABLE )
+		 	WHEELSCounter:process( getDIN(WHEEL_ON_SW), false, false)
+			setOut(WHEEL_POWER_CH, ( ENGINE_ON  or ( WHEELSCounter == 1)) and OUT_ENABLE )
+			setOut(WHEEL_PWM_CH  , ( ENGINE_ON  or ( WHEELSCounter == 1)) and OUT_ENABLE  )
 			OutSetPWM(WHEEL_PWM_CH, 20)
 			
-			
-			--блок FLASH
+			--блок FLASH и света		
+            LigthCounter:process( KeyBoard:getKey(3), false, not ENGINE_ON )
+            local HIGH_BEAM_ON =  (LigthCounter:get() == 2)
 			
 			FlashCounter:process(getDIN(FLASH_SW),false,not getDIN(FLASH_SW))
 			if (( FlashCounter:get(1) == 1 ) and (not FLASH_ON)) then
 				FLASH_ON = true
 			end
 			
-			HIGH_BEAM_ON =  (LigthCounter:get() == 2)
-			FlashOnCounter:process(   flash_pause:process(FLASH_ON), false, not FLASH_ON)
-
+			FlashOnCounter:process( flash_pause:process(FLASH_ON), false, not FLASH_ON)
             local flk = FlashOnCounter:get()
 			if (flk ==2 ) or (flk == 4) or ((flk ==0 ) and FLASH_ON) then
 				HIGH_BEAM_ON = true
@@ -209,56 +191,49 @@ main = function ()
 			if (flk ==1 ) or (flk == 3) or (flk ==5) then
 				HIGH_BEAM_ON = false
 			end
-			if (flk == 5) then
+			if (flk == 6) then
 				FLASH_ON  = false
-			end 
-		
-			LigthCounter:process(KeyBoard:getKey(3), false,false)
-			setOut(LOW_BEAM_CH,(LigthCounter:get() == 1) and ENGINE_ON)
-			setOut(HIGH_BEAM_CH, HIGH_BEAM_ON and ENGINE_ON)
-			--блок FLASH
+			end
 
+			setOut(LOW_BEAM_CH,(LigthCounter:get() == 1)  and OUT_ENABLE )
+			setOut(HIGH_BEAM_CH, HIGH_BEAM_ON             and OUT_ENABLE )
+			--блок FLASH
 			--Блок дворников
-           
-            WiperCounter:process( getDIN(WIPER_SW),false,false)	
-			WiperCounter:process( false ,false,false)	
-			wipers_pause:process(not getDIN( WIPER_HOME_SW ),false)
-			
-			if (WiperCounter:get() == 1) then
-				if (state ==0) then
-					WIPERS_PAUSE_ON = true
-					if getDIN( WIPER_HOME_SW ) then
-						state = 1
+            WiperCounter:process( getDIN(WIPER_SW),false, not ENGINE_ON )	
+			wipers_pause:process(not getDIN( WIPER_HOME_SW ),false) -- задержка для режима паузы
+			--запускается в любых режимах, что бы не делать отдельный сигнал сборса
+			if (WiperCounter:get() == 1) then         -- если режим паузы
+				if (state ==0) then                   -- если токо включили
+					WIPERS_PAUSE_ON = true            -- запускаем двроники
+					if getDIN( WIPER_HOME_SW ) then   -- и ждем пока они уедут из домашнего положения
+						state = 1                     -- переводи в рабочий режима паузы
 					end 
 				else 
-					if getDIN( WIPER_HOME_SW ) then
-					  WIPERS_PAUSE_ON = false
+					if getDIN( WIPER_HOME_SW ) then    -- елси двроники уехали из домашнего положения
+					  WIPERS_PAUSE_ON = false          -- сбрасываем переменную запуска, теперь дворники автоматом
+													   -- доедут до дома и выключатся
 					else
-					  WIPERS_PAUSE_ON = wipers_pause:get()
+					  WIPERS_PAUSE_ON = wipers_pause:get() -- если мы тут, то довники приехали домой и запустилась задержка
+														-- когда продет время заржки, пусковая переменная будет включена
+														-- и они сдвинуться из домашнего пложения
 					end 
 			   end
 			else
 			 state = 0
+			 WIPERS_PAUSE_ON = false
 			end
-			
-		    WIPERS_PAUSE_ON  = WIPERS_PAUSE_ON and (WiperCounter:get() == 1)
-			WIPER_LOW_SPEED  = (WiperCounter:get() == 2)
-			WIPER_HIGH_SPEED = (WiperCounter:get() == 3)
-			
-			location  = WIPER_HIGH_SPEED or WIPERS_PAUSE_ON or  ( location and getDIN( WIPER_HOME_SW ) ) 
-			setOut(WIPER_LOW_CH,  wipers_on_delay_l:process( WIPER_LOW_SPEED , false )  )   
-		    setOut(WIPER_HIGH_CH, wipers_on_delay_2:process( WIPER_HIGH_SPEED or WIPERS_PAUSE_ON or location, false ) and not  WIPER_LOW_SPEED ) 
-			
-			
-			
-			
+			local WIPER_LOW_SPEED  = (WiperCounter:get() == 2)	-- включаем низкую скорость. второе нажатие на кнопку
+			local WIPER_HIGH_SPEED = (WiperCounter:get() == 3)	-- высокую скорость, третье нажатие на копку
+			location  = WIPER_HIGH_SPEED or WIPERS_PAUSE_ON or  ( location and getDIN( WIPER_HOME_SW ) )  -- переменная
+			-- отвечает за доезд дворников домой, если их выклчюили посередине цикла, она сброситься 
+			-- как только они приедут домой. 
+			-- каналы выключаются когда крутиться стартер
+			-- каналы ключатся с задержкой 0.5с, это тайм аут на осоновку мотора, что бы он перестал генерить 
+			-- в канал. Иначе может срабоать защитра 
+			setOut( WIPER_LOW_CH,  wipers_on_delay_l:process( WIPER_LOW_SPEED , false ) and OUT_ENABLE )  
+		    setOut( WIPER_HIGH_CH, wipers_on_delay_2:process( WIPER_HIGH_SPEED or WIPERS_PAUSE_ON or location, false ) and not  WIPER_LOW_SPEED and OUT_ENABLE  ) 		
 			--Конец блока доврников
-			
-	
-		
-					
-						
-			    
+	    
 	        end
 	   Yield()
 	end

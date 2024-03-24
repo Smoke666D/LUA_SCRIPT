@@ -4,7 +4,6 @@
 EXT_CAN_ID = 0x80000000
 -- Объекты СanIput. Cозадется с помощью метода :new( id пакета, время обновления данных , битовая маска, указывающая какие байты из фрема забирать, )
 --
-
 CanInputV1 = {}
 CanInputV1.__index = CanInputV1
 function CanInputV1:new ( addr )
