@@ -75,6 +75,7 @@ function init()
 	setDINConfig(EBU_PUMP,0)
 	setDINConfig(WIPER_HOME_SW,1)
     setDINConfig(ENGINE_ON_SW,0)
+	--ConfigStorage(0,0,0x00,0x01,0x03)
 	Yield()
 end
 
